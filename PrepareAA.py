@@ -28,13 +28,13 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads):
  	print(cmd)
  	call(cmd,shell=True)
  	print("Performing duplicate removal & indexing")
- 	cmd = "samtools rmdup -s {}.cs.bam {}.cs.rmdup.bam &> rmdup.out".format(outname,outname)
+ 	cmd_list = ["samtools", "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
  	print(cmd)
-	call(cmd,shell=True)
+	call(cmd_list)
 	print("Running samtools index")
-	cmd = "samtools index {}.cs.rmdup.bam &> st_index.out".format(outname)
+	cmd_list = ["samtools", "index", "{}.cs.rmdup.bam".format(outname)]
 	print(cmd)
-	call(cmd,shell=True)
+	call(cmd_list)
 	print("Removing temp BAM")
 	cmd = "rm {}.cs.bam".format(outname)
 	call(cmd,shell=True)
@@ -269,7 +269,8 @@ if __name__ == '__main__':
 
 	if not os.path.isfile(args.sorted_bam + ".bai"):
 		print(args.sorted_bam + ".bai not found, calling samtools index")
-		call("samtools index " + args.sorted_bam + " &> st_index.out", shell=True)
+		call(["samtools","index",args.sorted_bam])
+		print("Finished indexing")
 
 	centromere_dict = get_ref_centromeres(args.ref)
 
