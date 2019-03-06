@@ -22,7 +22,7 @@ class workerThread(threading.Thread):
 #THIS IS DESIGNED TO WORK FOR ANALYSIS WITH HG19.
 def run_bwa(ref,fastqs,outdir,sname,nthreads):
 	outname = outdir + sname
-	print outname
+	print(outname)
 	print("Performing alignment and sorting")	
  	cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
  	print(cmd)
@@ -31,7 +31,13 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads):
  	cmd = "samtools rmdup -s {}.cs.bam {}.cs.rmdup.bam &> rmdup.out".format(outname,outname)
  	print(cmd)
 	call(cmd,shell=True)
-	call("samtools index {}.cs.rmdup.bam".format(outname),shell=True)
+	print("Running samtools index")
+	cmd = "samtools index {}.cs.rmdup.bam".format(outname)
+	print(cmd)
+	call(cmd,shell=True)
+	print("Removing temp BAM")
+	cmd = "rm {}.cs.bam".format(outname)
+	call(cmd,shell=True)
 	return outname + ".cs.rmdup.bam"
 
 def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
@@ -133,7 +139,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory,sorted_bam,output_direct
 
 	#call amplified_intervals.py from $AA_SRC
 	CNV_seeds_filename = "{}/{}_AA_CNV_SEEDS.bed".format(output_directory, sname)
-	cmd = "python {}/amplified_intervals.py --bed {} --bam {} | grep '^chr\\|\\|^[1-2]\\|^X\\|^Y' > {}".format(AA_SRC, canvas_output_directory + "/CNV_GAIN.bed",sorted_bam,CNV_seeds_filename)
+	cmd = "python {}/amplified_intervals.py --bed {} --bam {} | grep '^chr\\|^[1-2]\\|^X\\|^Y' > {}".format(AA_SRC, canvas_output_directory + "/CNV_GAIN.bed",sorted_bam,CNV_seeds_filename)
 	call(cmd,shell=True)
 	return CNV_seeds_filename
 
