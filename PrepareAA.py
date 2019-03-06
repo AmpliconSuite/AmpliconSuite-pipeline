@@ -267,6 +267,9 @@ if __name__ == '__main__':
 		print("Running pipeline on " + fastqs)
 		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads)
 
+	if not args.sorted_bam + ".bai":
+		call("samtools index " + args.sored_bam, shell=True)
+
 	centromere_dict = get_ref_centromeres(args.ref)
 
 	#chunk the genome by chr
