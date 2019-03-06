@@ -32,7 +32,7 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads):
  	print(cmd)
 	call(cmd,shell=True)
 	print("Running samtools index")
-	cmd = "samtools index {}.cs.rmdup.bam".format(outname)
+	cmd = "samtools index {}.cs.rmdup.bam &> st_index.out".format(outname)
 	print(cmd)
 	call(cmd,shell=True)
 	print("Removing temp BAM")
@@ -268,7 +268,8 @@ if __name__ == '__main__':
 		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads)
 
 	if not os.path.isfile(args.sorted_bam + ".bai"):
-		call("samtools index " + args.sored_bam, shell=True)
+		print(args.sorted_bam + ".bai not found, calling samtools index")
+		call("samtools index " + args.sorted_bam + " &> st_index.out", shell=True)
 
 	centromere_dict = get_ref_centromeres(args.ref)
 
