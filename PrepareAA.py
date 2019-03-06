@@ -177,7 +177,7 @@ if __name__ == '__main__':
 	parser.add_argument("--canvas_data_dir",help="Path to folder with required Canvas reference reference files",required=True)
 	parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and AA",required=True)
 	parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
-	parser.add_argument("--ref", help="Reference genome version. Only Hg19 currently supported.",choices=["hg19","GRCh37","hg38"],default="Hg19")
+	parser.add_argument("--ref", help="Reference genome version. Only Hg19 currently supported.",choices=["hg19","GRCh37","hg38"],default="hg19")
 	parser.add_argument("--vcf", help= "VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
