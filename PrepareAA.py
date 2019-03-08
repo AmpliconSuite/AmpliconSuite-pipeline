@@ -19,7 +19,6 @@ class workerThread(threading.Thread):
 	def run(self): 
 		self._target(*self._args)
 
-#THIS IS DESIGNED TO WORK FOR ANALYSIS WITH HG19.
 def run_bwa(ref,fastqs,outdir,sname,nthreads):
 	outname = outdir + sname
 	print(outname)
@@ -41,6 +40,7 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads):
 	return outname + ".cs.rmdup.bam"
 
 def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
+	#Freebayes cmd-line args
 	#-f is fasta
 	#-r is region to call
 	while True:
@@ -50,24 +50,16 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 			break
 		
 		curr_region_string = curr_region_tup[0] + ":" + curr_region_tup[1]
-		print(curr_region_string)
-
+		print("Running " + curr_region_string + ". " + str(len(regions)) + " items remaining.")
 		vcf_file = outdir + sname + "_" + curr_region_tup[0] + "_" + curr_region_tup[2] + ".vcf"
-		'''
-		SWAP OUT THE FILTER FIELD, ONLY ON NON HEADER LINES (unless you can fix it) with another if
-		awk '{ $7 = ($7 == "." ? "PASS" : $7) } 1' OFS="\t"
-		'''
-
 		replace_filter_field_func = "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\""
 		cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --max-coverage 25000 --strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func, vcf_file)	
-		#print(cmd)
 		call(cmd,shell=True)
 		#gzip the new VCF
-		print("gzipping VCF")
 		call("gzip -f " + vcf_file,shell=True)
 
 def run_canvas(bam_file, vcf_file, outdir, canvas_data_dir, removed_regions_bed, sname, ref):
-	print("Calling Canvas")
+	#Canvas cmd-line args
 	# -b: bam
 	# --sample-b-allele-vcf: vcf
 	# -n: sample name
@@ -76,13 +68,14 @@ def run_canvas(bam_file, vcf_file, outdir, canvas_data_dir, removed_regions_bed,
 	#-g: "folder with genome.fa and genomesize xml
 	#-f: regions to ignore
 
+	print("Calling Canvas")
 	cmd = "Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_data_dir, removed_regions_bed, outdir)
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
 
 def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
-	#sort the elements in hg19 chr sizes
 	print("Merging VCFs and zipping")
+	#collect the vcf files to merge
 	merged_vcf_file = outdir + sname + "_merged.vcf"
 	relevant_vcfs = [x for x in vcf_list if any([i in x for i in chr_names])]
 	chrom_vcf_d = {}
@@ -98,6 +91,7 @@ def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 		except ValueError:
 			numeric_chr_names.append(x)
 
+	#sort the elements
 	sorted_chr_names = ["chr" + str(x) for x in sorted(numeric_chr_names)]
 	#include the header from the first one
 	call("zcat " + chrom_vcf_d["chrM"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
@@ -115,12 +109,7 @@ def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 	return merged_vcf_file + ".gz"
 
 def convert_canvas_cnv_to_seeds(canvas_output_directory,sorted_bam,output_directory,sname):
-	
-	#enter the canvas folder
-	#open CNV.vcf.gz
-	#convert to bed
-
-	#call amplified_intervals.py
+	#convert the Canvas output to a BED format
 	with gzip.open(canvas_output_directory + "/CNV.vcf.gz", 'rb') as infile, open(canvas_output_directory + "/CNV_GAIN.bed",'w') as outfile:
 		for line in infile:
 			if line.startswith("#"):
@@ -191,7 +180,8 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
-	#Add a argument to specify Hg19 or GRCh37
+	#Todo: Implement support for non-hg19. Canvas is not well behaved and has documented bugs regarding reference genome selection.
+	#Todo: Implement support for different pipeline tools to be used instead.
 
 	#Check if AA_REPO set, print error and quit if not
 	try:
@@ -315,8 +305,6 @@ if __name__ == '__main__':
 		if not os.path.exists(outdir + "/AA_results"):
  			os.mkdir(outdir + "/AA_results")
 
- 		#run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname)
  		run_AA(amplified_interval_bed, args.sorted_bam, outdir + "/AA_results", sname)
 		
-
 	print("Completed\n")
