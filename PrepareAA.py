@@ -135,7 +135,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory,sorted_bam,output_direct
 
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname):
 	print("Running AA with default arguments. To change settings run AA separately.")
-	cmd = "{}/AmpliconArchitect.py --bed {} --bam {} --out {}/{}".format(AA_SRC,amplified_interval_bed,sorted_bam,AA_outdir,sname)
+	cmd = "{}/AmpliconArchitect.py --downsample 5 --bed {} --bam {} --out {}/{}".format(AA_SRC,amplified_interval_bed,sorted_bam,AA_outdir,sname)
 	call(cmd,shell=True)
 
 def get_ref_sizes(ref_genome_size_file):
