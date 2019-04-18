@@ -58,7 +58,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
 
-def run_canvas(bam_file, vcf_file, outdir, canvas_data_dir, removed_regions_bed, sname, ref):
+def run_canvas(bam_file, vcf_file, outdir, canvas_lib_dir, removed_regions_bed, sname, ref):
 	#Canvas cmd-line args
 	# -b: bam
 	# --sample-b-allele-vcf: vcf
@@ -69,7 +69,7 @@ def run_canvas(bam_file, vcf_file, outdir, canvas_data_dir, removed_regions_bed,
 	#-f: regions to ignore
 
 	print("Calling Canvas")
-	cmd = "Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_data_dir, removed_regions_bed, outdir)
+	cmd = "Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_lib_dir, removed_regions_bed, outdir)
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
 
@@ -177,18 +177,20 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="A simple pipeline wrapper for AmpliconArchitect, invoking alignment, variant calling, and CNV calling prior to AA. The CNV calling is necesary for running AA")
 	parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
 	parser.add_argument("-s", "--sample_name", help="sample name", required=True)
-	parser.add_argument("--canvas_data_dir",help="Path to folder with required Canvas reference reference files")
 	parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and AA",required=True)
 	parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
 	parser.add_argument("--ref", help="Reference genome version. Only Hg19 currently supported.",choices=["hg19","GRCh37","hg38"],default="hg19")
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
-	parser.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
-	parser.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end cngain name")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=3.9999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=20000)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
+	group2 = parser.add_mutually_exclusive_group(required=True)
+	group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
+	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end cngain name")
+	group2.add_argument("--canvas_lib_dir",help="Path to folder with required Canvas reference reference files")
+
 
 	args = parser.parse_args()
 
@@ -221,9 +223,10 @@ if __name__ == '__main__':
  		print("Other reference versions currently unsupported.")
  		sys.exit()
 
-	if not os.path.exists(args.canvas_data_dir) and not args.cnv_bed and not args.reuse_canvas:
-		sys.stderr.write("Could not locate Canvas data repo folder")
-		sys.exit()
+ 	if not args.cnv_bed:
+		if not os.path.exists(args.canvas_lib_dir) and not args.reuse_canvas:
+			sys.stderr.write("Could not locate Canvas data repo folder")
+			sys.exit()
  	
  	#check for the bed file of regions to ignore (centromeres, low complexity)
  	ploidy_vcf = AA_REPO + "/" + args.ref + "/dummy_ploidy.vcf"
@@ -312,7 +315,7 @@ if __name__ == '__main__':
 
 	#Run Canvas
 	if not args.reuse_canvas and not args.cnv_bed:
-		run_canvas(args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_data_dir, removed_regions_bed,sname,ref)
+		run_canvas(args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_lib_dir, removed_regions_bed,sname,ref)
 
 	#Convert Canvas output to seeds
 	if not args.cnv_bed:
