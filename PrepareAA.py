@@ -19,11 +19,29 @@ class workerThread(threading.Thread):
 	def run(self): 
 		self._target(*self._args)
 
-def run_bwa(ref,fastqs,outdir,sname,nthreads):
+def run_bwa(ref,fastqs,outdir,sname,nthreads,usingDeprecatedSamtools = False):
 	outname = outdir + sname
 	print(outname)
-	print("Performing alignment and sorting")	
- 	cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
+	print("Checking for ref index")
+	exts = [".sa",".amb",".ann","pac","bwt"]
+	indexPresent = True
+	for i in exts:
+		if not os.path.exists(ref + i):
+			indexPresent = False
+			print "Could not find " + ref + i + ", building BWA index from scratch. This could take a moment"
+			break
+
+	if not indexPresent:
+		cmd = "bwa index " + ref
+		call(cmd,shell=True)
+
+
+	print("Performing alignment and sorting")
+	if usingDeprecatedSamtools
+ 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
+ 	else:
+ 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 -o {}.cs -; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
+
  	print(cmd)
  	call(cmd,shell=True)
  	print("Performing duplicate removal & indexing")
@@ -58,7 +76,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
 
-def run_canvas(bam_file, vcf_file, outdir, canvas_lib_dir, removed_regions_bed, sname, ref):
+def run_canvas(canvas_lib_dir,bam_file, vcf_file, outdir, canvas_lib_dir, removed_regions_bed, sname, ref):
 	#Canvas cmd-line args
 	# -b: bam
 	# --sample-b-allele-vcf: vcf
@@ -69,7 +87,7 @@ def run_canvas(bam_file, vcf_file, outdir, canvas_lib_dir, removed_regions_bed, 
 	#-f: regions to ignore
 
 	print("Calling Canvas")
-	cmd = "Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_lib_dir, removed_regions_bed, outdir)
+	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_lib_dir,bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_lib_dir + "/canvasdata", removed_regions_bed, outdir)
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
 
@@ -185,13 +203,14 @@ if __name__ == '__main__':
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=3.9999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=20000)
+	parser.add_argument("--old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 	group2 = parser.add_mutually_exclusive_group(required=True)
 	group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
 	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain")
-	group2.add_argument("--canvas_lib_dir",help="Path to folder with required Canvas reference reference files.")
+	group2.add_argument("--canvas_lib_dir",help="Path to folder with Canvas executable and \"/canvasdata\" folder.")
 
 	args = parser.parse_args()
 
@@ -272,7 +291,7 @@ if __name__ == '__main__':
 		#Run BWA
 		fastqs = " ".join(args.fastqs)
 		print("Running pipeline on " + fastqs)
-		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads)
+		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads,args.old_samtools)
 
 	if not os.path.isfile(args.sorted_bam + ".bai"):
 		print(args.sorted_bam + ".bai not found, calling samtools index")
@@ -316,7 +335,7 @@ if __name__ == '__main__':
 
 	#Run Canvas
 	if not args.reuse_canvas and not args.cnv_bed:
-		run_canvas(args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_lib_dir, removed_regions_bed,sname,ref)
+		run_canvas(args.canvas_lib_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_lib_dir, removed_regions_bed,sname,ref)
 
 	#Convert Canvas output to seeds
 	if not args.cnv_bed:
