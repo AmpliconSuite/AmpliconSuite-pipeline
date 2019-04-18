@@ -76,7 +76,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
 
-def run_canvas(canvas_lib_dir,bam_file, vcf_file, outdir, canvas_lib_dir, removed_regions_bed, sname, ref):
+def run_canvas(canvas_lib_dir,bam_file, vcf_file, outdir, removed_regions_bed, sname, ref):
 	#Canvas cmd-line args
 	# -b: bam
 	# --sample-b-allele-vcf: vcf
@@ -335,7 +335,7 @@ if __name__ == '__main__':
 
 	#Run Canvas
 	if not args.reuse_canvas and not args.cnv_bed:
-		run_canvas(args.canvas_lib_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_lib_dir, removed_regions_bed,sname,ref)
+		run_canvas(args.canvas_lib_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed, sname, ref)
 
 	#Convert Canvas output to seeds
 	if not args.cnv_bed:
