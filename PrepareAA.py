@@ -135,8 +135,10 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 	return canvas_output_directory + "/CNV_GAIN.bed"
 
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
+	print "Running amplified_intervals"
 	AA_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
 	cmd = "python {}/amplified_intervals.py --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC, CNV_seeds_filename,sorted_bam,str(cngain),str(cnsize_min),AA_seeds_filename)
+	print cmd
 	call(cmd,shell=True)
 
 	return AA_seeds_filename + ".bed"
@@ -188,9 +190,8 @@ if __name__ == '__main__':
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 	group2 = parser.add_mutually_exclusive_group(required=True)
 	group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
-	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end cngain name")
-	group2.add_argument("--canvas_lib_dir",help="Path to folder with required Canvas reference reference files")
-
+	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain")
+	group2.add_argument("--canvas_lib_dir",help="Path to folder with required Canvas reference reference files.")
 
 	args = parser.parse_args()
 
