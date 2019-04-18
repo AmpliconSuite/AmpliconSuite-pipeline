@@ -108,7 +108,7 @@ def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 
 	return merged_vcf_file + ".gz"
 
-def convert_canvas_cnv_to_seeds(canvas_output_directory,sorted_bam,output_directory,sname):
+def convert_canvas_cnv_to_seeds(canvas_output_directory,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	#convert the Canvas output to a BED format
 	with gzip.open(canvas_output_directory + "/CNV.vcf.gz", 'rb') as infile, open(canvas_output_directory + "/CNV_GAIN.bed",'w') as outfile:
 		for line in infile:
@@ -127,10 +127,13 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory,sorted_bam,output_direct
 					outfile.write(chrom + "\t" + start + "\t" + end + "\t" + fields[4] + "\t" + chrom_num + "\n")
 
 	#call amplified_intervals.py from $AA_SRC
-	CNV_seeds_filename = "{}/{}_AA_CNV_SEEDS.bed".format(output_directory, sname)
-	cmd = "python {}/amplified_intervals.py --bed {} --bam {} | grep '^chr\\|^[1-2]\\|^X\\|^Y' > {}".format(AA_SRC, canvas_output_directory + "/CNV_GAIN.bed",sorted_bam,CNV_seeds_filename)
+	CNV_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
+	#old AA version
+	# cmd = "python {}/amplified_intervals.py --bed {} --bam {} | grep '^chr\\|^[1-2]\\|^X\\|^Y' > {}".format(AA_SRC, canvas_output_directory + "/CNV_GAIN.bed",sorted_bam,CNV_seeds_filename)
+	#new AA version
+	cmd = "python {}/amplified_intervals.py --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC, canvas_output_directory + "/CNV_GAIN.bed",sorted_bam,str(cngain),str(cnsize_min),CNV_seeds_filename)
 	call(cmd,shell=True)
-	return CNV_seeds_filename
+	return CNV_seeds_filename + ".bed"
 
 
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname):
@@ -173,7 +176,10 @@ if __name__ == '__main__':
 	parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and AA",required=True)
 	parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
 	parser.add_argument("--ref", help="Reference genome version. Only Hg19 currently supported.",choices=["hg19","GRCh37","hg38"],default="hg19")
-	parser.add_argument("--vcf", help= "VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
+	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
+	parser.add_argument("--reuse_cnv", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
+	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=3.9999)
+	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
@@ -233,7 +239,7 @@ if __name__ == '__main__':
  	canvas_output_directory = args.output_directory + "/canvas_output/"
  	if not os.path.exists(canvas_output_directory):
  		os.mkdir(canvas_output_directory)
- 	else:
+ 	elif not args.reuse_cnv:
  		#prompt user to clear old results
  		user_input = raw_input("Canvas folder already exists.\n Clear old Canvas results? Highly recommended. Canvas re-uses old results, even if they cause an error. (y/n): ")
  		if user_input.lower() == "y" or user_input.lower() == "yes":
@@ -275,7 +281,7 @@ if __name__ == '__main__':
 		except KeyError:
 			regions.append((key,"0-" + value,""))
 	
-	if not merged_vcf_file:
+	if not merged_vcf_file or not args.reuse_cnv:
 		#Run FreeBayes, one instance per chromosome
 		threadL = []
 		for i in range(int(args.nthreads)):
@@ -291,14 +297,18 @@ if __name__ == '__main__':
 		#MERGE VCFs
 		merged_vcf_file = merge_and_filter_vcfs(chr_sizes.keys(),vcf_files,outdir, sname)
 
+	elif args.reuse_cnv:
+		print("Skipping VCF step")
+
 	else:
 		print("Using " + merged_vcf_file + " for Canvas CNV step. Improper formatting of VCF can causes errors.")
 
 	#Run Canvas
-	run_canvas(args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_data_dir, removed_regions_bed,sname,ref)
+	if not args.reuse_cnv:
+		run_canvas(args.sorted_bam, merged_vcf_file, canvas_output_directory, args.canvas_data_dir, removed_regions_bed,sname,ref)
 
 	#Convert Canvas output to seeds
-	amplified_interval_bed = convert_canvas_cnv_to_seeds(canvas_output_directory,args.sorted_bam,outdir,sname)
+	amplified_interval_bed = convert_canvas_cnv_to_seeds(canvas_output_directory,args.sorted_bam,outdir,sname,args.cngain,args.cnsize_min)
 
 	#Run AA
 	if args.run_AA:
