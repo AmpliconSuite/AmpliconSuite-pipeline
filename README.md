@@ -12,7 +12,7 @@ Requires the following tools to be installed beforehand:
 
 Canvas can be tricky to install. Unfortunately PrepareAA only supports hg19 currently, as the standalone version of Canvas currently only seems to support hg19.
 
-Please make sure the Canvas hg19 reference genome files are located in the expected location for canvas. To do this, you can follow instructions on the Canvas Github page or more simply, extract canvasdata.tar.gz (available here: https://drive.google.com/open?id=1Wzk7wE6Mk-k8X3XqvZziLySDWyT-tTen) in the folder with the Canvas executable, to create the canvasdata/ directory.
+Please make sure the Canvas hg19 reference genome files are located in the expected location for canvas. To do this, you can follow instructions on the Canvas Github page or more simply, extract canvasdata.tar.gz (available here: https://drive.google.com/open?id=1Wzk7wE6Mk-k8X3XqvZziLySDWyT-tTen) in the folder with the Canvas executable, to create the canvasdata/ directory. For convenience, the command is: `tar -xzvf canvasdata.tar.gz`
 
 
 ### Installation
