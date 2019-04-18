@@ -23,7 +23,7 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads,usingDeprecatedSamtools = False):
 	outname = outdir + sname
 	print(outname)
 	print("Checking for ref index")
-	exts = [".sa",".amb",".ann","pac","bwt"]
+	exts = [".sa",".amb",".ann",".pac",".bwt"]
 	indexPresent = True
 	for i in exts:
 		if not os.path.exists(ref + i):
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=3.9999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=20000)
-	parser.add_argument("--old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
+	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
@@ -291,7 +291,7 @@ if __name__ == '__main__':
 		#Run BWA
 		fastqs = " ".join(args.fastqs)
 		print("Running pipeline on " + fastqs)
-		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads,args.old_samtools)
+		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads,args.use_old_samtools)
 
 	if not os.path.isfile(args.sorted_bam + ".bai"):
 		print(args.sorted_bam + ".bai not found, calling samtools index")
