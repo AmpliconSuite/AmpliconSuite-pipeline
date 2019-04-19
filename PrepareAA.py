@@ -28,7 +28,7 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads,usingDeprecatedSamtools = False):
 	for i in exts:
 		if not os.path.exists(ref + i):
 			indexPresent = False
-			print "Could not find " + ref + i + ", building BWA index from scratch. This could take a moment"
+			print "Could not find " + ref + i + ", building BWA index from scratch. This could take > 60 minutes"
 			break
 
 	if not indexPresent:
@@ -311,7 +311,7 @@ if __name__ == '__main__':
 		except KeyError:
 			regions.append((key,"0-" + value,""))
 	
-	if (not merged_vcf_file or not args.reuse_canvas) and not args.cnv_bed:
+	if not (merged_vcf_file or args.reuse_canvas or args.cnv_bed):
 		#Run FreeBayes, one instance per chromosome
 		threadL = []
 		for i in range(int(args.nthreads)):
