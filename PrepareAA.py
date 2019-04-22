@@ -40,7 +40,7 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads,usingDeprecatedSamtools = False):
 	if usingDeprecatedSamtools:
  		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
  	else:
- 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 -o {}.cs -; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
+ 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
 
  	print(cmd)
  	call(cmd,shell=True)
