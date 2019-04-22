@@ -223,14 +223,14 @@ if __name__ == '__main__':
 
 	except KeyError:
 		sys.stderr.write("AA_DATA_REPO bash variable not found. AmpliconArchitect may not be properly installed.\n")
-		sys.exit()
+		sys.exit(1)
 	
 	try:
 		AA_SRC = os.environ['AA_SRC']
 	
 	except KeyError:
 		sys.stderr.write("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
-		sys.exit()
+		sys.exit(1)
 
 	####MUST CHANGE REF IF NOT USING HG19
 	##UPDATE TO USE AA_DATA_REPO
@@ -238,22 +238,28 @@ if __name__ == '__main__':
  		ref = AA_REPO + "/hg19/hg19full.fa"
  		ref_genome_size_file = AA_REPO + "/hg19/hg19full.fa.fai"
  		removed_regions_bed = AA_REPO + "/hg19/hg19_merged_centromeres_conserved_sorted.bed"
+ 		#check if #your two files exist
+ 		data_rep_files = set(os.listdir(AA_REPO + "/hg19/"))
+ 		if "dummy_ploidy.vcf" not in data_rep_files or not "hg19_merged_centromeres_conserved_sorted.bed" in data_rep_files:
+ 			sys.stderr.write("PrepareAA data repo files not found in AA data repo. Did you place them prior to running?")
+ 			sys.exit(1)
+
 
  	else:
  		print("Other reference versions currently unsupported.")
- 		sys.exit()
+ 		sys.exit(1)
 
  	if not args.cnv_bed:
 		if not os.path.exists(args.canvas_lib_dir) and not args.reuse_canvas:
 			sys.stderr.write("Could not locate Canvas data repo folder")
-			sys.exit()
+			sys.exit(1)
  	
  	#check for the bed file of regions to ignore (centromeres, low complexity)
  	ploidy_vcf = AA_REPO + "/" + args.ref + "/dummy_ploidy.vcf"
  	merged_vcf_file = args.vcf
  	if not os.path.isfile(removed_regions_bed):
  		sys.stderr.write("Could not locate " + removed_regions_bed + "\n")
- 		sys.exit()
+ 		sys.exit(1)
 
  	if not args.output_directory:
  		args.output_directory = os.getcwd()
