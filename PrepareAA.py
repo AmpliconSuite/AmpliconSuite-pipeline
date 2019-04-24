@@ -210,7 +210,7 @@ if __name__ == '__main__':
 	group2 = parser.add_mutually_exclusive_group(required=True)
 	group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
 	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain")
-	group2.add_argument("--canvas_lib_dir",type=str,help="Path to folder with Canvas executable and \"/canvasdata\" folder.")
+	group2.add_argument("--canvas_lib_dir",help="Path to folder with Canvas executable and \"/canvasdata\" folder.",default="")
 
 	args = parser.parse_args()
 
