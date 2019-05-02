@@ -162,7 +162,7 @@ def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname
 	return AA_seeds_filename + ".bed"
 
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname):
-	print("Running AA with default arguments. To change settings run AA separately.")
+	print("Running AA with default arguments (& downsample 5). To change settings run AA separately.")
 	cmd = "{}/AmpliconArchitect.py --downsample 5 --bed {} --bam {} --out {}/{}".format(AA_SRC,amplified_interval_bed,sorted_bam,AA_outdir,sname)
 	call(cmd,shell=True)
 
