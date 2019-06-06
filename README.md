@@ -37,7 +37,7 @@ A standard invokation of PrepareAA is:
 ```
 Where the CNV bed file is formatted as:
 
-`chrN    start        end     copy_number    some_arbitrary_name`
+`chrN    start        end     some_arbitrary_name      copy_number`
 
 
 
