@@ -27,18 +27,21 @@ A standard invokation of PrepareAA is:
 ```
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 
-If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`. 
 
-If using your own CNV calls:
+* If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`. 
+
+
+* If using your own CNV calls:
 ```
 /path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads  --cnv_bed your_cnvs.bed  (--fastqs sample_r1.fastq sample_r2.fastq | --sorted_bam sample.cs.bam) [--run_AA]
 ```
 Where the CNV bed file is formatted as:
 
-`chrN    start        end        some_arbitrary_name   copy_number`
+`chrN    start        end     copy_number    some_arbitrary_name`
 
 
-If you generated your own VCF but would still like to use Canvas CNV, you can supply `--vcf` to bypass the freebayes step.
+
+* If you generated your own VCF but would still like to use Canvas CNV, you can supply `--vcf` to bypass the freebayes step.
 
 Canvas only considers sites with "PASS" in the FILTER field of the VCF, so if "." is used, Canvas will fail. If you would like to convert your VCF with "." in the FILTER field to "PASS", you can use the following awk command
 ```
