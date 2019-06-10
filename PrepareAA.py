@@ -272,7 +272,7 @@ if __name__ == '__main__':
  		os.mkdir(freebayes_output_directory)
 
  	canvas_output_directory = args.output_directory + "/canvas_output/"
- 	if not os.path.exists(canvas_output_directory):
+ 	if not os.path.exists(canvas_output_directory) and not args.cnv_bed:
  		os.mkdir(canvas_output_directory)
 
  	elif not args.reuse_canvas and not args.cnv_bed:
