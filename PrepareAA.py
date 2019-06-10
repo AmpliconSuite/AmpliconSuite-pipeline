@@ -351,9 +351,10 @@ if __name__ == '__main__':
 
 	#Run AA
 	if args.run_AA:
-		if not os.path.exists(outdir + "/AA_results"):
- 			os.mkdir(outdir + "/AA_results")
+		AA_outdir = outdir + "/" + sname + "_AA_results"
+		if not os.path.exists(AA_outdir):
+ 			os.mkdir(AA_outdir)
 
- 		run_AA(amplified_interval_bed, args.sorted_bam, outdir + "/AA_results", sname)
+ 		run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname)
 		
 	print("Completed\n")
