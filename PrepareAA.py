@@ -142,7 +142,8 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 					start = fields[1]
 					end = fields[2].rsplit(":")[3].rsplit("-")[1]
 					chrom_num = fields[-1].rsplit(":")[3]
-					outfile.write(chrom + "\t" + start + "\t" + end + "\t" + fields[4] + "\t" + chrom_num + "\n")
+					outline = "\t".join([chrom,start,end,fields[4],chrom_num]) + "\n"
+					outfile.write(outline)
 
 	# #call amplified_intervals.py from $AA_SRC
 	# CNV_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
@@ -202,7 +203,7 @@ if __name__ == '__main__':
 	parser.add_argument("--ref", help="Reference genome version. Only Hg19 currently supported.",choices=["hg19","GRCh37","hg38"],default="hg19")
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=4.999999)
-	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=100000)
+	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")

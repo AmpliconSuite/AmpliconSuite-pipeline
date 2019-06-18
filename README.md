@@ -70,7 +70,7 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--cngain [float]`: (Optional) Set a custom threshold for the CN gain considered by AA. Default: 5.
 
-- `--cnsize_min [int]`: (Optional) Set a custom threshold for CN interval size considered by AA. Default: 100000.
+- `--cnsize_min [int]`: (Optional) Set a custom threshold for CN interval size considered by AA. Default: 50000.
 
 - `--use_old_samtools`: (Optional) Set this flag if your Samtools version is < 1.0. Default: False.
 
