@@ -187,8 +187,8 @@ def get_ref_centromeres(ref_name):
 			else:
 				pmin = min(int(centromere_dict[fields[0]][0]),int(fields[1]))
 				pmax = max(int(centromere_dict[fields[0]][1]),int(fields[2]))
-				#pad with 15kb
-				centromere_dict[fields[0]] = (str(pmin-15000),str(pmax+15000))
+				#pad with 20kb
+				centromere_dict[fields[0]] = (str(pmin-20000),str(pmax+20000))
 
 	return centromere_dict
 
