@@ -6,7 +6,7 @@ A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/viraj
 Requires the following tools to be installed beforehand:
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - samtools (PrepareAA supports both versions >= 1.0 and < 1.0)
-- [freebayes](https://github.com/ekg/freebayes) (unless supplying your own CNV calls or VCF)
+- [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required unless supplying your own CNV calls or VCF)
 - [Canvas](https://github.com/Illumina/canvas) (unless supplying your own CNV calls)
 - [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect)
 

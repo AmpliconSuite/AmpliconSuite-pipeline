@@ -71,7 +71,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		print("Running " + curr_region_string + ". " + str(len(regions)) + " items remaining.")
 		vcf_file = outdir + sname + "_" + curr_region_tup[0] + "_" + curr_region_tup[2] + ".vcf"
 		replace_filter_field_func = "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\""
-		cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --max-coverage 25000 --strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func, vcf_file)	
+		cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 --strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func, vcf_file)	
 		call(cmd,shell=True)
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
