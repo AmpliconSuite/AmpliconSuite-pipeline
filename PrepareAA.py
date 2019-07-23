@@ -46,11 +46,11 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads,usingDeprecatedSamtools = False):
  	call(cmd,shell=True)
  	print("Performing duplicate removal & indexing")
  	cmd_list = ["samtools", "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
- 	print(cmd)
+ 	print(" ".join(cmd_list))
 	call(cmd_list)
 	print("Running samtools index")
 	cmd_list = ["samtools", "index", "{}.cs.rmdup.bam".format(outname)]
-	print(cmd)
+ 	print(" ".join(cmd_list))
 	call(cmd_list)
 	print("Removing temp BAM")
 	cmd = "rm {}.cs.bam".format(outname)
