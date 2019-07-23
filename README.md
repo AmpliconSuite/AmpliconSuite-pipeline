@@ -5,18 +5,18 @@ A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/viraj
 ### Prerequisites:
 Requires the following tools to be installed beforehand:
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
-- samtools (PrepareAA supports both versions >= 1.0 and < 1.0)
+- [samtools](http://www.htslib.org/) (PrepareAA supports both versions >= 1.0 and < 1.0)
 - [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required unless supplying your own CNV calls or VCF)
 - [Canvas](https://github.com/Illumina/canvas) (unless supplying your own CNV calls)
 - [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect)
 
-One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained by running `sudo apt-get install dotnet-sdk-2.2`.
+One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`.
 
 Additionally, please make sure the Canvas hg19 reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page, or we provide a simplified file, canvasdata.tar.gz (available here: https://drive.google.com/open?id=1Wzk7wE6Mk-k8X3XqvZziLySDWyT-tTen) which should be extracted in the folder with the Canvas executable, to create the canvasdata/ sudirectory. For convenience, the command is: `tar -xzvf canvasdata.tar.gz`
 
 
 ### Installation
-Files in hg19/ folder must be placed into $AA_DATA_REPO/hg19/ prior to using.
+Files in hg19/ folder must be placed into $AA_DATA_REPO/hg19/ prior to using. Replacing the file "conserved.bed" in the data repo with the version included here is highly recommended for compatability with both standard and non-standard hg19 versions.
 
 Prepare AA will generate a BWA index for the AA hg19 reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
 
@@ -28,7 +28,7 @@ A standard invokation of PrepareAA is:
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 
 
-* If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`. 
+* If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`.
 
 
 * If using your own CNV calls:
