@@ -237,7 +237,7 @@ if __name__ == '__main__':
 	##UPDATE TO USE AA_DATA_REPO
 	if args.ref == "hg19":
  		ref = AA_REPO + "/hg19/hg19full.fa"
- 		ref_genome_size_file = AA_REPO + "/hg19/hg19full.fa.fai"
+ 		ref_genome_size_file = AA_REPO + "/hg19/hg19_noAlt.fa.fai"
  		removed_regions_bed = AA_REPO + "/hg19/hg19_merged_centromeres_conserved_sorted.bed"
  		#check if #your two files exist
  		data_rep_files = set(os.listdir(AA_REPO + "/hg19/"))
