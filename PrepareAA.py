@@ -68,7 +68,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 			break
 		
 		curr_region_string = curr_region_tup[0] + ":" + curr_region_tup[1]
-		print("Running " + curr_region_string + ". " + str(len(regions)) + " items remaining.")
+		print(curr_region_string + ". " + str(len(regions)) + " items remaining.")
 		vcf_file = outdir + sname + "_" + curr_region_tup[0] + "_" + curr_region_tup[2] + ".vcf"
 		replace_filter_field_func = "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\""
 		cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 --strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func, vcf_file)	
@@ -162,9 +162,9 @@ def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname
 
 	return AA_seeds_filename + ".bed"
 
-def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname):
-	print("Running AA with default arguments (& downsample 5). To change settings run AA separately.")
-	cmd = "{}/AmpliconArchitect.py --downsample 5 --bed {} --bam {} --out {}/{}".format(AA_SRC,amplified_interval_bed,sorted_bam,AA_outdir,sname)
+def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample):
+	print("Running AA with default arguments (& downsample " + str(downsample) + "). To change settings run AA separately.")
+	cmd = "{}/AmpliconArchitect.py --downsample {} --bed {} --bam {} --out {}/{}".format(AA_SRC,str(downsample),amplified_interval_bed,sorted_bam,AA_outdir,sname)
 	call(cmd,shell=True)
 
 def get_ref_sizes(ref_genome_size_file):
@@ -204,6 +204,7 @@ if __name__ == '__main__':
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=4.999999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)
+	parser.add_argument("--downsample",type=float,help="AA downsample argument (see AA documentation)",default=5)
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
@@ -320,6 +321,7 @@ if __name__ == '__main__':
 	
 	if not (merged_vcf_file or args.reuse_canvas or args.cnv_bed):
 		#Run FreeBayes, one instance per chromosome
+		print("Running freebayes")
 		threadL = []
 		for i in range(int(args.nthreads)):
 			threadL.append(workerThread(i, run_freebayes, ref, args.sorted_bam, freebayes_output_directory, sname, args.nthreads, regions))
@@ -356,6 +358,6 @@ if __name__ == '__main__':
 		if not os.path.exists(AA_outdir):
  			os.mkdir(AA_outdir)
 
- 		run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname)
+ 		run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample)
 		
 	print("Completed\n")

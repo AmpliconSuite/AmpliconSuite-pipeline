@@ -4,11 +4,11 @@ A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/viraj
 
 ### Prerequisites:
 Requires the following tools to be installed beforehand:
+- [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect)
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - [samtools](http://www.htslib.org/) (PrepareAA supports both versions >= 1.0 and < 1.0)
 - [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required unless supplying your own CNV calls or VCF)
 - [Canvas](https://github.com/Illumina/canvas) (unless supplying your own CNV calls)
-- [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect)
 
 One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`.
 
@@ -18,7 +18,7 @@ Additionally, please make sure the Canvas hg19 reference genome files are locate
 ### Installation
 Files in hg19/ folder must be placed into $AA_DATA_REPO/hg19/ prior to using. Replacing the file "conserved.bed" in the data repo with the version included here is highly recommended for compatability with both standard and non-standard hg19 versions.
 
-Prepare AA will generate a BWA index for the AA hg19 reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
+Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
 
 ### Usage
 A standard invokation of PrepareAA is:
@@ -72,6 +72,8 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--cnsize_min [int]`: (Optional) Set a custom threshold for CN interval size considered by AA. Default: 50000.
 
+- `--downsample [float]`: (Optional) Set a custom threshold for bam coverage downsampling during AA. Does not affect coverage in analyses outside of AA. Default: 5.
+
 - `--use_old_samtools`: (Optional) Set this flag if your Samtools version is < 1.0. Default: False.
 
 - `--reuse_canvas` (Optional) Reuse the Canvas results from a previous run. Default: False
@@ -79,4 +81,4 @@ A description of other command line arguments for PrepareAA is provided below
 - `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps.
 
 
-PrepareAA has been tested with Ubuntu 16.04.
+PrepareAA has been tested with Ubuntu 16.04. PrepareAA's dependencies will not work on CentOS 6, but CentOS 7+ should be fine.
