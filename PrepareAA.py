@@ -165,6 +165,7 @@ def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample):
 	print("Running AA with default arguments (& downsample " + str(downsample) + "). To change settings run AA separately.")
 	cmd = "{}/AmpliconArchitect.py --downsample {} --bed {} --bam {} --out {}/{}".format(AA_SRC,str(downsample),amplified_interval_bed,sorted_bam,AA_outdir,sname)
+	print cmd
 	call(cmd,shell=True)
 
 def get_ref_sizes(ref_genome_size_file):
@@ -207,7 +208,7 @@ if __name__ == '__main__':
 	parser.add_argument("--downsample",type=float,help="AA downsample argument (see AA documentation)",default=5)
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	group = parser.add_mutually_exclusive_group(required=True)
-	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to AA/Canvas compatible reference)")
+	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to hg19)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 	group2 = parser.add_mutually_exclusive_group(required=True)
 	group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
