@@ -27,7 +27,7 @@ A standard invokation of PrepareAA is:
 ```
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 
-
+##### Starting from intermediate steps
 * If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`.
 
 
@@ -43,7 +43,7 @@ Where the CNV bed file is formatted as:
 
 * If you generated your own VCF but would still like to use Canvas CNV, you can supply `--vcf` to bypass the freebayes step.
 
-Canvas only considers sites with "PASS" in the FILTER field of the VCF, so if "." is used, Canvas will fail. If you would like to convert your VCF with "." in the FILTER field to "PASS", you can use the following awk command
+* If using your own VCF + Canvas: Canvas only considers sites with "PASS" in the FILTER field of the VCF, so if "." is used, Canvas will fail. If you would like to convert your VCF with "." in the FILTER field to "PASS", you can use the following awk command
 ```
 cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\"" > your_reformatted_file.vcf
 ```
