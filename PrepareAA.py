@@ -287,7 +287,7 @@ if __name__ == '__main__':
 		runCNV = "CNVkit"
 
 	#Paths of all the repo files needed
- 	refFnames = {"hg19":"hg19full.fa","GRCh37":"human_g1k_v37.fasta","GRCh38":"hg38.fa"}
+ 	refFnames = {"hg19":"hg19full.fa","GRCh37":"human_g1k_v37.fasta","GRCh38":"GRCh38.fa"}
  	gdir = AA_REPO + args.ref + "/"
  	ref = gdir + refFnames[args.ref]
  	ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
