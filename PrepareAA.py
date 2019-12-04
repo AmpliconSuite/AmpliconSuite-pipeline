@@ -76,7 +76,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
 
-def run_canvas(canvas_lib_dir,bam_file, vcf_file, outdir, removed_regions_bed, sname, ref):
+def run_canvas(canvas_data_repo, bam_file, vcf_file, outdir, removed_regions_bed, sname, ref):
 	#Canvas cmd-line args
 	# -b: bam
 	# --sample-b-allele-vcf: vcf
@@ -87,9 +87,38 @@ def run_canvas(canvas_lib_dir,bam_file, vcf_file, outdir, removed_regions_bed, s
 	#-f: regions to ignore
 
 	print("Calling Canvas")
-	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_lib_dir,bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_lib_dir + "/canvasdata", removed_regions_bed, outdir)
+	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_data_repo,bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_data_repo + "/canvasdata", removed_regions_bed, outdir)
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
+
+def run_cnvkit(ckpy_path, nthreads, ref_file, outdir, bamfile, vcf=None):
+	#CNVkit cmd-line args
+	# -m wgs: wgs data
+	# -y: assume chrY present
+	# -n: create flat reference (cnv baseline)
+	# -p: number of threads
+	# -f: reference genome fasta
+
+	if not ckpy_path.endswith("/cnvkit.py"):
+		ckpy_path+="/cnvkit.py"
+
+	cmd = "python3 {} batch -m wgs -y -n -p {} -f {} -d {} {} > {}/cnvkit_stdout.log".format(ckpy_path,nthreads,ref_file,outdir,bamfile,outdir)
+	print(cmd)
+	call(cmd,shell=True)
+	rscript_str = ""
+	if args.rscript_path:
+		if not args.rscript_path.endswith("/Rscript"):
+			args.rscript_path+="/Rscript"
+
+		rscript_st = "--rscript-path " + args.rscript_path
+
+	bamBase = os.path.splittext(os.path.basename(bamfile))
+	cnrFile = bamBase + ".cnr"
+	cnsFile = bamBase + ".cns"
+	#TODO: possibly include support for adding VCF calls.
+	cmd = "python3 {} segment {} {} -p {} -o {} >> {}/cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir)
+	print(cmd)
+	call(cmd,shell=True)
 
 def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 	print("Merging VCFs and zipping")
@@ -153,6 +182,20 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 	
 	return canvas_output_directory + "/CNV_GAIN.bed"
 
+#Read the CNVkit .cns files
+def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
+	base = os.path.basename(bam)
+	with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + "/CNV_GAIN.bed",'w') as outfile:
+		head = infile.next().rstrip().rsplit("\t")
+		for line in infile:
+			fields = line.rstrip().rsplit("\t")
+			s,e = int(fields[1]),int(fields[2])
+			cn_r = float(fields[4])
+			cn = 2**(cn_r + 1)
+			if cn >= args.cngain and e - s >= args.cnsize_min:
+				outline = "\t".join(fields[0:3] + [str(cn),str(cn_r),fields[5]]) + "\n"
+				outfile.write(outline)
+
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	print "Running amplified_intervals"
 	AA_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
@@ -162,9 +205,9 @@ def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname
 
 	return AA_seeds_filename + ".bed"
 
-def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample):
+def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref):
 	print("Running AA with default arguments (& downsample " + str(downsample) + "). To change settings run AA separately.")
-	cmd = "python {}/AmpliconArchitect.py --downsample {} --bed {} --bam {} --out {}/{}".format(AA_SRC,str(downsample),amplified_interval_bed,sorted_bam,AA_outdir,sname)
+	cmd = "python {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --out {}/{}".format(AA_SRC,ref,str(downsample),amplified_interval_bed,sorted_bam,AA_outdir,sname)
 	print cmd
 	call(cmd,shell=True)
 
@@ -179,7 +222,7 @@ def get_ref_sizes(ref_genome_size_file):
 
 def get_ref_centromeres(ref_name):
 	centromere_dict = {} 
-	with open(AA_REPO + "/" + ref_name + "/" + ref_name + "_centromere.bed") as infile:
+	with open(AA_REPO + ref_name + "/" + ref_name + "_centromere.bed") as infile:
 		for line in infile:
 			fields = line.rstrip().rsplit("\t")
 			if fields[0] not in centromere_dict:
@@ -199,21 +242,23 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="A simple pipeline wrapper for AmpliconArchitect, invoking alignment, variant calling, and CNV calling prior to AA. The CNV calling is necesary for running AA")
 	parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
 	parser.add_argument("-s", "--sample_name", help="sample name", required=True)
-	parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and AA",required=True)
+	parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and CNV calling",required=True)
 	parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
-	parser.add_argument("--ref", help="Reference genome version. Only Hg19 currently supported.",choices=["hg19","GRCh37","hg38"],default="hg19")
+	parser.add_argument("--ref", help="Reference genome version.",choices=["hg19","GRCh38"],default="hg19")
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=4.999999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)
 	parser.add_argument("--downsample",type=float,help="AA downsample argument (see AA documentation)",default=5)
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
+	parser.add_argument("--rscript_path",help="Specify custom path to Rscript, if needed when using CNVKit (which requires R version >3.5)")
 	group = parser.add_mutually_exclusive_group(required=True)
-	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to hg19)")
+	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to an AA-supported reference.)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 	group2 = parser.add_mutually_exclusive_group(required=True)
 	group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
-	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain")
-	group2.add_argument("--canvas_lib_dir",help="Path to folder with Canvas executable and \"/canvasdata\" folder.",default="")
+	group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain",default="")
+	group2.add_argument("--canvas_data_repo",help="Path to folder with Canvas executable and \"/canvasdata\" folder.",default="")
+	group2.add_argument("--cnvkit_dir",help="Path to cnvkit.py",default="")
 
 	args = parser.parse_args()
 
@@ -222,7 +267,7 @@ if __name__ == '__main__':
 
 	#Check if AA_REPO set, print error and quit if not
 	try:
-		AA_REPO = os.environ['AA_DATA_REPO']
+		AA_REPO = os.environ['AA_DATA_REPO'] + "/"
 
 	except KeyError:
 		sys.stderr.write("AA_DATA_REPO bash variable not found. AmpliconArchitect may not be properly installed.\n")
@@ -235,68 +280,64 @@ if __name__ == '__main__':
 		sys.stderr.write("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
 		sys.exit(1)
 
-	####MUST CHANGE REF IF NOT USING HG19
-	##UPDATE TO USE AA_DATA_REPO
-	if args.ref == "hg19":
- 		ref = AA_REPO + "/hg19/hg19full.fa"
- 		ref_genome_size_file = AA_REPO + "/hg19/hg19_noAlt.fa.fai"
- 		removed_regions_bed = AA_REPO + "/hg19/hg19_merged_centromeres_conserved_sorted.bed"
- 		#check if #your two files exist
- 		data_rep_files = set(os.listdir(AA_REPO + "/hg19/"))
- 		if "dummy_ploidy.vcf" not in data_rep_files or not "hg19_merged_centromeres_conserved_sorted.bed" in data_rep_files:
+	runCNV = None
+	if args.canvas_data_repo:
+		runCNV = "Canvas"
+	elif args.cnvkit_dir:
+		runCNV = "CNVkit"
+
+	#Paths of all the repo files needed
+ 	refFnames = {"hg19":"hg19full.fa","GRCh37":"human_g1k_v37.fasta","GRCh38":"hg38.fa"}
+ 	gdir = AA_REPO + args.ref + "/"
+ 	ref = gdir + refFnames[args.ref]
+ 	ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
+ 	removed_regions_bed = gdir + args.ref + "_merged_centromeres_conserved_sorted.bed"
+ 	ploidy_vcf = gdir + "dummy_ploidy.vcf"
+	merged_vcf_file = args.vcf
+ 	if not os.path.isfile(ploidy_vcf) or not os.path.isfile(removed_regions_bed):
  			sys.stderr.write("PrepareAA data repo files not found in AA data repo. Did you place them prior to running?")
  			sys.exit(1)
 
-
- 	else:
- 		print("Other reference versions currently unsupported.")
- 		sys.exit(1)
-
- 	if not args.cnv_bed:
-		if not os.path.exists(args.canvas_lib_dir) and not args.reuse_canvas:
+ 	#check if user gave a correct path to Canvas data repo
+	if not args.cnv_bed:
+		if args.canvas_data_repo and not os.path.exists(args.canvas_data_repo):
 			sys.stderr.write("Could not locate Canvas data repo folder")
 			sys.exit(1)
- 	
- 	#check for the bed file of regions to ignore (centromeres, low complexity)
- 	ploidy_vcf = AA_REPO + "/" + args.ref + "/dummy_ploidy.vcf"
- 	merged_vcf_file = args.vcf
- 	if not os.path.isfile(removed_regions_bed):
- 		sys.stderr.write("Could not locate " + removed_regions_bed + "\n")
- 		sys.exit(1)
 
- 	if not args.output_directory:
- 		args.output_directory = os.getcwd()
+	#set an output directory if user did not specify
+	if not args.output_directory:
+		args.output_directory = os.getcwd()
 
- 	if not os.path.exists(args.output_directory):
- 		os.mkdir(args.output_directory)
+	#make the output directory location if it does not exist
+	if not os.path.exists(args.output_directory):
+		os.mkdir(args.output_directory)
 
- 	freebayes_output_directory = args.output_directory + "/freebayes_vcfs/"
- 	if not os.path.exists(freebayes_output_directory) and not args.reuse_canvas and not args.cnv_bed:
- 		os.mkdir(freebayes_output_directory)
+	canvas_output_directory = args.output_directory + "/canvas_output/"
+	if not os.path.exists(canvas_output_directory) and runCNV == "Canvas":
+		os.mkdir(canvas_output_directory)
 
- 	canvas_output_directory = args.output_directory + "/canvas_output/"
- 	if not os.path.exists(canvas_output_directory) and not args.cnv_bed:
- 		os.mkdir(canvas_output_directory)
+	#prompt user to clear old results
+	elif runCNV == "Canvas":
+		user_input = raw_input("Canvas output files already exist here.\n Clear old Canvas results? (y/n) Highly recommended - will give error otherwise.")
+		if user_input.lower() == "y" or user_input.lower() == "yes":
+			print("Clearing results")
+			call("rm -rf {}/TempCNV*".format(canvas_output_directory),shell=True)
+			call("rm -rf {}/Logging".format(canvas_output_directory),shell=True)
+			call("rm -rf {}/Checkpoints".format(canvas_output_directory),shell=True)
+		else:
+			print("NOT CLEARING OLD CANVAS OUTPUT. THIS IS NOT RECOMMENDED.")
 
- 	elif not args.reuse_canvas and not args.cnv_bed:
- 		#prompt user to clear old results
- 		user_input = raw_input("Canvas folder already exists.\n Clear old Canvas results? Highly recommended. Canvas re-uses old results, even if they cause an error. (y/n): ")
- 		if user_input.lower() == "y" or user_input.lower() == "yes":
- 			print("Clearing results")
- 			call("rm -rf {}/TempCNV*".format(canvas_output_directory),shell=True)
- 			call("rm -rf {}/Logging".format(canvas_output_directory),shell=True)
- 			call("rm -rf {}/Checkpoints".format(canvas_output_directory),shell=True)
- 		else:
- 			print("NOT CLEARING OLD CANVAS OUTPUT. THIS IS NOT RECOMMENDED.")
+	elif args.cnv_bed and not os.path.isfile(args.cnv_bed):
+		sys.stderr.write("Specified CNV bed file does not exist: " + args.cnv_bed + "\n")
+		sys.exit(1)
 
+	sname =  args.sample_name
+	outdir = args.output_directory + "/"
 
- 	sname =  args.sample_name
- 	outdir = args.output_directory + "/"
-
- 	print("Running PrepareAA on sample: " + sname)
+	print("Running PrepareAA on sample: " + sname)
 
  	#Check if Fastqs provided
- 	if args.fastqs:
+	if args.fastqs:
 		#Run BWA
 		fastqs = " ".join(args.fastqs)
 		print("Running pipeline on " + fastqs)
@@ -320,36 +361,45 @@ if __name__ == '__main__':
 		except KeyError:
 			regions.append((key,"0-" + value,""))
 	
-	if not (merged_vcf_file or args.reuse_canvas or args.cnv_bed):
-		#Run FreeBayes, one instance per chromosome
-		print("Running freebayes")
-		threadL = []
-		for i in range(int(args.nthreads)):
-			threadL.append(workerThread(i, run_freebayes, ref, args.sorted_bam, freebayes_output_directory, sname, args.nthreads, regions))
-			threadL[i].start()
+	#coordinate CNV calling
+	if runCNV == "Canvas":
+		if not merged_vcf_file:
+			#Run FreeBayes, one instance per chromosome
+			freebayes_output_directory = args.output_directory + "/freebayes_vcfs/"
+			if not os.path.exists(freebayes_output_directory):
+				os.mkdir(freebayes_output_directory)
 
-		for t in threadL:
-			t.join()
+			print("Running freebayes")
+			threadL = []
+			for i in range(int(args.nthreads)):
+				threadL.append(workerThread(i, run_freebayes, ref, args.sorted_bam, freebayes_output_directory, sname, args.nthreads, regions))
+				threadL[i].start()
 
-		#make a list of vcf files
-		vcf_files = [freebayes_output_directory + x for x in os.listdir(freebayes_output_directory) if x.endswith(".vcf.gz")]
+			for t in threadL:
+				t.join()
 
-		#MERGE VCFs
-		merged_vcf_file = merge_and_filter_vcfs(chr_sizes.keys(),vcf_files,outdir, sname)
+			#make a list of vcf files
+			vcf_files = [freebayes_output_directory + x for x in os.listdir(freebayes_output_directory) if x.endswith(".vcf.gz")]
 
-	elif args.reuse_canvas or args.cnv_bed:
-		print("Skipping VCF step")
+			#MERGE VCFs
+			merged_vcf_file = merge_and_filter_vcfs(chr_sizes.keys(),vcf_files,outdir, sname)
 
-	else:
-		print("Using " + merged_vcf_file + " for Canvas CNV step. Improper formatting of VCF can causes errors.")
+		else:
+			print("Using " + merged_vcf_file + " for Canvas CNV step. Improper formatting of VCF can causes errors. See README for formatting tips.")
 
-	#Run Canvas
-	if not args.reuse_canvas and not args.cnv_bed:
-		run_canvas(args.canvas_lib_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed, sname, ref)
-
-	#Convert Canvas output to seeds
-	if not args.cnv_bed:
+		run_canvas(args.canvas_data_repo, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed, sname, ref)
 		args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
+
+	elif args.reuse_canvas:
+		args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
+
+	elif runCNV == "CNVkit":
+		cnvkit_output_directory = args.output_directory + "cnvkit_output/"
+		if not os.path.exists(cnvkit_output_directory):
+				os.mkdir(cnvkit_output_directory)
+
+		run_cnvkit(args.cnvkit_dir, args.nthreads, ref, cnvkit_output_directory, args.sorted_bam)
+		args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory)
 	
 	amplified_interval_bed = run_amplified_intervals(args.cnv_bed,args.sorted_bam,outdir,sname,args.cngain,args.cnsize_min)
 
@@ -357,8 +407,8 @@ if __name__ == '__main__':
 	if args.run_AA:
 		AA_outdir = outdir + "/" + sname + "_AA_results"
 		if not os.path.exists(AA_outdir):
- 			os.mkdir(AA_outdir)
+			os.mkdir(AA_outdir)
 
- 		run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample)
+		run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample, args.ref)
 		
 	print("Completed\n")
