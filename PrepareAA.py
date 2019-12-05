@@ -112,7 +112,7 @@ def run_cnvkit(ckpy_path, nthreads, ref_file, outdir, bamfile, vcf=None):
 
 		rscript_st = "--rscript-path " + args.rscript_path
 
-	bamBase = os.path.splittext(os.path.basename(bamfile))
+	bamBase = os.path.splitext(os.path.basename(bamfile))[0]
 	cnrFile = bamBase + ".cnr"
 	cnsFile = bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
