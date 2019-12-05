@@ -102,7 +102,9 @@ def run_cnvkit(ckpy_path, nthreads, ref_file, outdir, bamfile, vcf=None):
 	if not ckpy_path.endswith("/cnvkit.py"):
 		ckpy_path+="/cnvkit.py"
 
-	cmd = "python3 {} batch -m wgs -y -n -p {} -f {} -d {} {} > {}/cnvkit_stdout.log".format(ckpy_path,nthreads,ref_file,outdir,bamfile,outdir)
+	ckRef = AA_DATA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
+
+	cmd = "python3 {} batch -m wgs -y -r {} -p {} -f {} -d {} {} > {}/cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,ref_file,outdir,bamfile,outdir)
 	print(cmd)
 	call(cmd,shell=True)
 	rscript_str = ""
