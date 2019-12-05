@@ -105,7 +105,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 
 	ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
 
-	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/{}_cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir,bambase)
+	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/{}_cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir,bamBase)
 	print(cmd)
 	call(cmd,shell=True)
 	rscript_str = ""
@@ -118,7 +118,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	cnrFile = outdir + bamBase + ".cnr"
 	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
-	cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir,bambase)
+	cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir,bamBase)
 	print(cmd)
 	call(cmd,shell=True)
 
