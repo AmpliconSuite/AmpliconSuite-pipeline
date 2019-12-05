@@ -195,14 +195,14 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 			cn_r = float(fields[4])
 			cn = 2**(cn_r + 1)
 			if cn >= args.cngain and e - s >= args.cnsize_min:
-				outline = "\t".join(fields[0:3] + [str(cn),str(cn_r),fields[5]]) + "\n"
+				outline = "\t".join(fields[0:3] + ["CNVkit",str(cn)]) + "\n"
 				outfile.write(outline)
 
 	return cnvkit_output_directory + base + "_CNV_GAIN.bed"
 
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	print "Running amplified_intervals"
-	AA_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
+	AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
 	cmd = "python {}/amplified_intervals.py --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC, CNV_seeds_filename,sorted_bam,str(cngain),str(cnsize_min),AA_seeds_filename)
 	print cmd
 	call(cmd,shell=True)
