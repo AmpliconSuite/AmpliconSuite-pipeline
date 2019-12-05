@@ -183,7 +183,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 	return canvas_output_directory + "/CNV_GAIN.bed"
 
 #Read the CNVkit .cns files
-def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
+def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory):
 	base = os.path.basename(bam)
 	with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + "/CNV_GAIN.bed",'w') as outfile:
 		head = infile.next().rstrip().rsplit("\t")
