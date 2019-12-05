@@ -91,7 +91,7 @@ def run_canvas(canvas_data_repo, bam_file, vcf_file, outdir, removed_regions_bed
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
 
-def run_cnvkit(ckpy_path, nthreads, ref_file, outdir, bamfile, vcf=None):
+def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	#CNVkit cmd-line args
 	# -m wgs: wgs data
 	# -y: assume chrY present
@@ -104,7 +104,7 @@ def run_cnvkit(ckpy_path, nthreads, ref_file, outdir, bamfile, vcf=None):
 
 	ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
 
-	cmd = "python3 {} batch -m wgs -y -r {} -p {} -f {} -d {} {} > {}/cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,ref_file,outdir,bamfile,outdir)
+	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} > {}/cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir)
 	print(cmd)
 	call(cmd,shell=True)
 	rscript_str = ""
@@ -402,7 +402,7 @@ if __name__ == '__main__':
 		if not os.path.exists(cnvkit_output_directory):
 				os.mkdir(cnvkit_output_directory)
 
-		run_cnvkit(args.cnvkit_dir, args.nthreads, ref, cnvkit_output_directory, args.sorted_bam)
+		run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam)
 		args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,args.sorted_bam)
 	
 	amplified_interval_bed = run_amplified_intervals(args.cnv_bed,args.sorted_bam,outdir,sname,args.cngain,args.cnsize_min)
