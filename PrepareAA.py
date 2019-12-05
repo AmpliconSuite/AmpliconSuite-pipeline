@@ -98,13 +98,14 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	# -n: create flat reference (cnv baseline)
 	# -p: number of threads
 	# -f: reference genome fasta
+	bamBase = os.path.splitext(os.path.basename(bamfile))[0]
 
 	if not ckpy_path.endswith("/cnvkit.py"):
 		ckpy_path+="/cnvkit.py"
 
 	ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
 
-	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir)
+	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/{}_cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir,bambase)
 	print(cmd)
 	call(cmd,shell=True)
 	rscript_str = ""
@@ -114,11 +115,10 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 
 		rscript_st = "--rscript-path " + args.rscript_path
 
-	bamBase = os.path.splitext(os.path.basename(bamfile))[0]
 	cnrFile = outdir + bamBase + ".cnr"
 	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
-	cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir)
+	cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir,bambase)
 	print(cmd)
 	call(cmd,shell=True)
 
