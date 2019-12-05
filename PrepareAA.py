@@ -185,7 +185,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 #Read the CNVkit .cns files
 def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 	base = os.path.splitext(os.path.basename(bam))[0]
-	with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + "/CNV_GAIN.bed",'w') as outfile:
+	with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + base + "_CNV_GAIN.bed",'w') as outfile:
 		head = infile.next().rstrip().rsplit("\t")
 		for line in infile:
 			fields = line.rstrip().rsplit("\t")
@@ -196,7 +196,7 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 				outline = "\t".join(fields[0:3] + [str(cn),str(cn_r),fields[5]]) + "\n"
 				outfile.write(outline)
 
-	cnvkit_output_directory + base + ".cns"
+	return cnvkit_output_directory + base + "_CNV_GAIN.bed"
 
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	print "Running amplified_intervals"
