@@ -183,7 +183,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 	return canvas_output_directory + "/CNV_GAIN.bed"
 
 #Read the CNVkit .cns files
-def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory):
+def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 	base = os.path.basename(bam)
 	with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + "/CNV_GAIN.bed",'w') as outfile:
 		head = infile.next().rstrip().rsplit("\t")
@@ -399,7 +399,7 @@ if __name__ == '__main__':
 				os.mkdir(cnvkit_output_directory)
 
 		run_cnvkit(args.cnvkit_dir, args.nthreads, ref, cnvkit_output_directory, args.sorted_bam)
-		args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory)
+		args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,args.sorted_bam)
 	
 	amplified_interval_bed = run_amplified_intervals(args.cnv_bed,args.sorted_bam,outdir,sname,args.cngain,args.cnsize_min)
 
