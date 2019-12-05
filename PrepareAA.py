@@ -104,7 +104,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 
 	ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
 
-	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} > {}/cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir)
+	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir)
 	print(cmd)
 	call(cmd,shell=True)
 	rscript_str = ""
@@ -118,7 +118,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	cnrFile = outdir + bamBase + ".cnr"
 	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
-	cmd = "python3 {} segment {} {} -p {} -o {} >> {}/cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir)
+	cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir)
 	print(cmd)
 	call(cmd,shell=True)
 
@@ -203,7 +203,7 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	print "Running amplified_intervals"
 	AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-	cmd = "python {}/amplified_intervals.py --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC, CNV_seeds_filename,sorted_bam,str(cngain),str(cnsize_min),AA_seeds_filename)
+	cmd = "python {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC,args.ref,CNV_seeds_filename,sorted_bam,str(cngain),str(cnsize_min),AA_seeds_filename)
 	print cmd
 	call(cmd,shell=True)
 

@@ -1,30 +1,42 @@
 ## PrepareAA
 
-A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect). Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA only supports hg19 currently. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
+A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect). Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports both hg38 and hg19. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
 
 ### Prerequisites:
-Requires the following tools to be installed beforehand:
+PrepareAA (PAA) Requires the following tools to be installed beforehand:
 - [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect)
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - [samtools](http://www.htslib.org/) (PrepareAA supports both versions >= 1.0 and < 1.0)
-- [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required unless supplying your own CNV calls or VCF)
-- [Canvas](https://github.com/Illumina/canvas) (unless supplying your own CNV calls)
+- [Canvas](https://github.com/Illumina/canvas) or [CNVkit](https://github.com/etal/cnvkit) (unless supplying your own CNV calls)
+- [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required if using Canvas - unless supplying your own VCF calls)
 
-One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`.
 
-Additionally, please make sure the Canvas hg19 reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page, or we provide a simplified file, canvasdata.tar.gz (available here: https://drive.google.com/open?id=1Wzk7wE6Mk-k8X3XqvZziLySDWyT-tTen) which should be extracted in the folder with the Canvas executable, to create the canvasdata/ sudirectory. For convenience, the command is: `tar -xzvf canvasdata.tar.gz`
+PAA + Canvas is only configured for hg19, whereas PAA + CNVkit supports hg38 & hg19.
 
+If using Canvas please make sure the Canvas hg19 reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page, or we provide a simplified file, canvasdata.tar.gz (available here: https://drive.google.com/open?id=1Wzk7wE6Mk-k8X3XqvZziLySDWyT-tTen) which should be extracted in the folder with the Canvas executable, to create the canvasdata/ sudirectory. For convenience, the command is: `tar -xzvf canvasdata.tar.gz`. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
+
+Please note that CNVkit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 ### Installation
-Files in hg19/ folder must be placed into $AA_DATA_REPO/hg19/ prior to using. Replacing the file "conserved.bed" in the data repo with the version included here is highly recommended for compatability with both standard and non-standard hg19 versions.
+Files in PrepareAA/hg19/ directory must be placed into $AA_DATA_REPO/hg19/ prior to using. If using hg38, you will need to download the hg38 AA data repo patch if you have not done so already. If using hg19, replacing the file "conserved.bed" in the data repo with the version included here is recommended for compatability with both standard and non-standard hg19 versions.
 
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
 
 ### Usage
-A standard invokation of PrepareAA is:
+Two example standard runs of PrepareAA:
+
+#### Starting from .fastq files, using Canvas for seed generation.
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads  --canvas_lib_dir /path/to/canvas/canvas_data_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz [--run_AA]
+/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --canvas_lib_dir /path/to/canvas/canvas_data_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz [--run_AA]
 ```
+
+or
+
+#### Starting from sorted .bam, using CNVkit for seed generation
+```
+/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --sorted_bam sample.cs.rmdup.bam [--run_AA]
+```
+
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 
 ##### Starting from intermediate steps
@@ -40,6 +52,7 @@ Where the CNV bed file is formatted as:
 `chrN    start        end     some_arbitrary_name      copy_number`
 
 
+* CNVkit requires R version 3.5 or greater. This is not standard on many Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
 * If you generated your own VCF but would still like to use Canvas CNV, you can supply `--vcf` to bypass the freebayes step.
 
@@ -54,11 +67,15 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `-o | --output_directory [outdir]`: (Optional) Directory where results will be stored. Defaults to current directory.
 
+- `-s | --sample_name [sname]`: (Required) A name for the sample being run.
+
 - `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. We do not control thread usage of Canvas. Recommend 12 or more threads to be used.
 
-- `--canvas_lib_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]`) Path to directory containing the Canvas executable and canvasdata/ subdirectory.
+- `--canvas_lib_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`) Path to directory containing the Canvas executable and canvasdata/ subdirectory.
 
-- `-s | --sample_name [sname]`: (Required) A name for the sample being run.
+- `--cnvkit_dir [/path/to/cnvkit.py]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--canvas_lib_dir`) Path to directory containing cnvkit.py.
+
+- `--rscript_path [/path/to/Rscript]` (Required if system Rscript version < 3.5 and using `--cnvkit_dir`). Specify a path to a local installation of Rscript compatible with CNVkit.
 
 - `--sorted_bam [sample.cs.bam] | --fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
 
