@@ -113,8 +113,8 @@ def run_cnvkit(ckpy_path, nthreads, ref_file, outdir, bamfile, vcf=None):
 		rscript_st = "--rscript-path " + args.rscript_path
 
 	bamBase = os.path.splitext(os.path.basename(bamfile))[0]
-	cnrFile = bamBase + ".cnr"
-	cnsFile = bamBase + ".cns"
+	cnrFile = outdir + bamBase + ".cnr"
+	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
 	cmd = "python3 {} segment {} {} -p {} -o {} >> {}/cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir)
 	print(cmd)
@@ -184,7 +184,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 
 #Read the CNVkit .cns files
 def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
-	base = os.path.basename(bam)
+	base = os.path.splitext(os.path.basename(bam))[0]
 	with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + "/CNV_GAIN.bed",'w') as outfile:
 		head = infile.next().rstrip().rsplit("\t")
 		for line in infile:
@@ -195,6 +195,8 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 			if cn >= args.cngain and e - s >= args.cnsize_min:
 				outline = "\t".join(fields[0:3] + [str(cn),str(cn_r),fields[5]]) + "\n"
 				outfile.write(outline)
+
+	cnvkit_output_directory + base + ".cns"
 
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	print "Running amplified_intervals"
