@@ -114,13 +114,13 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 		if not args.rscript_path.endswith("/Rscript"):
 			args.rscript_path+="/Rscript"
 
-		rscript_st = "--rscript-path " + args.rscript_path
+		rscript_str = "--rscript-path " + args.rscript_path
 
 	cnrFile = outdir + bamBase + ".cnr"
 	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
-	# cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile,outdir,bamBase)
-	cmd = "python3 {} segment {} {} -p {} -o {}".format(ckpy_path,cnrFile,rscript_st,nthreads,cnsFile)
+	# cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_str,nthreads,cnsFile,outdir,bamBase)
+	cmd = "python3 {} segment {} {} -p {} -o {}".format(ckpy_path,cnrFile,rscript_str,nthreads,cnsFile)
 	print(cmd)
 	call(cmd,shell=True)
 
