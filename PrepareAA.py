@@ -99,6 +99,12 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	# -p: number of threads
 	# -f: reference genome fasta
 	bamBase = os.path.splitext(os.path.basename(bamfile))[0]
+	p3p = "python3"
+	if args.python3_path:
+		if not args.python3_path.endswith("/python"):
+			args.python3_path+="/python"
+
+		p3p = args.python3_path
 
 	if not ckpy_path.endswith("/cnvkit.py"):
 		ckpy_path+="/cnvkit.py"
@@ -106,7 +112,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
 
 	# cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/{}_cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir,bamBase)
-	cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {}".format(ckpy_path,ckRef,nthreads,outdir,bamfile)
+	cmd = "{} {} batch -m wgs -y -r {} -p {} -d {} {}".format(p3p,ckpy_path,ckRef,nthreads,outdir,bamfile)
 	print(cmd)
 	call(cmd,shell=True)
 	rscript_str = ""
@@ -120,7 +126,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
 	# cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_str,nthreads,cnsFile,outdir,bamBase)
-	cmd = "python3 {} segment {} {} -p {} -o {}".format(ckpy_path,cnrFile,rscript_str,nthreads,cnsFile)
+	cmd = "{} {} segment {} {} -p {} -o {}".format(p3p,ckpy_path,cnrFile,rscript_str,nthreads,cnsFile)
 	print(cmd)
 	call(cmd,shell=True)
 
@@ -256,7 +262,8 @@ if __name__ == '__main__':
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)
 	parser.add_argument("--downsample",type=float,help="AA downsample argument (see AA documentation)",default=5)
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
-	parser.add_argument("--rscript_path",help="Specify custom path to Rscript, if needed when using CNVKit (which requires R version >3.5)")
+	parser.add_argument("--rscript_path",help="Specify custom path to Rscript, if needed when using CNVKit (which requires R version >3.4)")
+	parser.add_argument("--python3_path",help="Specify custom path to python3, if needed when using CNVKit (requires python3)")
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to an AA-supported reference.)")
 	group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
