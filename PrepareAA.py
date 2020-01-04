@@ -256,7 +256,7 @@ if __name__ == '__main__':
 	parser.add_argument("-s", "--sample_name", help="sample name", required=True)
 	parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and CNV calling",required=True)
 	parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
-	parser.add_argument("--ref", help="Reference genome version.",choices=["hg19","GRCh38"],default="hg19")
+	parser.add_argument("--ref", help="Reference genome version.",choices=["hg19","GRCh37","GRCh38"],default="hg19")
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=4.999999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)

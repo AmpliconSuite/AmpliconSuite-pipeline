@@ -1,0 +1,5 @@
+##fileformat=VCFv4.1
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">
+##FORMAT=<ID=CN,Number=1,Type=Integer,Description="Copy number genotype for imprecise events">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	generic
+Y	0	.	N	<CNV>	.	PASS	END=59373566	CN	1
