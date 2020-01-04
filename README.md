@@ -18,7 +18,7 @@ If using Canvas please make sure the Canvas hg19 reference genome files are loca
 Please note that CNVkit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 ### Installation
-Files in PrepareAA/hg19/ directory must be placed into $AA_DATA_REPO/hg19/ prior to using. If using hg38, you will need to download the hg38 AA data repo patch if you have not done so already. If using hg19 or GRCh37, replacing the files "conserved.bed/conserved_gain5.bed" in the data repo with the version included here is recommended for compatability with both standard and non-standard reference versions.
+Files in PrepareAA/hg19/ directory must be placed into $AA_DATA_REPO/hg19/ prior to using. If using hg38, you will need to download the hg38 AA data repo patch if you have not done so already. If using hg19 or GRCh37, replacing the files "`conserved.bed/conserved.gain5.bed`" in the data repo with the version included here is recommended for compatability with both standard and non-standard reference versions.
 
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
 
