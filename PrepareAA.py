@@ -234,7 +234,8 @@ def get_ref_sizes(ref_genome_size_file):
 
 def get_ref_centromeres(ref_name):
 	centromere_dict = {} 
-	with open(AA_REPO + ref_name + "/" + ref_name + "_centromere.bed") as infile:
+	fnameD = {"GRCh38":"GRCh38_centromere.bed","GRCh37":"human_g1k_v37_centromere.bed","hg19":"hg19_centromere.bed"}
+	with open(AA_REPO + ref_name + "/" + fnameD[ref_name]) as infile:
 		for line in infile:
 			fields = line.rstrip().rsplit("\t")
 			if fields[0] not in centromere_dict:
