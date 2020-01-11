@@ -121,6 +121,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 			args.rscript_path+="/Rscript"
 
 		rscript_str = "--rscript-path " + args.rscript_path
+		print("Set Rscript flag: " + rscript_str)
 
 	cnrFile = outdir + bamBase + ".cnr"
 	cnsFile = outdir + bamBase + ".cns"
