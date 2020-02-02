@@ -262,7 +262,7 @@ if __name__ == '__main__':
 	parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
 	parser.add_argument("--cngain",type=float,help="CN gain threshold to consider for AA seeding",default=4.999999)
 	parser.add_argument("--cnsize_min",type=int,help="CN interval size (in bp) to consider for AA seeding",default=50000)
-	parser.add_argument("--downsample",type=float,help="AA downsample argument (see AA documentation)",default=5)
+	parser.add_argument("--downsample",type=float,help="AA downsample argument (see AA documentation)",default=10)
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	parser.add_argument("--rscript_path",help="Specify custom path to Rscript, if needed when using CNVKit (which requires R version >3.4)")
 	parser.add_argument("--python3_path",help="Specify custom path to python3, if needed when using CNVKit (requires python3)")
@@ -358,7 +358,10 @@ if __name__ == '__main__':
 		print("Running pipeline on " + fastqs)
 		args.sorted_bam = run_bwa(ref,fastqs,outdir,sname, args.nthreads,args.use_old_samtools)
 
-	if not os.path.isfile(args.sorted_bam + ".bai"):
+
+	bamBaiNoExt = args.sorted_bam[:-3] + "bai"
+	baiExists = os.path.isfile(args.sorted_bam + ".bai") or os.path.isfile(bamBaiNoExt)
+	if not baiExists:
 		print(args.sorted_bam + ".bai not found, calling samtools index")
 		call(["samtools","index",args.sorted_bam])
 		print("Finished indexing")
