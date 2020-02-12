@@ -158,11 +158,15 @@ def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 	#sort the elements
 	sorted_chr_names = ["chr" + str(x) for x in sorted(numeric_chr_names)]
 	#include the header from the first one
-	call("zcat " + chrom_vcf_d["chrM"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
+	if args.ref != "GRCh37":
+		call("zcat " + chrom_vcf_d["chrM"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
+
+	else:
+		call("zcat " + chrom_vcf_d["M"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
 
 	#zcat the rest, grepping out all header lines starting with "#"
 	for i in sorted_chr_names:
-		if i == "chrM":
+		if i == "chrM" or i == "M":
 			continue
 		call("zcat " + chrom_vcf_d[i + "p"] + " | grep -v \"^#\" | awk '$4 != \"N\"' >> " + merged_vcf_file,shell=True)
 		call("zcat " + chrom_vcf_d[i + "q"] + " | grep -v \"^#\" | awk '$4 != \"N\"' >> " + merged_vcf_file,shell=True)
