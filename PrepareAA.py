@@ -71,7 +71,8 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		print(curr_region_string + ". " + str(len(regions)) + " items remaining.")
 		vcf_file = outdir + sname + "_" + curr_region_tup[0] + "_" + curr_region_tup[2] + ".vcf"
 		replace_filter_field_func = "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\""
-		cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 --strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func, vcf_file)	
+		cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 \
+		--strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func, vcf_file)	
 		call(cmd,shell=True)
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
@@ -87,8 +88,14 @@ def run_canvas(canvas_dir, bam_file, vcf_file, outdir, removed_regions_bed, snam
 	#-f: regions to ignore
 
 	print("Calling Canvas")
-	ref_repo = canvas_dir + "/canvasdata/" + ref + "/"
-	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir,bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
+	ref_repo = canvas_dir + "/canvasdata/" + args.ref + "/"
+	#cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={}\
+	# -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir,bam_file, \
+	#vcf_file, ploidy_vcf, sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
+	cmd = "{}/Canvas Somatic-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} \
+	-r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir, bam_file, vcf_file, ploidy_vcf,\
+	 sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
+
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
 
@@ -112,7 +119,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 
 	ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
 
-	# cmd = "python3 {} batch -m wgs -y -r {} -p {} -d {} {} &> {}/{}_cnvkit_stdout.log".format(ckpy_path,ckRef,nthreads,outdir,bamfile,outdir,bamBase)
 	cmd = "{} {} batch -m wgs -y -r {} -p {} -d {} {}".format(p3p,ckpy_path,ckRef,nthreads,outdir,bamfile)
 	print(cmd)
 	call(cmd,shell=True)
@@ -127,7 +133,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	cnrFile = outdir + bamBase + ".cnr"
 	cnsFile = outdir + bamBase + ".cns"
 	#TODO: possibly include support for adding VCF calls.
-	# cmd = "python3 {} segment {} {} -p {} -o {} &>> {}/{}_cnvkit_stdout.log".format(ckpy_path,cnrFile,rscript_str,nthreads,cnsFile,outdir,bamBase)
 	cmd = "{} {} segment {} {} -p {} -o {}".format(p3p,ckpy_path,cnrFile,rscript_str,nthreads,cnsFile)
 	print(cmd)
 	call(cmd,shell=True)
@@ -188,8 +193,6 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 
 	# #call amplified_intervals.py from $AA_SRC
 	# CNV_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
-	# #old AA version
-	# # cmd = "python {}/amplified_intervals.py --bed {} --bam {} | grep '^chr\\|^[1-2]\\|^X\\|^Y' > {}".format(AA_SRC, canvas_output_directory + "/CNV_GAIN.bed",sorted_bam,CNV_seeds_filename)
 	# #new AA version
 	
 	return canvas_output_directory + "/CNV_GAIN.bed"
@@ -213,7 +216,8 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory,bam):
 def run_amplified_intervals(CNV_seeds_filename,sorted_bam,output_directory,sname,cngain,cnsize_min):
 	print "Running amplified_intervals"
 	AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-	cmd = "python {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC,args.ref,CNV_seeds_filename,sorted_bam,str(cngain),str(cnsize_min),AA_seeds_filename)
+	cmd = "python {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out \
+	{}".format(AA_SRC,args.ref,CNV_seeds_filename,sorted_bam,str(cngain),str(cnsize_min),AA_seeds_filename)
 	print cmd
 	call(cmd,shell=True)
 
