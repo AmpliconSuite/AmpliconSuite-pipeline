@@ -156,17 +156,18 @@ def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 			numeric_chr_names.append(x)
 
 	#sort the elements
-	sorted_chr_names = ["chr" + str(x) for x in sorted(numeric_chr_names)]
 	#include the header from the first one
 	if args.ref != "GRCh37":
+		sorted_chr_names = ["chr" + str(x) for x in sorted(numeric_chr_names)]
 		call("zcat " + chrom_vcf_d["chrM"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
 
 	else:
-		call("zcat " + chrom_vcf_d["M"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
+		sorted_chr_names = [str(x) for x in sorted(numeric_chr_names)]
+		call("zcat " + chrom_vcf_d["MT"] + " | awk '$4 != \"N\"' > " + merged_vcf_file,shell=True)
 
 	#zcat the rest, grepping out all header lines starting with "#"
 	for i in sorted_chr_names:
-		if i == "chrM" or i == "M":
+		if i == "chrM" or i == "MT":
 			continue
 		call("zcat " + chrom_vcf_d[i + "p"] + " | grep -v \"^#\" | awk '$4 != \"N\"' >> " + merged_vcf_file,shell=True)
 		call("zcat " + chrom_vcf_d[i + "q"] + " | grep -v \"^#\" | awk '$4 != \"N\"' >> " + merged_vcf_file,shell=True)
