@@ -92,7 +92,7 @@ def run_canvas(canvas_dir, bam_file, vcf_file, outdir, removed_regions_bed, snam
 	#cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={}\
 	# -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir,bam_file, \
 	#vcf_file, ploidy_vcf, sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
-	cmd = "{}/Canvas Somatic-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} \
+	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} \
 	-r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir, bam_file, vcf_file, ploidy_vcf,\
 	 sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
 
