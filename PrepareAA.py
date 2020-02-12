@@ -76,7 +76,7 @@ def run_freebayes(ref,bam_file,outdir,sname,nthreads,regions):
 		#gzip the new VCF
 		call("gzip -f " + vcf_file,shell=True)
 
-def run_canvas(canvas_data_repo, bam_file, vcf_file, outdir, removed_regions_bed, sname, ref):
+def run_canvas(canvas_dir, bam_file, vcf_file, outdir, removed_regions_bed, sname, ref):
 	#Canvas cmd-line args
 	# -b: bam
 	# --sample-b-allele-vcf: vcf
@@ -87,7 +87,8 @@ def run_canvas(canvas_data_repo, bam_file, vcf_file, outdir, removed_regions_bed
 	#-f: regions to ignore
 
 	print("Calling Canvas")
-	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_data_repo,bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, canvas_data_repo + "/canvasdata", removed_regions_bed, outdir)
+	ref_repo = canvas_dir + "/canvasdata/" + ref + "/"
+	cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir,bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
 	print(cmd)
 	call(cmd,shell=True,executable="/bin/bash")
 
@@ -296,7 +297,7 @@ if __name__ == '__main__':
 		sys.exit(1)
 
 	runCNV = None
-	if args.canvas_data_repo:
+	if args.canvas_dir:
 		runCNV = "Canvas"
 
 	elif args.cnvkit_dir:
@@ -316,7 +317,7 @@ if __name__ == '__main__':
 
  	#check if user gave a correct path to Canvas data repo
 	if not args.cnv_bed:
-		if args.canvas_data_repo and not os.path.exists(args.canvas_data_repo):
+		if args.canvas_dir and not os.path.exists(args.canvas_dir):
 			sys.stderr.write("Could not locate Canvas data repo folder")
 			sys.exit(1)
 
@@ -406,7 +407,7 @@ if __name__ == '__main__':
 		else:
 			print("Using " + merged_vcf_file + " for Canvas CNV step. Improper formatting of VCF can causes errors. See README for formatting tips.")
 
-		run_canvas(args.canvas_data_repo, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed, sname, ref)
+		run_canvas(args.canvas_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed, sname, ref)
 		args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
 
 	elif args.reuse_canvas:
