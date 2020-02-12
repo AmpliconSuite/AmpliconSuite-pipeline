@@ -147,7 +147,7 @@ def merge_and_filter_vcfs(chr_names,vcf_list,outdir,sname):
 		curr_chrom = f.rsplit(".vcf.gz")[0].rsplit("_")[-2:]
 		chrom_vcf_d[curr_chrom[0] + curr_chrom[1]] = f
 
-	chr_nums = [x[3:] for x in chr_names]
+	chr_nums = [x.lstrip("chr") for x in chr_names]
 	numeric_chr_names = []
 	for x in chr_nums:
 		try:
@@ -344,7 +344,7 @@ if __name__ == '__main__':
 
 	#prompt user to clear old results
 	elif runCNV == "Canvas":
-		user_input = raw_input("Canvas output files already exist here.\n Clear old Canvas results? (y/n) Highly recommended - will give error otherwise.")
+		user_input = raw_input("Canvas output files already exist here.\n Clear old Canvas results? (y/n) Highly recommended - will give error otherwise: ")
 		if user_input.lower() == "y" or user_input.lower() == "yes":
 			print("Clearing results")
 			call("rm -rf {}/TempCNV*".format(canvas_output_directory),shell=True)
@@ -387,6 +387,8 @@ if __name__ == '__main__':
 			cent_tup = centromere_dict[key]
 			regions.append((key,"0-" + cent_tup[0],"p"))
 			regions.append((key,cent_tup[1] + "-" + value,"q"))
+		
+		#handle mitochondrial contig
 		except KeyError:
 			regions.append((key,"0-" + value,""))
 	
