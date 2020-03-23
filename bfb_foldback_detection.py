@@ -11,6 +11,10 @@ clustDelta = 500
 min_clust_size = 25
 fb_dist_cut = 25000
 
+#for bfb-calling
+min_score_for_bfb = 0.25
+min_fb_reads_for_bfb = 25
+
 class dummy_read(object):
     def __init__(self,mrn,mstart,mir):
         self.reference_start = mstart
@@ -411,20 +415,40 @@ if __name__ == '__main__':
 
 
     elif args.AA_graph_list:
-        with open(args.AA_graph_list) as infile, open(args.o + "graph_f.txt", 'w') as outfile:
+        samp_list = []
+        samp_with_bfb = set()
+        with open(args.AA_graph_list) as infile, open(args.o + "_graph_f.txt", 'w') as outfile:
             outfile.write("Sample\tgraph-f\tfoldback_reads\tnon_foldback_reads\n")
             for line in infile:
                 try:
-                    s,f = line.rstrip().split()
+                    a,f = line.rstrip().split()
                     totFB, totNonFB = compute_f_from_AA_graph(f,excIT)
                     gF = float(totFB) / max(1,(totFB + totNonFB))
+
+                    samp = a.rsplit("_amplicon")[0]
+                    if gF >= min_score_for_bfb and totFB >= min_fb_reads_for_bfb:
+                        samp_with_bfb.add(samp)
+
+                    if samp not in samp_list:
+                        samp_list.append(samp)
+
                 except ValueError:
-                    s = line.rstrip()
+                    a = line.rstrip()
+                    samp = a.rsplit("_amplicon")[0]
+                    if samp not in samp_list:
+                        samp_list.append(samp)
+
                     totFB = 0
                     totNonFB = 0
                     gF = 0
 
-                outfile.write("\t".join([s,str(gF),str(totFB),str(totNonFB)]) + "\n")
+                outfile.write("\t".join([a,str(gF),str(totFB),str(totNonFB)]) + "\n")
+
+        #write bfb calls
+        with open(args.o + "_bfb_calls.txt", 'w') as outfile:
+            for samp in samp_list:
+                isBFB = str(samp in samp_with_bfb)
+                outfile.write(samp + "\t" + isBFB + "\n")
 
     sys.exit()
 
