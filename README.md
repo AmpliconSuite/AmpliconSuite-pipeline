@@ -98,4 +98,21 @@ A description of other command line arguments for PrepareAA is provided below
 - `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps.
 
 
-PrepareAA has been tested with Ubuntu 16.04. PrepareAA's dependencies will not work on CentOS 6, but CentOS 7+ should be fine.
+PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependencies (related to CNV calling) will not work on CentOS 6.
+
+
+### Additional analysis scripts
+#### BFB detection with `bfb_foldback_detection.py`
+This script can be used to detect possible BFB-like signatures from AA graph files (documentation below). A second mode of operation can be invoked using other custom inputs (documentation coming soon).
+
+To use the `bfb_foldback_detection.py` script on AA output, please create a two column file with the name of the graph file in column 1 and the path to the graph file in column 2. The rest of the command-line arguments are as follows.
+
+
+##### Required arguments for running on AA results
+-  `--exclude [path to $AA_DATA_REPO/[ref]/[mappability excludable file]`
+
+- `-o [output filename prefix]`
+
+- `--ref [hg19, GRCh37, GRCh38]`
+
+- `--AA_graph_list [two-column file listing AA graphs]`
