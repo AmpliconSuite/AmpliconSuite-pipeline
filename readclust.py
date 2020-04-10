@@ -1,13 +1,23 @@
+import logging
+
 class dummy_read(object):
-    def __init__(self,mrn,mstart,mir):
+    def __init__(self,mrn,mstart,mir,mqn=""):
         self.reference_start = mstart
         self.reference_name = mrn
         self.is_reverse = mir
+        self.query_name = mqn
         self.qstart,self.qend = -1,-1
         self.reference_end = mstart
         self.template_length = -1
         self.is_read1 = False
         self.is_read2 = True
+        self.mapping_quality = 0
+
+    def get_tags(self):
+        return ["Dummy read",]
+
+    def has_tag(self,_):
+        return False
 
 
 #TODO: how to check if two read clusts overlap? - same as other - but make sure ref chroms sorted
@@ -89,7 +99,8 @@ class pe_read_clust(object):
 
     def clust_to_string(self):
         s = self.clust_ID + " | #read_pairs: " + str(self.size) + "\n"
-
+        s +=" ".join(["ReadNum","isReverse","qstart","qend","refname","ref_start","ref_end","template_length",
+                      "qname","tags","\n"])
         for v in zip(self.left_reads,self.right_reads):
             for a in v:
                 readno = ""
@@ -103,13 +114,14 @@ class pe_read_clust(object):
                 else:
                     adir = "+"
 
-                sstart = readno + ": " + adir + " "
+                sstart = readno + " " + adir + " "
                 s+=sstart
                 s+=" ".join([str(x) for x in [a.qstart,a.qend,a.reference_name,a.reference_start,a.reference_end,
-                                             a.is_reverse,a.template_length]])
+                                             a.template_length,a.mapping_quality,a.query_name,a.get_tags()]])
                 s+="\n"
 
             s+="\n"
 
         s+="\n"
         return s
+
