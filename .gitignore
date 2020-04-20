@@ -59,3 +59,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+hg19/
+GRCh37/
+GRCh38/
+install_paa.sh
+docker/run_paa_docker.sh
