@@ -11,6 +11,7 @@ class dummy_read(object):
         self.template_length = -1
         self.is_read1 = False
         self.is_read2 = True
+        self.is_supplemental = False
         self.mapping_quality = 0
 
     def get_tags(self):
@@ -124,4 +125,3 @@ class pe_read_clust(object):
 
         s+="\n"
         return s
-
