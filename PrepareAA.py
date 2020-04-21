@@ -38,9 +38,9 @@ def run_bwa(ref,fastqs,outdir,sname,nthreads,usingDeprecatedSamtools = False):
 
 	print("Performing alignment and sorting")
 	if usingDeprecatedSamtools:
- 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 2G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
+ 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 3G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
  	else:
- 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 2G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
+ 		cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 3G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(nthreads, ref, fastqs,outname,outname)
 
  	print(cmd)
  	call(cmd,shell=True)
@@ -313,7 +313,7 @@ if __name__ == '__main__':
 		runCNV = "CNVkit"
 
 	#Paths of all the repo files needed
- 	refFnames = {"hg19":"hg19full.fa","GRCh37":"human_g1k_v37.fasta","GRCh38":"GRCh38.fa"}
+ 	refFnames = {"hg19":"hg19full.fa","GRCh37":"human_g1k_v37.fasta","GRCh38":"hg38full.fa"}
  	gdir = AA_REPO + args.ref + "/"
  	ref = gdir + refFnames[args.ref]
  	ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"

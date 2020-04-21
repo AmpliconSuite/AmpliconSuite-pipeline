@@ -3,10 +3,10 @@
 A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect). Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19, GRCh37, and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
 
 ### Prerequisites:
-PrepareAA (PAA) Requires the following tools to be installed beforehand:
-- [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect)
+PrepareAA (PAA) may require the following tools to be installed beforehand, depending on what input data you have:
+- The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed. The AmpliconArchitect data repo used by this fork also must be downloaded.
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
-- [samtools](http://www.htslib.org/) (PrepareAA supports both versions >= 1.0 and < 1.0)
+- [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
 - [Canvas](https://github.com/Illumina/canvas) or [CNVkit](https://github.com/etal/cnvkit) (unless supplying your own CNV calls)
 - [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required if using Canvas - unless supplying your own VCF calls)
 
@@ -16,9 +16,39 @@ If using Canvas please make sure the Canvas reference genome files are located i
 Please note that CNVkit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 ### Installation
-Files in PrepareAA/hg19/ directory must be placed into $AA_DATA_REPO/hg19/ prior to using. If using hg38, you will need to download the hg38 AA data repo patch if you have not done so already. If using hg19 or GRCh37, replacing the files `conserved.bed` or `conserved.gain5.bed` in the data repo with the version included here is recommended for compatability with both standard and non-standard reference versions.
+
+In the directory you want to run AA in, do 
+
+`git clone https://github.com/jluebeck/PrepareAA.git`
+
+Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/AmpliconArchitect)) for AA installation instructions. AA must be installed to use PAA.
 
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
+
+### PrepareAA Docker 
+A dockerized version of PAA is available in the docker folder. It will install AmpliconArchitect inside the docker image. Currently, the dockerized version does not support the variant calling or alignment steps but they will be integrated soon. Running this docker image can be done as follows:
+
+1. Docker:
+    * Install docker: `https://docs.docker.com/install/`
+    * (Optional): Add user to the docker group and relogin:
+        `sudo usermod -a -G docker $USER`
+2. License for Mosek optimization tool:
+    * Obtain license file `mosek.lic` (`https://mosek.com/resources/academic-license` or `https://mosek.com/resources/trial-license`)
+    * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
+3. Download AA data repositories and set environment variable AA_DATA_REPO:
+    * Download from `https://drive.google.com/open?id=1aptbKrELgC-GSk3A0lA4-mUITcoUJpAu`
+    * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
+        ```bash
+        tar zxf data_repo.tar.gz
+        echo export AA_DATA_REPO=$PWD/data_repo >> ~/.bashrc
+        source ~/.bashrc
+        ```
+#### Obtain PrepareAA image and execution script:
+1. Pull docker image:
+    * `docker pull jluebeck/PrepareAA`
+
+2. Run script `run_paa_docker.sh` located in `PrepareAA/docker`
+
 
 ### Usage
 Two example standard runs of PrepareAA:
