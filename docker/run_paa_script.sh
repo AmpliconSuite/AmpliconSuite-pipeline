@@ -6,8 +6,7 @@ export AA_SRC
 MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses
 export MOSEKLM_LICENSE_FILE
 
-ls /home > /home/output/docker.log
-ls /home/data_repo >> /home/output/docker.log
+ls /home > /home/output/docker_home_manifest.log
 
 python programs/PrepareAA-unstable_dev/PrepareAA.py $argstring
 

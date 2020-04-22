@@ -77,7 +77,7 @@ with open("paa_docker.sh",'w') as outfile:
 
 	#assemble a docker command string
 	dockerstring = "docker run --rm -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\""+ \
-	" -v " + bamdir + ":/home/bam_dir -v " + cnvdir + ":/home/bed_dir -v " + \
+	" -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + cnvdir + ":/home/bed_dir -v " + \
 	args.output_directory + ":/home/output -v " + MOSEKLM_LICENSE_FILE + \
 	":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
