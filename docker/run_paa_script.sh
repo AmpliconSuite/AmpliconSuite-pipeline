@@ -6,6 +6,6 @@ export AA_SRC
 MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses
 export MOSEKLM_LICENSE_FILE
 
-python programs/PrepareAA/PrepareAA.py $argstring
+python programs/PrepareAA-master/PrepareAA.py $argstring
 
 #python programs/AmpliconArchitect-master/src/AmpliconArchitect.py $argstring
