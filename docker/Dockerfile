@@ -13,19 +13,19 @@ RUN mkdir -p /home/programs
 #Download libraries for AA
 RUN apt-get update && apt-get install -y
 RUN apt-get install -y \
-	gfortran \
-	libbz2-dev \
-	liblzma-dev \
-	python-dev \
-	python-matplotlib \
-	python-numpy \
-	python-pip \
-	python-scipy \
-	samtools \
-	ttf-mscorefonts-installer \
-	unzip \
-	wget \
-	zlib1g-dev
+gfortran \
+libbz2-dev \
+liblzma-dev \
+python-dev \
+python-matplotlib \
+python-numpy \
+python-pip \
+python-scipy \
+samtools \
+ttf-mscorefonts-installer \
+unzip \
+wget \
+zlib1g-dev
 
 RUN pip install Cython
 RUN pip install pysam Flask intervaltree

@@ -30,6 +30,9 @@ group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed
 
 args = parser.parse_args()
 
+if not args.output_directory:
+	args.output_directory = os.getcwd()
+
 try:
 	AA_REPO = os.environ['AA_DATA_REPO'] + "/"
 
@@ -43,6 +46,7 @@ except KeyError:
 # except KeyError:
 # 	sys.stderr.write("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
 # 	sys.exit(1)
+
 
 try:
 	#MOSEK LICENSE FILE PATH
@@ -67,16 +71,22 @@ argstring = "--ref " + args.ref + " -t 1 --cngain " + str(args.cngain) + " --cns
 if not args.no_AA:
 	argstring+=" --run_AA" 
 
-#assemble a docker command string
-dockerstring = "docker run --rm -e AA_DATA_REPO=/home/data_repo -e argstring=" + argstring + \
-" -v " + bamdir + ":/home/bam_dir -v " + cnvdir + ":/home/bed_dir -v " + \
-args.output_directory + ":/home/output -v " + MOSEKLM_LICENSE_FILE + \
-":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+with open("paa_docker.sh",'w') as outfile:
+	outfile.write("#!/bin/bash\n\n")
+	outfile.write("export argstring=\"" + argstring + "\"\n")
 
-print(dockerstring)
+	#assemble a docker command string
+	dockerstring = "docker run --rm -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\""+ \
+	" -v " + bamdir + ":/home/bam_dir -v " + cnvdir + ":/home/bed_dir -v " + \
+	args.output_directory + ":/home/output -v " + MOSEKLM_LICENSE_FILE + \
+	":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
-call(dockerstring,shell=True)
+	print("\n" + dockerstring + "\n")
+	outfile.write(dockerstring)
 
+call("chmod +x ./paa_docker.sh",shell=True)
+call("./paa_docker.sh",shell=True)
+call("rm paa_docker.sh",shell=True)
 
 
 
