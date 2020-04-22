@@ -54,4 +54,4 @@ RUN echo export AA_SRC=/home/programs/programs/AmpliconArchitect-master/src >> ~
 ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/jluebeck/PrepareAA/archive/master.zip /home/programs
-RUN unzip master.zip
+RUN cd /home/programs && unzip master.zip
