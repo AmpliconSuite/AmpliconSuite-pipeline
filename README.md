@@ -45,9 +45,9 @@ A dockerized version of PAA is available in the docker folder. It will install A
         ```
 #### Obtain PrepareAA image and execution script:
 1. Pull docker image:
-    * `docker pull jluebeck/PrepareAA`
+    * `docker pull jluebeck/prepareaa`
 
-2. Run script `run_paa_docker.sh` located in `PrepareAA/docker`
+2. Run script `run_paa_docker.py` located in `PrepareAA/docker`. It uses the same command line arguments one would pass to `PrepareAA.py`. Currently alignment and CNV calling steps are not integrated but they will be added in the next update.
 
 
 ### Usage
