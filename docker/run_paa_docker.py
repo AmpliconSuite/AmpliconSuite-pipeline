@@ -73,6 +73,9 @@ dockerstring = "docker run --rm -e AA_DATA_REPO=/home/data_repo -e argstring=" +
 args.output_directory + ":/home/output -v " + MOSEKLM_LICENSE_FILE + \
 ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
+print(dockerstring)
+
+subprocess.call(dockerstring,shell=True)
 
 
 
