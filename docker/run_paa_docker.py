@@ -75,7 +75,7 @@ args.output_directory + ":/home/output -v " + MOSEKLM_LICENSE_FILE + \
 
 print(dockerstring)
 
-subprocess.call(dockerstring,shell=True)
+call(dockerstring,shell=True)
 
 
 
