@@ -25,6 +25,7 @@ RUN apt-get install -y \
 	wget \
 	zlib1g-dev
 
+RUN pip install Cython
 RUN pip install pysam Flask intervaltree
 RUN pip install --upgrade matplotlib
 
