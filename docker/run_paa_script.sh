@@ -9,6 +9,6 @@ export MOSEKLM_LICENSE_FILE
 ls /home > /home/output/docker.log
 ls /home/data_repo >> /home/output/docker.log
 
-python programs/PrepareAA-master/PrepareAA.py $argstring
+python programs/PrepareAA-unstable_dev/PrepareAA.py $argstring
 
 #python programs/AmpliconArchitect-master/src/AmpliconArchitect.py $argstring
