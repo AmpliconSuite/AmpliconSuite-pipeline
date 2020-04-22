@@ -321,13 +321,14 @@ if __name__ == '__main__':
  	ploidy_vcf = gdir + "dummy_ploidy.vcf"
 	merged_vcf_file = args.vcf
  	if not os.path.isfile(ploidy_vcf) or not os.path.isfile(removed_regions_bed):
- 			sys.stderr.write("PrepareAA data repo files not found in AA data repo. Did you place them prior to running?")
+ 			sys.stderr.write(os.listdir(gdir) + "\n")
+ 			sys.stderr.write("PrepareAA data repo files not found in AA data repo. Did you place them prior to running?\n")
  			sys.exit(1)
 
  	#check if user gave a correct path to Canvas data repo
 	if not args.cnv_bed:
 		if args.canvas_dir and not os.path.exists(args.canvas_dir):
-			sys.stderr.write("Could not locate Canvas data repo folder")
+			sys.stderr.write("Could not locate Canvas data repo folder\n")
 			sys.exit(1)
 
 	#set an output directory if user did not specify
