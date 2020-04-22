@@ -1,9 +1,14 @@
+### April 2020 Update
+
+PrepareAA supports hg38-aligned data through the [jluebeck/AmpliconArchitect]((https://github.com/jluebeck/AmpliconArchitect)) fork. Additionally, PrepareAA has now been dockerized and is available [here](https://hub.docker.com/r/jluebeck/prepareaa). Instructions on using the dockerized version [below](### PrepareAA Docker)
+
+
 ## PrepareAA
 
-A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/virajbdeshpande/AmpliconArchitect). Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19, GRCh37, and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
+A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19, GRCh37, and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
 
 ### Prerequisites:
-PrepareAA (PAA) may require the following tools to be installed beforehand, depending on what input data you have:
+Depending on what input data you are using, PrepareAA (PAA) may require the following tools to be installed beforehand:
 - The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed. The AmpliconArchitect data repo used by this fork also must be downloaded.
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
@@ -15,7 +20,7 @@ If using Canvas please make sure the Canvas reference genome files are located i
 
 Please note that CNVkit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
-### Installation
+### Standalone configuration
 
 In the directory you want to run AA in, do 
 
@@ -23,7 +28,7 @@ In the directory you want to run AA in, do
 
 Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/AmpliconArchitect)) for AA installation instructions. AA must be installed to use PAA.
 
-Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only.
+Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed.
 
 ### PrepareAA Docker 
 A dockerized version of PAA is available in the docker folder. It will install AmpliconArchitect inside the docker image. Currently, the dockerized version does not support the variant calling or alignment steps but they will be integrated soon. Running this docker image can be done as follows:
@@ -47,7 +52,7 @@ A dockerized version of PAA is available in the docker folder. It will install A
 1. Pull docker image:
     * `docker pull jluebeck/prepareaa`
 
-2. Run script `run_paa_docker.py` located in `PrepareAA/docker`. It uses the same command line arguments one would pass to `PrepareAA.py`. Currently alignment and CNV calling steps are not integrated but they will be added in the next update.
+2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. Currently alignment and CNV calling steps are not integrated but they will be added in the next update.
 
 
 ### Usage

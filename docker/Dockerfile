@@ -27,8 +27,7 @@ unzip \
 wget \
 zlib1g-dev
 
-RUN pip install Cython
-RUN pip install pysam Flask intervaltree
+RUN pip install Cython pysam Flask intervaltree
 RUN pip install --upgrade matplotlib
 
 
