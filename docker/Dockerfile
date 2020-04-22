@@ -49,6 +49,7 @@ RUN cd /home/programs/mosek/8/tools/platform/linux64x86/python/2/ && python setu
 RUN echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
 RUN echo export AA_SRC=/home/programs/programs/AmpliconArchitect-master/src >> ~/.bashrc
 ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/programs
-ADD https://github.com/jluebeck/PrepareAA/archive/PAA_master.zip /home/programs
-
-RUN cd /home/programs && unzip master.zip && unzip PAA_master.zip
+RUN cd /home/programs && unzip master.zip
+RUN rm master.zip
+ADD https://github.com/jluebeck/PrepareAA/archive/master.zip /home/programs
+RUN unzip master.zip
