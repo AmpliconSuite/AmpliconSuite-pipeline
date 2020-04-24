@@ -1,6 +1,6 @@
 ### April 2020 Update
 
-PrepareAA supports hg38-aligned data through the [jluebeck/AmpliconArchitect]((https://github.com/jluebeck/AmpliconArchitect)) fork. Additionally, PrepareAA has now been dockerized and is available [here](https://hub.docker.com/r/jluebeck/prepareaa). Instructions on using the dockerized version [below](###prepareaa-docker)
+PrepareAA supports hg38-aligned data through the [jluebeck/AmpliconArchitect]((https://github.com/jluebeck/AmpliconArchitect)) fork. Additionally, PrepareAA has now been dockerized and is available [here](https://hub.docker.com/r/jluebeck/prepareaa). Instructions on using the dockerized version [below](#prepareaa-docker).
 
 
 ## PrepareAA
