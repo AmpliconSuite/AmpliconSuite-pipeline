@@ -106,7 +106,7 @@ def read_excludedRegions(exc_file,ref):
             if not line:
                 continue
 
-            fields = line.rsplit("\t")
+            fields = line.rsplit()
             fields[1],fields[2] = int(fields[1]),int(fields[2])
             if ref == "GRCh37" and fields[0].startswith("chr"):
                 fields[0] = fields[0][3:]
