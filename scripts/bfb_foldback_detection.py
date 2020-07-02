@@ -438,6 +438,7 @@ if __name__ == '__main__':
 
                 except ValueError:
                     a = line.rstrip()
+                    print(a)
                     samp = a.rsplit("_amplicon")[0]
                     if samp not in samp_list:
                         samp_list.append(samp)
