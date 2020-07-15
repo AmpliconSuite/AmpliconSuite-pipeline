@@ -276,7 +276,7 @@ if __name__ == '__main__':
 	parser.add_argument("--use_old_samtools",help="Indicate you are using an old build of samtools (prior to version 1.0)",action='store_true',default=False)
 	parser.add_argument("--rscript_path",help="Specify custom path to Rscript, if needed when using CNVKit (which requires R version >3.4)")
 	parser.add_argument("--python3_path",help="Specify custom path to python3, if needed when using CNVKit (requires python3)")
-	parser.add_argument("--aa_data_repo",help="Specify a custom $AA_DATA_REPO path. Overrides the bash variable")
+	parser.add_argument("--aa_data_repo",help="Specify a custom $AA_DATA_REPO path FOR PRELIMINARY STEPS ONLY(!). Will not override bash variable during AA")
 	parser.add_argument("--aa_src",help="Specify a custom $AA_SRC path. Overrides the bash variable")
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to an AA-supported reference.)")
