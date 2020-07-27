@@ -34,6 +34,7 @@ RUN apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
 RUN pip3 install cnvkit biopython reportlab pandas pyfaidx pysam 
 RUN apt-get install -y r-base
+RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
 ## already installed
 #RUN pip install matplotlib numpy scipy
 
@@ -57,7 +58,7 @@ RUN echo export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/programs/mosek/8/tools/pl
 RUN echo export MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses >> ~/.bashrc
 RUN cd /home/programs/mosek/8/tools/platform/linux64x86/python/2/ && python setup.py install
 RUN echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
-RUN echo export AA_SRC=/home/programs/programs/AmpliconArchitect-master/src >> ~/.bashrc
+RUN echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
 ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/auberginekenobi/PrepareAA/archive/master.zip /home/programs
