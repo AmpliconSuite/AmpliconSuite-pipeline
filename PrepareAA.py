@@ -109,8 +109,8 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 	bamBase = os.path.splitext(os.path.basename(bamfile))[0]
 	p3p = "python3"
 	if args.python3_path:
-		if not args.python3_path.endswith("/python"):
-			args.python3_path+="/python"
+		if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
+			args.python3_path+="/python3"
 
 		p3p = args.python3_path
 
