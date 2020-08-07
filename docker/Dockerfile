@@ -1,5 +1,4 @@
 # Use an official Python runtime as a parent image
-#FROM ubuntu:18.04
 FROM ubuntu:18.04
 
 # Build in non-interactive mode for online continuous building
@@ -46,7 +45,7 @@ RUN cd /home/programs && tar xf mosektoolslinux64x86.tar.bz2
 RUN mkdir -p /home/output/
 RUN mkdir -p /home/input/
 RUN mkdir -p /home/programs/mosek/8/licenses/
-RUN mkdir -p /home/data_repo
+RUN mkdir -p /home/data_repo/
 COPY run_paa_script.sh /home/
 
 #Set environmental variables
