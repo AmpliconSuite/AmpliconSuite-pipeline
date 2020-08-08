@@ -52,7 +52,7 @@ A dockerized version of PAA is available in the docker folder. It will install A
 1. Pull docker image:
     * `docker pull jluebeck/prepareaa`
 
-2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. Currently alignment and CNV calling steps are not integrated but they will be added in the next update.
+2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. Currently fastq alignment steps are not provided in the image. However CNV calling with CNVKit is integrated into the docker image (with thanks to Owen Chapman). Thus, one can start with a BAM file and get AA output if using the docker image.
 
 
 ### Usage
