@@ -12,6 +12,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+venv/
 build/
 develop-eggs/
 dist/
@@ -60,6 +61,7 @@ docs/_build/
 # PyBuilder
 target/
 
+*.png
 hg19/
 GRCh37/
 GRCh38/
