@@ -41,7 +41,7 @@ A dockerized version of PAA is available in the docker folder. It will install A
     * Obtain license file `mosek.lic` (`https://mosek.com/resources/academic-license` or `https://mosek.com/resources/trial-license`)
     * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
-    * Download from `https://drive.google.com/open?id=1aptbKrELgC-GSk3A0lA4-mUITcoUJpAu`
+    * Download from `https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu`
     * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
         ```bash
         tar zxf data_repo.tar.gz
