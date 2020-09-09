@@ -16,9 +16,11 @@ Depending on what input data you are using, PrepareAA (PAA) may require the foll
 - [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required if using Canvas - unless supplying your own VCF calls)
 
 
-If using Canvas please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`, which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
+**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`, which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
 
-Please note that CNVkit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
+**Note on using CNVkit**: Please note that CNVkit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
+
+PrepareAA assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables. This is already standard for most users.
 
 ### Standalone configuration
 
