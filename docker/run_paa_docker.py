@@ -61,7 +61,6 @@ except KeyError:
 
 
 #attach some directories
-bamdir,bamname = os.path.split(args.sorted_bam)
 cnvdir,cnvname = os.path.split(args.cnv_bed)
 
 #assemble an argstring
@@ -69,9 +68,11 @@ argstring = "--ref " + args.ref + " -t 1 --cngain " + str(args.cngain) + " --cns
 " --downsample " + str(args.downsample) + " -s " + args.sample_name
 
 if args.sorted_bam:
+	bamdir, bamname = os.path.split(args.sorted_bam)
 	argstring+=" --sorted_bam /home/bam_dir/" + args.sorted_bam
 
 else:
+	bamdir = os.path.split(args.fastqs[0])
 	argstring+=" --fastqs /home/bam_dir/" + args.fastqs[0] + " /home/bam_dir/" + args.fastqs[1]
 
 if args.cnv_bed:
