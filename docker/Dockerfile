@@ -70,6 +70,5 @@ ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/progr
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/jluebeck/PrepareAA/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
-RUN CNVKIT_PATH=`which cnvkit.py`
-RUN cp $CNVKIT_PATH /home/programs/cnvkit.py
+RUN cp `which cnvkit.py` /home/programs/cnvkit.py
 
