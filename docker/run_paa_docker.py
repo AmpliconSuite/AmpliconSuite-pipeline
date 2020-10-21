@@ -72,7 +72,7 @@ if args.sorted_bam:
 	argstring+=" --sorted_bam /home/bam_dir/" + args.sorted_bam
 
 else:
-	bamdir = os.path.split(args.fastqs[0])
+	bamdir, fq1name = os.path.split(args.fastqs[0])
 	argstring+=" --fastqs /home/bam_dir/" + args.fastqs[0] + " /home/bam_dir/" + args.fastqs[1]
 
 if args.cnv_bed:
