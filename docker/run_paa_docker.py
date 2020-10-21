@@ -26,7 +26,8 @@ group2 = parser.add_mutually_exclusive_group(required=True)
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
 group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain",default="")
 # group2.add_argument("--canvas_dir",help="Path to folder with Canvas executable and \"/canvasdata\" folder (reference files organized by reference name).",default="")
-group2.add_argument("--run_cnvkit",help="Use CNVKit 0.9.7 installed in the docker image to generate CNV calls and seed bed file",default="")
+group2.add_argument("--run_cnvkit",help="Use CNVKit 0.9.7 installed in the docker image to generate CNV calls and seed bed file",
+					action='store_true')
 
 args = parser.parse_args()
 
