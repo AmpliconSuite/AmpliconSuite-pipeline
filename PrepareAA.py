@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import sys
 import os
@@ -233,7 +233,7 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bam):
 def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sname, cngain, cnsize_min):
     print("Running amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-    cmd = "python {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out \
+    cmd = "python2 {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out \
     {}".format(AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min), AA_seeds_filename)
     print(cmd)
     call(cmd, shell=True)
@@ -244,7 +244,7 @@ def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sn
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref):
     print("Running AA with default arguments (& downsample " + str(
         downsample) + "). To change settings run AA separately.")
-    cmd = "python {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --out \
+    cmd = "python2 {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --out \
             {}/{}".format(AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, AA_outdir, sname)
 
     print(cmd)

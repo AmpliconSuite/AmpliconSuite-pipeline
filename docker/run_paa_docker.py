@@ -9,7 +9,7 @@ from subprocess import call
 parser = argparse.ArgumentParser(description="A dockerized pipeline wrapper for AmpliconArchitect. Currently does seed filtering + AA.")
 parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
 parser.add_argument("-s", "--sample_name", help="sample name", required=True)
-# parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and CNV calling",required=True)
+parser.add_argument("-t","--nthreads",help="Number of threads to use in BWA and CNV calling",required=True)
 parser.add_argument("--no_AA", help="Do not run AA after all files prepared. Default - run_AA.", action='store_true')
 parser.add_argument("--ref", help="Reference genome version.",choices=["hg19","GRCh37","GRCh38"],default="hg19")
 # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
@@ -21,12 +21,12 @@ parser.add_argument("--downsample",type=float,help="AA downsample argument (see 
 # parser.add_argument("--python3_path",help="Specify custom path to python3, if needed when using CNVKit (requires python3)")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to an AA-supported reference.)")
-# group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
+group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 group2 = parser.add_mutually_exclusive_group(required=True)
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
 group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain",default="")
 # group2.add_argument("--canvas_dir",help="Path to folder with Canvas executable and \"/canvasdata\" folder (reference files organized by reference name).",default="")
-# group2.add_argument("--cnvkit_dir",help="Path to cnvkit.py",default="")
+group2.add_argument("--cnvkit_dir",help="Path to cnvkit.py",default="")
 
 args = parser.parse_args()
 
@@ -65,8 +65,20 @@ cnvdir,cnvname = os.path.split(args.cnv_bed)
 
 #assemble an argstring
 argstring = "--ref " + args.ref + " -t 1 --cngain " + str(args.cngain) + " --cnsize_min " + str(args.cnsize_min) + \
-" --downsample " + str(args.downsample) + " -s " + args.sample_name + " --sorted_bam /home/bam_dir/" + bamname + \
-" --cnv_bed /home/bed_dir/" + cnvname + " -o /home/output"
+" --downsample " + str(args.downsample) + " -s " + args.sample_name
+
+if args.sorted_bam:
+	argstring+=" --sorted_bam /home/bam_dir/" + args.sorted_bam
+
+else:
+	argstring+=" --fastqs /home/bam_dir/" + args.fastqs[0] + " /home/bam_dir/" + args.fastqs[1]
+
+if args.cnv_bed
+	argstring+=" --cnv_bed /home/bed_dir/" + cnvname + " -o /home/output"
+
+else:
+	argstring+=" --cnvkit_dir $CNVKIT_PATH" 
+
 
 if not args.no_AA:
 	argstring+=" --run_AA" 

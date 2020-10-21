@@ -1,8 +1,8 @@
 # Use an official Python runtime as a parent image
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # Build in non-interactive mode for online continuous building
-ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the working directory to /app
 WORKDIR /home/
@@ -13,10 +13,12 @@ RUN mkdir -p /home/programs
 #Download libraries for AA
 RUN apt-get update && apt-get install -y
 RUN apt-get install -y \
+bwa \
 gfortran \
 libbz2-dev \
 liblzma-dev \
 python-dev \
+python3-dev
 samtools \
 ttf-mscorefonts-installer \
 unzip \
@@ -31,11 +33,11 @@ RUN pip install --upgrade matplotlib
 ## CNVkit & dependencies
 RUN apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
-RUN pip3 install cnvkit biopython reportlab pandas pyfaidx pysam 
-RUN apt-get install -y r-base
+RUN pip3 install future futures cnvkit biopython reportlab pandas pomegranate pyfaidx pysam 
+#RUN apt-get install -y r-base
 RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
-## already installed
-#RUN pip install matplotlib numpy scipy
+RUN pip3 install cnvkit==0.9.7
+RUN cnvkit.py version
 
 RUN cd /home/programs && wget http://download.mosek.com/stable/8.0.0.60/mosektoolslinux64x86.tar.bz2
 RUN cd /home/programs && tar xf mosektoolslinux64x86.tar.bz2
@@ -49,7 +51,6 @@ RUN mkdir -p /home/data_repo/
 COPY run_paa_script.sh /home/
 
 #Set environmental variables
-
 RUN echo export MOSEKPLATFORM=linux64x86 >> ~/.bashrc
 RUN export MOSEKPLATFORM=linux64x86
 RUN echo export PATH=$PATH:/home/programs/mosek/8/tools/platform/$MOSEKPLATFORM/bin >> ~/.bashrc
@@ -62,3 +63,4 @@ ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/progr
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/jluebeck/PrepareAA/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
+RUN echo export CNVKIT_PATH=`which cnvkit.py` >> ~/.bashrc
