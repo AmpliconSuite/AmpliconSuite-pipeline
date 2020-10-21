@@ -79,8 +79,7 @@ if args.cnv_bed:
 	argstring+=" --cnv_bed /home/bed_dir/" + cnvname + " -o /home/output"
 
 else:
-	print("Specifying use of CNVKit from docker image")
-	argstring+=" --cnvkit_dir $CNVKIT_PATH" 
+	argstring+=" --cnvkit_dir /home/programs/cnvkit.py"
 
 
 if not args.no_AA:

@@ -5,8 +5,6 @@ AA_SRC=/home/programs/AmpliconArchitect-master/src
 export AA_SRC
 MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses
 export MOSEKLM_LICENSE_FILE
-CNVKIT_PATH=`which cnvkit.py`
-export CNVKIT_PATH
 
 ls /home > /home/output/docker_home_manifest.log
 echo $CNVKIT_PATH >> /home/output/docker_home_manifest.log
