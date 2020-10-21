@@ -79,12 +79,15 @@ if args.cnv_bed:
 	argstring+=" --cnv_bed /home/bed_dir/" + cnvname + " -o /home/output"
 
 else:
+	print("Specifying use of CNVKit from docker image")
 	argstring+=" --cnvkit_dir $CNVKIT_PATH" 
 
 
 if not args.no_AA:
 	argstring+=" --run_AA" 
 
+print("Creating a docker script with the following argstring:")
+print(argstring + "\n")
 with open("paa_docker.sh",'w') as outfile:
 	outfile.write("#!/bin/bash\n\n")
 	outfile.write("export argstring=\"" + argstring + "\"\n")
