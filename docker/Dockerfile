@@ -11,30 +11,37 @@ WORKDIR /home/
 RUN mkdir -p /home/programs
 
 #Download libraries for AA
-RUN apt-get update && apt-get install -y
+RUN apt-get update
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository universe -y
+RUN apt-get install -y python2
+ADD https://bootstrap.pypa.io/get-pip.py /home/
+RUN python2 get-pip.py
+RUN pip2 --version
+#RUN pip2 install --upgrade pip
+RUN apt-get update
 RUN apt-get install -y \
 bwa \
 gfortran \
 libbz2-dev \
 liblzma-dev \
 python-dev \
-python3-dev
+python3-dev \
 samtools \
 ttf-mscorefonts-installer \
 unzip \
 wget \
 zlib1g-dev
-RUN apt-get install -y python-pip
-RUN pip install --upgrade pip
-RUN apt-get install -y python-matplotlib python-numpy python-scipy
-RUN pip install Cython pysam Flask intervaltree
-RUN pip install --upgrade matplotlib
+RUN apt-get install -y python3-matplotlib python3-numpy python3-scipy
+RUN pip2 install Cython pysam Flask intervaltree matplotlib numpy scipy
+RUN pip2 install --upgrade matplotlib
 
 ## CNVkit & dependencies
 RUN apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
-RUN pip3 install future futures cnvkit biopython reportlab pandas pomegranate pyfaidx pysam 
-#RUN apt-get install -y r-base
+RUN pip3 install -U Cython
+RUN pip3 install -U future futures biopython reportlab pandas pomegranate pyfaidx pysam 
+RUN apt-get install -y r-base-core
 RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
 RUN pip3 install cnvkit==0.9.7
 RUN cnvkit.py version
