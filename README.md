@@ -33,14 +33,14 @@ Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/Am
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed.
 
 ### PrepareAA Docker 
-A dockerized version of PAA is available in the docker folder. It will install AmpliconArchitect inside the docker image. Currently, the dockerized version does not support the variant calling or alignment steps but they will be integrated soon. Running this docker image can be done as follows:
+A dockerized version of PAA is available in the docker folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
 
 1. Docker:
     * Install docker: `https://docs.docker.com/install/`
     * (Optional): Add user to the docker group and relogin:
         `sudo usermod -a -G docker $USER`
 2. License for Mosek optimization tool:
-    * Obtain license file `mosek.lic` (`https://mosek.com/resources/academic-license` or `https://mosek.com/resources/trial-license`)
+    * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/` or `https://www.mosek.com/try/`)
     * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
     * Download from `https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu`
@@ -54,7 +54,7 @@ A dockerized version of PAA is available in the docker folder. It will install A
 1. Pull docker image:
     * `docker pull jluebeck/prepareaa`
 
-2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. Currently fastq alignment steps are not provided in the image. However CNV calling with CNVKit is integrated into the docker image (with thanks to Owen Chapman). Thus, one can start with a BAM file and get AA output if using the docker image.
+2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
 
 
 ### Usage
