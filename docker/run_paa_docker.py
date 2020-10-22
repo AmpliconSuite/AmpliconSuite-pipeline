@@ -21,7 +21,7 @@ parser.add_argument("--downsample",type=float,help="AA downsample argument (see 
 # parser.add_argument("--python3_path",help="Specify custom path to python3, if needed when using CNVKit (requires python3)")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", help= "Sorted BAM file (aligned to an AA-supported reference.)")
-group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
+group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq). Must both be in the same directory.", nargs=2)
 group2 = parser.add_mutually_exclusive_group(required=True)
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified intervals immediately.",action='store_true')
 group2.add_argument("--cnv_bed",help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain",default="")
@@ -69,11 +69,12 @@ argstring = "--ref " + args.ref + " -t 1 --cngain " + str(args.cngain) + " --cns
 
 if args.sorted_bam:
 	bamdir, bamname = os.path.split(args.sorted_bam)
-	argstring+=" --sorted_bam /home/bam_dir/" + args.sorted_bam
+	argstring+=" --sorted_bam /home/bam_dir/" + bamname
 
 else:
-	bamdir, fq1name = os.path.split(args.fastqs[0])
-	argstring+=" --fastqs /home/bam_dir/" + args.fastqs[0] + " /home/bam_dir/" + args.fastqs[1]
+	_, fq1name = os.path.split(args.fastqs[0])
+	bamdir, fq2name = os.path.split(args.fastqs[1])
+	argstring+=" --fastqs /home/bam_dir/" + fq1name + " /home/bam_dir/" + fq2name
 
 if args.cnv_bed:
 	argstring+=" --cnv_bed /home/bed_dir/" + cnvname + " -o /home/output"
