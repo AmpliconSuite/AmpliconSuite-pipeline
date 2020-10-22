@@ -65,7 +65,7 @@ cnvdir,cnvname = os.path.split(args.cnv_bed)
 
 #assemble an argstring
 argstring = "--ref " + args.ref + " -t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + str(args.cnsize_min) + \
-" --downsample " + str(args.downsample) + " -s " + args.sample_name
+" --downsample " + str(args.downsample) + " -s " + args.sample_name + " -o /home/output"
 
 if args.sorted_bam:
 	bamdir, bamname = os.path.split(args.sorted_bam)
@@ -77,7 +77,7 @@ else:
 	argstring+=" --fastqs /home/bam_dir/" + fq1name + " /home/bam_dir/" + fq2name
 
 if args.cnv_bed:
-	argstring+=" --cnv_bed /home/bed_dir/" + cnvname + " -o /home/output"
+	argstring+=" --cnv_bed /home/bed_dir/" + cnvname
 
 else:
 	argstring+=" --cnvkit_dir /home/programs/cnvkit.py"
