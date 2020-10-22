@@ -7,7 +7,6 @@ MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses
 export MOSEKLM_LICENSE_FILE
 
 ls /home > /home/output/docker_home_manifest.log
-echo $CNVKIT_PATH >> /home/output/docker_home_manifest.log
-python programs/PrepareAA-master/PrepareAA.py $argstring
+python programs/PrepareAA-master/PrepareAA.py $argstring &> /home/output/PAA_stdout.log
 
 #python programs/AmpliconArchitect-master/src/AmpliconArchitect.py $argstring
