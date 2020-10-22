@@ -64,7 +64,7 @@ except KeyError:
 cnvdir,cnvname = os.path.split(args.cnv_bed)
 
 #assemble an argstring
-argstring = "--ref " + args.ref + " -t 1 --cngain " + str(args.cngain) + " --cnsize_min " + str(args.cnsize_min) + \
+argstring = "--ref " + args.ref + " -t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + str(args.cnsize_min) + \
 " --downsample " + str(args.downsample) + " -s " + args.sample_name
 
 if args.sorted_bam:
