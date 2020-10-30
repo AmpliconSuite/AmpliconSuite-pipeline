@@ -21,6 +21,7 @@ RUN pip2 --version
 #RUN pip2 install --upgrade pip
 RUN apt-get update
 RUN apt-get install -y \
+bcftools \
 bwa \
 gfortran \
 libbz2-dev \
@@ -70,5 +71,9 @@ ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/progr
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/jluebeck/PrepareAA/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
+ADD https://github.com/parklab/NGSCheckMate/archive/master.zip /home/programs
+RUN cd /home/programs && unzip master.zip
+RUN echo export NCM_HOME=/home/programs/NGSCheckMate >> ~/.bashrc
+RUN cp /home/programs/PrepareAA/docker/paa_default_ncm.conf /home/programs/NGSCheckMate/ncm.conf
 RUN cp `which cnvkit.py` /home/programs/cnvkit.py
 
