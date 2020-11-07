@@ -10,7 +10,7 @@
 #
 
 ### What is AA?
-AmpliconArchitect (AA) is a tool designed to study 'focal amplifications' in the cancer genome. AA can help identify common sources of focal amplifications, such as **circular extrachromosomal DNA (ecDNA)**, and **breakage-fusion-bridge cycles (BFBs)**.
+AmpliconArchitect (AA) is a tool designed to study **focal amplifications** in the cancer genome. AA can help identify common sources of focal amplifications, such as **circular extrachromosomal DNA (ecDNA)**, and **breakage-fusion-bridge cycles (BFBs)**.
  
 AA takes as input WGS data and a bed file of regions to examine, and outputs a **breakpoint graph** and a **cycles file**. The **breakpoint graph**
 encodes the identity of regions in the genome, their copy numbers (as measured by AA), and the breakpoint junctions between
@@ -47,7 +47,7 @@ the AA `amplified_intervals.py` filtering script to select/filter/merge CNV seed
 
 Ultimately, PrepareAA can even invoke AA (if installed beforehand), and thus saves users from the hassle associated with preparing everything to run AA on a sample.
 
-If you decide not to use PrepareAA, the following points are relevant to those users who have instead decided to "go it alone":
+If you decide to "got it alone" and not to use PrepareAA, please carefully read the following points:
 
 #### - Creating the BAM file:
 If you are generating your own BAM file, please note that aligners vary in terms of which tags they will add to BAM files. Furthermore,
