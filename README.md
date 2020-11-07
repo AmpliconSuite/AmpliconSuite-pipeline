@@ -1,8 +1,3 @@
-### April 2020 Update
-
-PrepareAA supports hg38-aligned data through the [jluebeck/AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) fork. Additionally, PrepareAA has now been dockerized and is available [here](https://hub.docker.com/r/jluebeck/prepareaa). Instructions on using the dockerized version [below](#prepareaa-docker).
-
-
 ## PrepareAA
 
 A multithreaded quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. PrepareAA supports hg19, GRCh37, and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
