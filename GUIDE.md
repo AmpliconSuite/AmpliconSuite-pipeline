@@ -1,12 +1,11 @@
 ## Primer on running AmpliconArchitect
-By Jens Luebeck and Viraj Deshpande
 
 ### Contents
- - What is AA?
- - Preparing the inputs
- - Selecting seed regions
- - Worked example
- - FAQ
+ - [What is AA?](#what-is-aa)
+ - [Preparing the inputs](#preparing-the-inputs)
+ - [Selecting seed regions](#filtering-and-selecting-seeds-from-cnv-data)
+ - [Worked example](#worked-example)
+ - [FAQ](#faq)
 
 #
 
