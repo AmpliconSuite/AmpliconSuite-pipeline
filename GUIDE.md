@@ -40,7 +40,7 @@ However, AA independently calls copy number inside the seed regions it is tasked
 
 ##### <ins>To help standardize the process of running AA, we have created a wrapper script, called [PrepareAA](https://github.com/jluebeck/PrepareAA) </ins> 
 
-PrepareAA wraps the steps users need to take before running AA. Users will enter the AA workflow at different stages. Some will start with .fastq files, others will have a BAM file only, and others will
+PrepareAA wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
 the workflow from any point. PrepareAA wraps BWA MEM for alignment, CNVKit (or Canvas) for CNV seed identification, and will also invoke
 the AA `amplified_intervals.py` filtering script to select/filter/merge CNV seeds which are appropriate for AA.
