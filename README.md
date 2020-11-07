@@ -117,11 +117,11 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--vcf [your_file.vcf]`: (Optional) Supply your own VCF to skip the freebayes step.
 
-- `--cngain [float]`: (Optional) Set a custom threshold for the CN gain considered by AA. Default: 5.
+- `--cngain [float]`: (Optional) Set a custom threshold for the CN gain considered by AA. Default: 4.5.
 
 - `--cnsize_min [int]`: (Optional) Set a custom threshold for CN interval size considered by AA. Default: 50000.
 
-- `--downsample [float]`: (Optional) Set a custom threshold for bam coverage downsampling during AA. Does not affect coverage in analyses outside of AA. Default: 5.
+- `--downsample [float]`: (Optional) Set a custom threshold for bam coverage downsampling during AA. Does not affect coverage in analyses outside of AA. Default: 10.
 
 - `--use_old_samtools`: (Optional) Set this flag if your Samtools version is < 1.0. Default: False.
 

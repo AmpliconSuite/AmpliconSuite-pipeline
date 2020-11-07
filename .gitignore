@@ -61,7 +61,8 @@ docs/_build/
 # PyBuilder
 target/
 
-*.png
+testfiles/*.png
+scripts/*.png
 hg19/
 GRCh37/
 GRCh38/

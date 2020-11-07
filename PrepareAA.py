@@ -294,7 +294,7 @@ if __name__ == '__main__':
     parser.add_argument("--vcf",
                         help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of FORMAT "
                              "field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage.")
-    parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.999999)
+    parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
     parser.add_argument("--downsample", type=float, help="AA downsample argument (see AA documentation)", default=10)
