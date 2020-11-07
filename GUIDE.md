@@ -38,7 +38,7 @@ AA uses external CNV calls to determine which regions it should examine - thes a
 However, AA independently calls copy number inside the seed regions it is tasked with, and thus after selecting the regions, 
 **the CN estimates are not propogated into AA's own estimations.**
 
-##### To help standardize the process of running AA, we have created a wrapper script, called [PrepareAA](https://github.com/jluebeck/PrepareAA) 
+##### <u>To help standardize the process of running AA, we have created a wrapper script, called [PrepareAA](https://github.com/jluebeck/PrepareAA) </u> 
 
 PrepareAA wraps the steps users need to take before running AA. Users will enter the AA workflow at different stages. Some will start with .fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
