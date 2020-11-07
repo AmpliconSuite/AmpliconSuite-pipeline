@@ -15,7 +15,7 @@ AmpliconArchitect (AA) is tool designed to study 'focal amplifications' in the c
 AA takes as input WGS data and a bed file of regions to examine, and outputs a **breakpoint graph** and a **cycles file**. The **breakpoint graph**
 encodes the identity of regions in the genome, their copy numbers (as measured by AA), and the breakpoint junctions between
 these elements (as measured by AA). The **cycles file** outputs both non-cyclic paths and cyclic paths which are decompositions
-of the breakpoint graph in to paths which best explain the CN of the segments.
+of the breakpoint graph into paths which best explain the CN of the segments.
 
 
 An open-access publication detailing AA's methodology is available in [Nature Communications](https://www.nature.com/articles/s41467-018-08200-y). Please cite AA if you use it in your work. 
@@ -25,7 +25,7 @@ An open-access publication detailing AA's methodology is available in [Nature Co
 Please refer to the [AA README](https://github.com/virajbdeshpande/AmpliconArchitect#installation) for complete 
 installation instructions.
 
-You may also want to install the following support programs for classifying outputs ([AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)) and visualization ([CycleViz](https://github.com/jluebeck/CycleViz))
+You may also want to install the additonal programs for classifying outputs ([AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)) and visualization ([CycleViz](https://github.com/jluebeck/CycleViz)).
 #
 
 ### Preparing the inputs
@@ -52,13 +52,11 @@ If you decide not to use PrepareAA, the following points are relevant to those u
 #### - Creating the BAM file:
 If you are generating your own BAM file, please note that aligners vary in terms of which tags they will add to BAM files. Furthermore,
 BAM files hosted on SRA are often stripped of tags needed by AA to correctly identify breakpoints. At this time, we recommend using
-**BWA MEM**. However, we have also modified AA so that it will support BAM files created by Isaac. Please note that for use with AA, BWA MEM should be run **without** setting the `-m` flag (it's off by default, just don't turn it on).
+**BWA MEM**. However, we have also modified AA so that it will support BAM files created by Illumina's Isaac aligner. Please note that for use with AA, BWA MEM should be run **without** setting the `-m` flag (it's off by default, just don't turn it on).
 
 Please also note that the AA data repo has reference genome fasta files you can align to. We recommend them as they are stripped of alternate contigs, and thus may cause fewer issues with CN estimation in AA.
 
-Don't forget to also create the BAM file index!
-
-`samtools index [sample].bam`
+Don't forget to also create the BAM file index! `samtools index [sample].bam`
 
 #### - Creating the CNV bed file:
 In the AA publication, ReadDepth was used as the CNV caller for seeding. However, there are much more modern CNV callers available. **We have found that
@@ -79,7 +77,7 @@ However, CNV estimates can be imperfect in low-complexity or repetitive regions.
 It filters and merges CNV estimates provided by the user. `amplified_intervals.py` is wrapped into PrepareAA and will be run by default.
 
 If you are not using PrepareAA though, we **highly recommend you invoke `amplified_intervals.py` on your CNV calls to create a new file of CNV seeds appropriate for AA.**
-If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filteres for these 
+If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these 
 regions, but it should still be avoided to give them to AA as input. 
 #
  
@@ -89,7 +87,7 @@ To check if your BAM file is coordinate-sorted, you can take a peek at the BAM f
 `samtools view -H your_bamfile.bam | head `. 
 Please make sure you know which reference genome it is aligned to so that you can properly specify the `--ref` argument to AA.
 
-For more on running AA, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#running-ampliconarchitect).
+For more on running AA, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#running-ampliconarchitect) or jump down to the [worked example](#worked-example).
 
 Note that PrepareAA can run AA on its own by setting `--run_AA`, and AA will automatically be called at the end of the preparation process without any additional work by the user.
 #
