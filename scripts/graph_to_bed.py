@@ -103,7 +103,7 @@ def write_bed(bedlist, ofname):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Classify AA amplicon type")
+    parser = argparse.ArgumentParser(description="Convert segments in graph files to .bed format")
     parser.add_argument("-i", "--input", help="Path to list of files to use. Each line formatted as: \
     samplename /path/to/sample_amplicon1_cycles.txt /path/to/sample_amplicon1_graph.txt", required=True)
     parser.add_argument("--min_cn", type=float, help="Minimum CN to report region (default 0)", default=0)
