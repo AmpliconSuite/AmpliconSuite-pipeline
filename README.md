@@ -138,6 +138,10 @@ A description of other command line arguments for PrepareAA is provided below
 PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependencies (related to CNV calling) will not work on CentOS 6.
 
 
+### Notes
+If using PrepareAA in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using PrepareAA to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
+
+
 ### Additional analysis scripts
 #### BFB detection with `bfb_foldback_detection.py`
 This script can be used to detect possible BFB-like signatures from AA graph files (documentation below). A second mode of operation can be invoked using other custom inputs (documentation coming soon).
@@ -153,3 +157,4 @@ To use the `bfb_foldback_detection.py` script on AA output, please create a two 
 - `--ref [hg19, GRCh37, GRCh38]`
 
 - `--AA_graph_list [two-column file listing AA graphs]`
+
