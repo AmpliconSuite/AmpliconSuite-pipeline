@@ -51,6 +51,11 @@ A dockerized version of PAA is available in the docker folder. It will install b
 
 2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
 
+An example command might look like:
+
+`PrepareAA/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --ref hg19 --sorted_bam /path/to/bamfile.bam --run_cnvkit`
+
+**Please make sure your output directory specified for `-o` is writeable.** 
 
 ### Usage
 Two example standard runs of PrepareAA:
