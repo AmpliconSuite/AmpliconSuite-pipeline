@@ -138,7 +138,7 @@ A description of other command line arguments for PrepareAA is provided below
 PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependencies (related to CNV calling) will not work on CentOS 6.
 
 
-### Notes
+### Citing
 If using PrepareAA in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using PrepareAA to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
 
 
