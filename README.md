@@ -143,8 +143,22 @@ If using PrepareAA in your publication, please cite the [AmpliconArchitect artic
 
 
 ### Additional analysis scripts
-#### BFB detection with `bfb_foldback_detection.py`
-This script can be used to detect possible BFB-like signatures from AA graph files (documentation below). A second mode of operation can be invoked using other custom inputs (documentation coming soon).
+   ### - `seed_trimmer.py`
+AA seeds are not designed to be larger than 10 Mbp - as that passes the upper limit of what is considered a 'focal amplification'.
+To pre-filter some of these seeds and break them on regions AA cannot analyze (low mappability, centromeres, segmental duplications), we provide the following script,
+which can and should be invoked on any seeds > 10 Mbp. This script should be run prior to running `amplified_intervals.py`.
+
+Usage:
+`./scripts/seed_trimmer.py --seeds [/path/to/my_seeds.bed] --ref hg19/GRCh37/GRCh38 [--minsize 50000]`
+
+This will output a bed file `/path/to/my_seeds_trimmed.bed`, which can then be fed into `amplified_intervals.py`. 
+
+
+   ### - `bfb_foldback_detection.py`
+**This script is deprecated, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**
+
+
+Script can be used to detect possible BFB-like signatures from AA graph files (documentation below).
 
 To use the `bfb_foldback_detection.py` script on AA output, please create a two column file with the name of the graph file in column 1 and the path to the graph file in column 2. The rest of the command-line arguments are as follows.
 
