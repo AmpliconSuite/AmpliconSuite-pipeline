@@ -70,8 +70,9 @@ def trim_seeds(seeddict, filt_regions):
     for k, ivalt in seeddict.items():
         updated_seed_tree = copy.copy(ivalt)
         for ival in ivalt:
-            for h in filt_regions[k][ival.begin: ival.end]:
-                updated_seed_tree.chop(h.begin - 250, h.end + 250)
+            if ival.end - ival.begin > 1000000:
+                for h in filt_regions[k][ival.begin: ival.end]:
+                    updated_seed_tree.chop(h.begin - 250, h.end + 250)
 
         updated_seeds[k] = updated_seed_tree
 
