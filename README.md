@@ -7,8 +7,8 @@ Depending on what input data you are using, PrepareAA (PAA) may require the foll
 - The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed. The AmpliconArchitect data repo used by this fork also must be downloaded.
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
-- [Canvas](https://github.com/Illumina/canvas) or [CNVkit](https://github.com/etal/cnvkit) (unless supplying your own CNV calls)
-- [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is required if using Canvas - unless supplying your own VCF calls)
+- [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
+- (If using Canvas) [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is only required if using Canvas - but not if supplying your own VCF calls to Canvas)
 
 
 **Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`, which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 

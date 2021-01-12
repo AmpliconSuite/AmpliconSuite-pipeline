@@ -79,6 +79,9 @@ It filters and merges CNV estimates provided by the user. `amplified_intervals.p
 If you are not using PrepareAA though, we **highly recommend you invoke `amplified_intervals.py` on your CNV calls to create a new file of CNV seeds appropriate for AA.**
 If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these 
 regions, but it should still be avoided to give them to AA as input. 
+
+If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the PrepareAA/scripts directory (and documented in PrepareAA's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
+The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it.
 #
  
 ### Running AA
