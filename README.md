@@ -149,9 +149,27 @@ To pre-filter some of these seeds and break them on regions AA cannot analyze (l
 which can and should be invoked on any seeds > 10 Mbp. This script should be run prior to running `amplified_intervals.py`.
 
 Usage:
+
 `./scripts/seed_trimmer.py --seeds [/path/to/my_seeds.bed] --ref hg19/GRCh37/GRCh38 [--minsize 50000]`
 
 This will output a bed file `/path/to/my_seeds_trimmed.bed`, which can then be fed into `amplified_intervals.py`. 
+
+
+### - `graph_cleaner.py`
+Sequencing artifacts can lead to spurious edges. This script attempts to remove edges which conform to artifactual profiles. 
+Namely, very short everted (inside-out read pair) orientation edges. These will appear as brown 'spikes' in the AA amplicon image.
+This script removes them from the graph file.
+
+Usage:
+
+`./scripts/graph_cleaner.py -g /path/to/sample_ampliconx_graph.txt [--max_hop_size 5000] `
+
+or
+
+`./scripts/graph_cleaner.py --graph_list /path/to/list_of_graphfiles.txt [--max_hop_size 5000] `
+
+
+This will output an AA graph file(s) `/path/to/my_sample_ampliconX_cleaned_graph.txt`.
 
 
    ### - `bfb_foldback_detection.py`
