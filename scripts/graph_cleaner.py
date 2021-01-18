@@ -327,7 +327,7 @@ if __name__ == '__main__':
     for gfile in gfile_list:
         print("Cleaning " + gfile)
         p, f = os.path.split(gfile)
-        outname = p + f.rsplit("_graph.txt")[0] + "_cleaned_graph.txt"
+        outname = f.rsplit("_graph.txt")[0] + "_cleaned_graph.txt"
         seg_intd, edge_line_list, dbp_set, removed_count = read_graph(gfile, max_hop)
         # compute the fraction of segments over 50 kbp
         print("Initial proportion over 25kbp:", proportion_over_size(seg_intd))
