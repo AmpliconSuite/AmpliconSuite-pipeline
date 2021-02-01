@@ -65,6 +65,9 @@ AA is fairly robust to the choice of CNV caller for seed identification**. Some 
 If you generate your own file of CNV calls, *please ensure the estimated copy number of these calls is in the last column of the bed file*. 
 Secondly, also ensure that the calls you are using are segmented, and not just raw per-bin estimates. This is not a concern for most users,
 however **if you notice there are > 50 CNV seeds going into AA, there may be something wrong**.   
+
+One increasingly popular CNV caller is ASCAT. We have found that ASCAT run with default settings appears to undersegment the genome as compared to other 
+CNV callers. **We do not recommend default ASCAT calls for AA CNV seed generation**.
 #
 
 ### Filtering and selecting seeds from CNV data
