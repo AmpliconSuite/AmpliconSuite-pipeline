@@ -80,6 +80,7 @@ def is_orphan(ival, chrom, dbp_set):
     return not has_bps and ival.end - ival.begin <= max_hop
 
 
+# compute proportion of graph segments over size cutoff
 def proportion_over_size(seg_intd, size=25000):
     total = 0.0
     n_over = 0.0
@@ -210,11 +211,14 @@ def merge_clusters(clustered_ivald):
 
             else:
                 ind = 0
+                # print("final merging")
                 for cip, x in zip(collapsed_is_parent, orphan_collapsed_intervals):
+                    # print(cip,x)
                     join_both_parents = False
                     join_dir = None
                     if not cip:
                         if 0 < ind < len(collapsed_is_parent) - 1:  # it's a middle
+                            # print("MIDDLE")
                             if abs(orphan_collapsed_intervals[ind-1].data[0] - orphan_collapsed_intervals[ind+1].data[0]) < 1:
                                 join_both_parents = True
                                 join_dir = 0
@@ -231,6 +235,7 @@ def merge_clusters(clustered_ivald):
                         elif ind == len(collapsed_is_parent) - 1:
                             join_dir = -1
 
+                    # print("JD", join_dir)
                     if join_both_parents:
                         hits = [-1, 0]
 
@@ -238,34 +243,36 @@ def merge_clusters(clustered_ivald):
                         hits = [join_dir]
 
                     else:
+                        # print("EMPTY HITS")
                         hits = []
 
                     for h in hits:
                         join_to_next[ind + h] = True
 
                     ind += 1
+                    # print(ind,"J2N",join_to_next)
 
-                print(join_to_next)
+                # print(join_to_next)
                 fully_joined = []
                 curr_joins = []
                 for join, ival in zip(join_to_next, orphan_collapsed_intervals):
                     if not join:
-                        if curr_joins:
-                            # merge
-                            curr_joins.append(ival)
-                            lens = [i.end - i.begin for i in curr_joins]
-                            cns = [j.data[0] for j in curr_joins]
-                            covs = [j.data[1] for j in curr_joins]
-                            tsize = sum([j.data[2] for j in curr_joins])
-                            tnrm = sum([j.data[3] for j in curr_joins])
-                            total_cn_weight = sum([i * j for i, j in zip(lens, cns)])
-                            total_cov_weight = sum([i * j for i, j in zip(lens, covs)])
-                            mean_cn_weight = total_cn_weight / sum(lens)
-                            mean_cov_weight = total_cov_weight / sum(lens)
-                            nd = (mean_cn_weight, mean_cov_weight, tsize, tnrm)
-                            nn = Interval(curr_joins[0].begin, curr_joins[-1].end, nd)
-                            fully_joined.append(nn)
-                            curr_joins = []
+                        # if curr_joins:
+                        # merge
+                        curr_joins.append(ival)
+                        lens = [i.end - i.begin for i in curr_joins]
+                        cns = [j.data[0] for j in curr_joins]
+                        covs = [j.data[1] for j in curr_joins]
+                        tsize = sum([j.data[2] for j in curr_joins])
+                        tnrm = sum([j.data[3] for j in curr_joins])
+                        total_cn_weight = sum([i * j for i, j in zip(lens, cns)])
+                        total_cov_weight = sum([i * j for i, j in zip(lens, covs)])
+                        mean_cn_weight = total_cn_weight / sum(lens)
+                        mean_cov_weight = total_cov_weight / sum(lens)
+                        nd = (mean_cn_weight, mean_cov_weight, tsize, tnrm)
+                        nn = Interval(curr_joins[0].begin, curr_joins[-1].end, nd)
+                        fully_joined.append(nn)
+                        curr_joins = []
 
                         # fully_joined.append(ival)
 
