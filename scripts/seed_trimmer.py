@@ -19,10 +19,13 @@ def read_bed(ifname, keepdat=False):
             line = line.rstrip()
             if line:
                 fields = line.rsplit()
+                s, e = int(fields[1]), int(fields[2])
+                if e - s == 0:
+                    print("Size 0 interval found. Skipping: " + line)
                 if keepdat:
-                    beddict[fields[0]].addi(int(fields[1]), int(fields[2]), tuple(fields[3:]))
+                    beddict[fields[0]].addi(s, e, tuple(fields[3:]))
                 else:
-                    beddict[fields[0]].addi(int(fields[1]), int(fields[2]))
+                    beddict[fields[0]].addi(s, e)
 
     return beddict
 
@@ -57,6 +60,7 @@ def read_filt_regions(ref):
     # do segdups
     sdp = AA_DATA_REPO + fdict["segdup_filename"]
     for cf in [mcc, mex, sdp]:
+        print("Reading " + cf)
         result = read_bed(cf)
         for k, ivalt in result.items():
             filt_regions[k].update(ivalt)
