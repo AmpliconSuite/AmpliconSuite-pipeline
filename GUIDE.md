@@ -143,7 +143,8 @@ You can still do Option 1 even if you already have CNV calls, or if you only hav
  - **Option 2 - Do the steps manually**:
  
  We're going to assume you have your BAM file and a BED file of CNV calls, generated with your favorite CNV caller, where the estimated CN is in the last column of the BED file.
- Let's assume you want to select standard parameters of CN > 4.5 and size > 50 kbp.
+ Let's assume you want to select standard parameters of CN > 4.5 and size > 50 kbp. Not all CNV callers produce CNV segmentation that is useable by AA. If you see seed regions > 10 Mbp, please consider
+instead generating seeds with CNVKit (highly recommended for best AA results), or at least run `seed_trimmer.py` first on those ultra-long seeds.
  ```
 # filter/select the seeds
 $AA_SRC/amplified_intervals.py --ref hg19 --bed [your_CNV_calls.bed] --out [sample_name]_AA_CNV_SEEDS --bam [sample_name].bam --gain 4.5 --cnsize_min 50000
