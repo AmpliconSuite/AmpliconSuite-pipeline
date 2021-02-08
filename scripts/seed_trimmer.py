@@ -22,6 +22,8 @@ def read_bed(ifname, keepdat=False):
                 s, e = int(fields[1]), int(fields[2])
                 if e - s == 0:
                     print("Size 0 interval found. Skipping: " + line)
+                    continue
+                    
                 if keepdat:
                     beddict[fields[0]].addi(s, e, tuple(fields[3:]))
                 else:
