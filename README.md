@@ -86,10 +86,11 @@ or
 ```
 /path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads  --cnv_bed your_cnvs.bed  (--fastqs sample_r1.fastq sample_r2.fastq | --sorted_bam sample.cs.bam) [--run_AA]
 ```
-Where the CNV bed file is formatted as:
+Where the CNV bed file is formatted as (**without a header present**):
 
-`chrN    start        end     some_arbitrary_name      copy_number`
+`chr    start        end       copy_number`
 
+Additional fields between `end` and `copy_number` may exist, but `copy_number` must always be the last column.
 
 * CNVkit requires R version 3.5 or greater. This is not standard on many Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
@@ -147,10 +148,21 @@ If using PrepareAA in your publication, please cite the [AmpliconArchitect artic
 
 
 ### Additional analysis scripts
+
+   ### - `convert_cns_to_bed.py`
+Many users will choose to run CNVKit outside of PrepareAA and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
+Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
+we provide the following script to reformat the `.cns` file from CNVKit into a `.bed` file useable with PrepareAA. 
+
+Usage:
+`./scripts/convert_cns_to_bed.py your_CNVKit_output/your_sample.cns`
+
+This will output a bed file which can be fed into PrepareAA. 
+
    ### - `seed_trimmer.py`
 AA seeds are not designed to be larger than 10 Mbp - as that passes the upper limit of what is considered a 'focal amplification'.
 To pre-filter some of these seeds and break them on regions AA cannot analyze (low mappability, centromeres, segmental duplications), we provide the following script,
-which can and should be invoked on any seeds > 10 Mbp. This script should be run prior to running `amplified_intervals.py`.
+which can and should be invoked on any seeds > 10 Mbp. This script should be run prior to running PrepareAA (or `amplified_intervals.py` if not using PrepareAA).
 
 Usage:
 
@@ -160,8 +172,8 @@ This will output a bed file `/path/to/my_seeds_trimmed.bed`, which can then be f
 
 
 ### - `graph_cleaner.py`
-Sequencing artifacts can lead to spurious edges. This script attempts to remove edges which conform to artifactual profiles. 
-Namely, very short everted (inside-out read pair) orientation edges. These will appear as brown 'spikes' in the AA amplicon image.
+Sequencing artifacts can lead to numerous spurious short breakpoint edges. This script attempts to remove edges which conform to artifactual profiles. 
+Namely, very short everted (inside-out read pair) orientation edges. These will appear as numerous short brown 'spikes' in the AA amplicon image.
 This script removes them from the graph file.
 
 Usage:
