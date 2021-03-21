@@ -60,13 +60,14 @@ def read_graph(graphf, maxhopsize):
 
 
 def write_graph(outname, merged_seg_intd, edge_line_list):
-    sorder_chroms = ["chr" + str(x) for x in range(1,23)] + ["chrX", "chrY"] + [str(x) for x in range(1,23)] + ["X,Y"]
+    sorder_chroms = ["chr" + str(x) for x in range(1, 23)] + ["chrX", "chrY"] + [str(x) for x in range(1, 23)] + ["X,Y"]
     with open(outname, 'w') as outfile:
         outfile.write(h1)
         for chrom in sorder_chroms:
             svals = merged_seg_intd[chrom]
-            for x in svals:
-                outline = "\t".join([str(y) for y in ["sequence", chrom + ":" + str(x.begin) + "-", chrom + ":" + str(x.end) + "+"] + list(x.data)]) + "\n"
+            sorted_svals = sorted(svals, key=lambda x: (x.begin, x.end, x.data))
+            for x in sorted_svals:
+                outline = "\t".join([str(y) for y in ["sequence", chrom + ":" + str(x[0]) + "-", chrom + ":" + str(x[1]) + "+"] + list(x[2])]) + "\n"
                 outfile.write(outline)
 
         outfile.write(h2)
