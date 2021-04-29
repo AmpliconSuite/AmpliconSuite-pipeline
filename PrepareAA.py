@@ -125,7 +125,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
         ckpy_path += "/cnvkit.py"
 
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
-
+    print("Running CNVKit batch")
     cmd = "{} {} batch -m wgs -y -r {} -p {} -d {} {}".format(p3p, ckpy_path, ckRef, nthreads, outdir, bamfile)
     print(cmd)
     call(cmd, shell=True)
@@ -139,6 +139,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
+    print("Running CNVKIt segment")
     # TODO: possibly include support for adding VCF calls.
     cmd = "{} {} segment {} {} -p {} -o {}".format(p3p, ckpy_path, cnrFile, rscript_str, nthreads, cnsFile)
     print(cmd)
@@ -418,8 +419,10 @@ if __name__ == '__main__':
         args.sorted_bam = run_bwa(ref, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
 
     bamBaiNoExt = args.sorted_bam[:-3] + "bai"
+    cramCraiNoExt = args.sorted_bam[:-4] + "crai"
     baiExists = os.path.isfile(args.sorted_bam + ".bai") or os.path.isfile(bamBaiNoExt)
-    if not baiExists:
+    craiExists = os.path.isfile(args.sorted_bam + ".crai") or os.path.isfile(cramCraiNoExt)
+    if not baiExists and not craiExists:
         print(args.sorted_bam + ".bai not found, calling samtools index")
         call(["samtools", "index", args.sorted_bam])
         print("Finished indexing")
