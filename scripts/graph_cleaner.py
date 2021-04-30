@@ -112,7 +112,7 @@ def ClusterIntervalsFromSortedList(seg_intd, dbp_set):
             can_merge = False
             has_orphan = is_orphan(a, chrom, dbp_set) or is_orphan(b, chrom, dbp_set)
             if b.begin - a.end == 1 and has_orphan:
-                if not (chrom, a.end) in dbp_set and not (chrom, b.end) in dbp_set:  # endpoints can be joined
+                if not (chrom, a.end) in dbp_set and not (chrom, b.begin) in dbp_set:  # endpoints can be joined
                     can_merge = True
                     curr_clust.append(b)
 
