@@ -316,7 +316,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Remove spurious sequence artifact edges from AA graph")
     parser.add_argument("-g", help="path to graph", type=str)
     parser.add_argument("--graph_list", help="Text file listing paths to all graphs to clean", type=str)
-    parser.add_argument("--max_hop_size", help="Maximum size of everted read hop", type=float, default=5000)
+    parser.add_argument("--max_hop_size", help="Maximum size of everted read hop", type=float, default=4000)
     args = parser.parse_args()
 
     if not args.g and not args.graph_list:
