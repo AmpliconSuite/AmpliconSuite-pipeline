@@ -2,18 +2,17 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19, GRCh37, and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
+PrepareAA supports hg19 (or GRCh37) and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 
 ### Prerequisites:
 Depending on what input data you are using, PrepareAA (PAA) may require the following tools to be installed beforehand:
-- The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed. The AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu) used by this fork also must be downloaded.
+- The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) is recommended for PrepareAA. The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu) must be downloaded and used.
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
 - [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
 - (If using Canvas) [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is only required if using Canvas - but not if supplying your own VCF calls to Canvas)
-
 
 **Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`, which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
 
@@ -77,6 +76,8 @@ or
 ```
 
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
+
+PrepareAA with CNVKit will also function on sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
 ##### Starting from intermediate steps
 * If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`.
