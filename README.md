@@ -167,7 +167,7 @@ which can and should be invoked on any seeds > 10 Mbp. This script should be run
 
 Usage:
 
-`./scripts/seed_trimmer.py --seeds [/path/to/my_seeds.bed] --ref hg19/GRCh37/GRCh38 [--minsize 50000]`
+`./scripts/seed_trimmer.py --seeds /path/to/my_seeds.bed --ref hg19/GRCh37/GRCh38 [--minsize 50000]`
 
 This will output a bed file `/path/to/my_seeds_trimmed.bed`, which can then be fed into `amplified_intervals.py`. 
 
@@ -179,18 +179,24 @@ This script removes them from the graph file.
 
 Usage:
 
-`./scripts/graph_cleaner.py -g /path/to/sample_ampliconx_graph.txt [--max_hop_size 5000] `
+`./scripts/graph_cleaner.py -g /path/to/sample_ampliconx_graph.txt [--max_hop_size 4000] `
 
 or
 
-`./scripts/graph_cleaner.py --graph_list /path/to/list_of_graphfiles.txt [--max_hop_size 5000] `
+`./scripts/graph_cleaner.py --graph_list /path/to/list_of_graphfiles.txt [--max_hop_size 4000] `
 
 
 This will output an AA graph file(s) `/path/to/my_sample_ampliconX_cleaned_graph.txt`.
 
+### - `graph_to_bed.py`
+Create a bed file of the graph segments and a bedpe file of the disordant graph edges.
 
-   ### - `bfb_foldback_detection.py`
-**This script is deprecated, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**
+Usage:
+
+`./scripts/graph_to_bed.py -g /path/to/sample_amplicon_graph.txt [--unmerged]`
+
+### - `bfb_foldback_detection.py [deprecated]`
+**This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**
 
 
 Script can be used to detect possible BFB-like signatures from AA graph files (documentation below).

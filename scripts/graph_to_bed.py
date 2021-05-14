@@ -13,6 +13,7 @@ if sys.version_info[0] < 3:
 
 def read_graph(graphf):
     intD = defaultdict(IntervalTree)
+    de_list = []
     with open(graphf) as infile:
         for line in infile:
             if line.startswith("sequence"):
@@ -20,16 +21,31 @@ def read_graph(graphf):
                 l, r = fields[1], fields[2]
                 lchrom, lpos = l[:-1].rsplit(":")
                 rchrom, rpos = r[:-1].rsplit(":")
-                lpos, rpos = int(lpos), int(rpos) + 1  #use the +1 semi-closed coordinate system of UCSC Genome Browser.
+                lpos, rpos = int(lpos), int(rpos)
+                if lpos == rpos: rpos += 1
                 cn = float(fields[3])
 
                 if add_chr_tag and not lchrom.startswith('chr'):
                     lchrom = "chr" + lchrom
                     rchrom = "chr" + rchrom
 
-                intD[lchrom].addi(lpos,rpos,cn)
+                intD[lchrom].addi(lpos, rpos, cn)
 
-    return intD
+            elif line.startswith("discordant"):
+                fields = line.rstrip().rsplit()
+                l, r = fields[1].rsplit("->")
+                lchrom, lpos = l[:-1].rsplit(":")
+                rchrom, rpos = r[:-1].rsplit(":")
+                lpos, rpos = int(lpos), int(rpos)
+                strand1 = l[-1]
+                strand2 = '-' if r[-1] == '+' else '+'
+                if add_chr_tag and not lchrom.startswith('chr'):
+                    lchrom = "chr" + lchrom
+                    rchrom = "chr" + rchrom
+
+                de_list.append((lchrom, lpos, rchrom, rpos, strand1, strand2))
+
+    return intD, de_list
 
 
 def readFlist(filelist):
@@ -39,10 +55,7 @@ def readFlist(filelist):
             line = line.rstrip()
             if line:
                 fields = line.rsplit()
-                if len(fields) < 2 or len(fields) > 3:
-                    print("Bad formatting in: ", line)
-                else:
-                    flist.append(fields)
+                flist.append((fields[0], fields[-1]))
 
     return flist
 
@@ -88,7 +101,10 @@ def make_bed(intD, min_cn = 0, unmerged = False):
     cn_segs = []
     for c in orderedNames:
         curr_it = intD[c]
-        ccs = sorted([[c, x.begin, x.end] for x in curr_it if x.data > min_cn])
+        if unmerged:
+            ccs = sorted([[c, x.begin, x.end, x.data] for x in curr_it if x.data > min_cn])
+        else:
+            ccs = sorted([[c, x.begin, x.end] for x in curr_it if x.data > min_cn])
         cn_segs.extend(ccs)
 
     bedlist = merge_intervals(cn_segs) if not unmerged else cn_segs
@@ -104,33 +120,38 @@ def write_bed(bedlist, ofname):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert segments in graph files to .bed format")
-    parser.add_argument("-i", "--input", help="Path to list of files to use. Each line formatted as: \
-    samplename /path/to/sample_amplicon1_cycles.txt /path/to/sample_amplicon1_graph.txt", required=True)
-    parser.add_argument("--min_cn", type=float, help="Minimum CN to report region (default 0)", default=0)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-g", "--graph", help="Path to graph file. Either --graph or --input specifying a list are "
+                                             "required", type=str)
+    group.add_argument("-i", "--input", help="Path to list of files to use. Each line containing the path to a graph "
+                                             "file in the last column", type=str)
+    parser.add_argument("--min_cn", type=float, help="Minimum CN to report region (default 0)", default=0.0)
     parser.add_argument("--unmerged", help="Do not merge adjacent intervals from graph file", action='store_true', default=False)
     parser.add_argument("--add_chr_tag", help="Add \'chr\' to the beginning of chromosome names in input files",
                         action='store_true', default=False)
+    # parser.add_argument("--graph_edge_bedpe", help="Also report a .bedpe file of all breakpoint graph edges (default "
+    #                                                "true)", action='store_true', default=True)
 
     args = parser.parse_args()
     add_chr_tag = args.add_chr_tag
 
-    collection_name = os.path.splitext(args.input)[0] + "_bed_files/"
-    os.makedirs(collection_name, exist_ok=True)
+    if args.input:
+        collection_name = os.path.splitext(args.input)[0] + "_bed_files/"
+        os.makedirs(collection_name, exist_ok=True)
+        flist = readFlist(args.input)
 
-    flist = readFlist(args.input)
+    else:
+        collection_name = ""
+        sname = os.path.splitext(os.path.basename(args.graph))[0]
+        flist = [(sname, args.graph)]
 
     for fpair in flist:
-        if len(fpair) > 2:
-            sName, cyclesFile, graphFile = fpair
-
-        else:
-            print(fpair)
-            sys.stderr.write("File list not properly formatted\n")
-            sys.exit(1)
-
+        sName, graphFile = fpair
+        intD, de_list = read_graph(graphFile)
+        bedlist = make_bed(intD, args.min_cn, args.unmerged)
         ofname = collection_name + os.path.splitext(os.path.basename(graphFile))[0] + ".bed"
         print(ofname)
-
-        intD = read_graph(graphFile)
-        bedlist = make_bed(intD, args.min_cn, args.unmerged)
         write_bed(bedlist, ofname)
+        ofname = collection_name + os.path.splitext(os.path.basename(graphFile))[0] + "_breakpoints.bedpe"
+        print(ofname)
+        write_bed(de_list, ofname)
