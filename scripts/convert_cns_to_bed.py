@@ -3,6 +3,7 @@
 import os
 import sys
 
+# takes one argument as input, a .cns file from CNVKit, rewrites it as a bed after converting the CN data.
 
 # Read the CNVkit .cns files
 def convert_cnvkit_cns_to_seeds(cns_file, base):
