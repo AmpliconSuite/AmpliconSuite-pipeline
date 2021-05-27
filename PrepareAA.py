@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import sys
-import os
-import threading
-from subprocess import call
 import argparse
+from datetime import datetime
 import gzip
+import os
+from subprocess import call
+import sys
+import threading
 
 
 # generic worker thread function
@@ -214,10 +215,11 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 
 
 # Read the CNVkit .cns files
-def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bam):
-    base = os.path.splitext(os.path.basename(bam))[0]
-    with open(cnvkit_output_directory + base + ".cns") as infile, open(cnvkit_output_directory + base + "_CNV_GAIN.bed",
-                                                                       'w') as outfile:
+def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None):
+    if cnsfile is None:
+        cnsfile = cnvkit_output_directory + base + ".cns"
+
+    with open(cnsfile) as infile, open(cnvkit_output_directory + base + "_CNV_GAIN.bed", 'w') as outfile:
         head = next(infile).rstrip().rsplit("\t")
         for line in infile:
             fields = line.rstrip().rsplit("\t")
@@ -320,7 +322,8 @@ if __name__ == '__main__':
                              "immediately.",
                         action='store_true')
     group2.add_argument("--cnv_bed",
-                        help="BED file of CNV changes. Fields in the bed file should be: chr start end name cngain",
+                        help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should be: "
+                             "chr start end name cngain",
                         default="")
     group2.add_argument("--canvas_dir",
                         help="Path to folder with Canvas executable and \"/canvasdata\" folder (reference files "
@@ -329,6 +332,7 @@ if __name__ == '__main__':
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
 
     args = parser.parse_args()
+    print(str(datetime.now()))
 
     if args.aa_data_repo:
         os.environ['AA_DATA_REPO'] = args.aa_data_repo
@@ -427,6 +431,7 @@ if __name__ == '__main__':
         call(["samtools", "index", args.sorted_bam])
         print("Finished indexing")
 
+    bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
     centromere_dict = get_ref_centromeres(args.ref)
 
     # chunk the genome by chr
@@ -484,7 +489,10 @@ if __name__ == '__main__':
             os.mkdir(cnvkit_output_directory)
 
         run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam)
-        args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, args.sorted_bam)
+        args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase)
+
+    if args.cnv_bed.endswith(".cns"):
+        args.cnv_bed = convert_cnvkit_cnv_to_seeds(args.output_directory, bambase, args.cnv_bed)
 
     amplified_interval_bed = run_amplified_intervals(args.cnv_bed, args.sorted_bam, outdir, sname, args.cngain,
                                                      args.cnsize_min)
@@ -498,3 +506,4 @@ if __name__ == '__main__':
         run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample, args.ref)
 
     print("Completed\n")
+    print(str(datetime.now()))
