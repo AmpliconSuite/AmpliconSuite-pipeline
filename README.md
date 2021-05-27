@@ -93,6 +93,8 @@ Where the CNV bed file is formatted as (**without a header present**):
 
 Additional fields between `end` and `copy_number` may exist, but `copy_number` must always be the last column.
 
+* You can also use a CNVKit .cns file instead of .bed for this argument.
+
 * CNVkit requires R version 3.5 or greater. This is not standard on many Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
 * If you generated your own VCF but would still like to use Canvas CNV, you can supply `--vcf` to bypass the freebayes step.
@@ -138,7 +140,7 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--reuse_canvas` (Optional) Reuse the Canvas results from a previous run. Default: False
 
-- `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps.
+- `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps. Bed file with CN estimate in last column or CNVKit .cns file.
 
 
 PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependencies (related to CNV calling) will not work on CentOS 6.
