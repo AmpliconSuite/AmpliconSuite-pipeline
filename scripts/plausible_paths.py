@@ -57,6 +57,25 @@ def DFS(v):
 	return lp, lcp
 
 
+def remove_duplicate_paths(candidates):
+	kept = []
+	for xf in candidates:
+		xr = [-x for x in xf[::-1]]
+		xfstr = "".join([str(x) for x in xf])
+		xrstr = "".join([str(x) for x in xr])
+		keepable = True
+		for yh in kept:
+			yfull = "".join([str(y) for y in yh + yh])
+			if xfstr in yfull or xrstr in yfull:
+				keepable = False
+				break
+
+		if keepable:
+			kept.append(xf)
+
+	return kept
+
+
 # read the graph and make dictionary of edges
 def read_graph(graphf, skip_short_jumps):
 	with open(graphf) as infile:
@@ -169,11 +188,12 @@ parser = argparse.ArgumentParser(description="Attempt to identify a longest path
 parser.add_argument("-g", "--graph", help="AA-formatted graph file",required=True)
 parser.add_argument("--scaling_factor", help="Estimated CN of elements appearing once in the amplicon, defaults to median CN in graph",type=float)
 parser.add_argument("--remove_short_jumps", help="Remove very short discordant edges ( < 800 bp) which are not inversions", action="store_true")
+parser.add_argument("--keep_all_LC", help="Keep all longest cyclic paths of same score", action="store_true", default=False)
 
 args = parser.parse_args()
 
 read_graph(args.graph, args.remove_short_jumps)
-print(len(edgeDict)/2,"edges will be considered")
+# print(len(edgeDict)/2, "edges will be considered")
 
 if args.scaling_factor:
 	scaling_factor = args.scaling_factor
@@ -196,6 +216,7 @@ scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
 # print("starting search from ",maxSeg, maxEC)
 # longest_path, longestCyclicPath = DFS(maxSeg)
 
+longest_cps =  []
 longest_path = []
 longestCyclicPath = []
 for av, cn in scaled_cns.items():
@@ -205,18 +226,31 @@ for av, cn in scaled_cns.items():
 			if len(clp) > len(longest_path):
 				longest_path = clp
 
-			if len(clcp) > len(longestCyclicPath):
-				longestCyclicPath = clcp 
+			if len(clcp) == len(longestCyclicPath) and args.keep_all_LC:
+				longest_cps.append(clcp)
 
-print(longest_path)
-print(longestCyclicPath)
+			elif len(clcp) > len(longestCyclicPath):
+				longestCyclicPath = clcp
+				longest_cps = [longestCyclicPath]
+
+print(longest_path, "longest noncyclic")
+print(longestCyclicPath, "longest cyclic")
 
 total_amp_content = sum([x[2] - x[1] for s, x in id_to_coords.items() if s > 0 and scaled_cns[s] > 0])
 print(total_amp_content, " amplified length")
 
 
 pweights = []
-paths = [longest_path, longestCyclicPath]
+if not args.keep_all_LC:
+	paths = [longestCyclicPath, longest_path]
+
+else:
+	# remove duplicates
+	print("removing duplicates")
+	longest_cps = remove_duplicate_paths(longest_cps)
+	longest_cps.append(longest_path)
+	paths = longest_cps
+
 for p in paths:
 	cn_remainder_counts = copy.copy(scaled_cns)
 	path_amp_content = 0
@@ -228,13 +262,13 @@ for p in paths:
 
 		cn_remainder_counts[abs(s)] -= 1
 
-	print(path_amp_content/total_amp_content,"proportion amplified content explained in path")
+	print(path_amp_content/total_amp_content, "proportion amplified content explained in path")
 	pweights.append(str(path_amp_content/total_amp_content))
 
 	print("remaining unexplained copies")
 	for s in sorted(cn_remainder_counts.keys()):
 		if cn_remainder_counts[s] > 0:
-			print(s,cn_remainder_counts[s]) 
+			print(s, cn_remainder_counts[s])
 
 
 ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
