@@ -492,7 +492,7 @@ if __name__ == '__main__':
         args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase)
 
     if args.cnv_bed.endswith(".cns"):
-        args.cnv_bed = convert_cnvkit_cnv_to_seeds(args.output_directory, bambase, args.cnv_bed)
+        args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, args.cnv_bed)
 
     amplified_interval_bed = run_amplified_intervals(args.cnv_bed, args.sorted_bam, outdir, sname, args.cngain,
                                                      args.cnsize_min)
