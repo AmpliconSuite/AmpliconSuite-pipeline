@@ -427,7 +427,7 @@ if __name__ == '__main__':
     baiExists = os.path.isfile(args.sorted_bam + ".bai") or os.path.isfile(bamBaiNoExt)
     craiExists = os.path.isfile(args.sorted_bam + ".crai") or os.path.isfile(cramCraiNoExt)
     if not baiExists and not craiExists:
-        print(args.sorted_bam + ".bai not found, calling samtools index")
+        print(args.sorted_bam + " index not found, calling samtools index")
         call(["samtools", "index", args.sorted_bam])
         print("Finished indexing")
 
