@@ -152,6 +152,9 @@ If using PrepareAA in your publication, please cite the [AmpliconArchitect artic
 
 ### Additional analysis scripts
 
+   ### - `bedpe_bed_from_cycles.py`
+Contains code for parsing a _cycles.txt file output from AmpliconArchitect and formatting as .bedpe (breakpoints) or .bed (sequences).
+
    ### - `convert_cns_to_bed.py`
 Many users will choose to run CNVKit outside of PrepareAA and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
