@@ -142,6 +142,13 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps. Bed file with CN estimate in last column or CNVKit .cns file.
 
+- `--normal_bam [matched_normal.bam]` (Optional) Specify a matched normal BAM file for CNVKit. Not used by AA itself.
+
+- `--purity [float between 0 and 1]` (Optional) Specify a tumor purity estimate for CNVKit. Not used by AA itself. 
+  Note that specifying low purity may lead to many high copy number seed regions after rescaling is applied consider 
+  setting a higher `--cn_gain` threshold for low purity samples undergoing correction.
+
+- `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVKit. Not used by AA itself.
 
 PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependencies (related to CNV calling) will not work on CentOS 6.
 
@@ -155,6 +162,9 @@ If using PrepareAA in your publication, please cite the [AmpliconArchitect artic
    ### - `bedpe_bed_from_cycles.py`
 Contains code for parsing a _cycles.txt file output from AmpliconArchitect and formatting as .bedpe (breakpoints) or .bed (sequences).
 
+   ### - `breakpoints_to_bed.py`
+Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
+
    ### - `convert_cns_to_bed.py`
 Many users will choose to run CNVKit outside of PrepareAA and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
@@ -164,6 +174,9 @@ Usage:
 `./scripts/convert_cns_to_bed.py your_CNVKit_output/your_sample.cns`
 
 This will output a bed file which can be fed into PrepareAA. 
+
+   ### - `cycles_to_bed.py`
+Write an AA cycles file as a series of bed files, one for each decomposition. Segments are merged and sorted, and order and orientation of segments is lost.
 
    ### - `seed_trimmer.py`
 AA seeds are not designed to be larger than 10 Mbp - as that passes the upper limit of what is considered a 'focal amplification'.
@@ -199,6 +212,11 @@ Create a bed file of the graph segments and a bedpe file of the disordant graph 
 Usage:
 
 `./scripts/graph_to_bed.py -g /path/to/sample_amplicon_graph.txt [--unmerged]`
+
+### - `plausible_paths.py`
+Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified.
+`plausible_paths` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
+searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
 
 ### - `bfb_foldback_detection.py [deprecated]`
 **This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**

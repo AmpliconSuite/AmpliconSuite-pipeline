@@ -107,7 +107,7 @@ def run_canvas(canvas_dir, bam_file, vcf_file, outdir, removed_regions_bed, snam
     call(cmd, shell=True, executable="/bin/bash")
 
 
-def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
+def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, normal=None, refG=None, vcf=None):
     # CNVkit cmd-line args
     # -m wgs: wgs data
     # -y: assume chrY present
@@ -127,7 +127,12 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, vcf=None):
 
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
     print("Running CNVKit batch")
-    cmd = "{} {} batch -m wgs -y -r {} -p {} -d {} {}".format(p3p, ckpy_path, ckRef, nthreads, outdir, bamfile)
+    if args.normal_bam:
+        cmd = "{} {} batch {} -m wgs --fasta {} -p {} -d {} --normal {}".format(p3p, ckpy_path, bamfile, refG, nthreads,
+                                                                                        outdir, normal)
+    else:
+        cmd = "{} {} batch -m wgs -r {} -p {} -d {} {}".format(p3p, ckpy_path, ckRef, nthreads, outdir, bamfile)
+
     print(cmd)
     call(cmd, shell=True)
     rscript_str = ""
@@ -207,17 +212,16 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
                     outline = "\t".join([chrom, start, end, fields[4], chrom_num]) + "\n"
                     outfile.write(outline)
 
-    # #call amplified_intervals.py from $AA_SRC
-    # CNV_seeds_filename = "{}/{}_AA_CNV_SEEDS".format(output_directory, sname)
-    # #new AA version
-
     return canvas_output_directory + "/CNV_GAIN.bed"
 
 
 # Read the CNVkit .cns files
-def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None):
+def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, rescaled=False):
     if cnsfile is None:
-        cnsfile = cnvkit_output_directory + base + ".cns"
+        if not rescaled:
+            cnsfile = cnvkit_output_directory + base + ".cns"
+        else:
+            cnsfile = cnvkit_output_directory + base + "_rescaled.cns"
 
     with open(cnsfile) as infile, open(cnvkit_output_directory + base + "_CNV_GAIN.bed", 'w') as outfile:
         head = next(infile).rstrip().rsplit("\t")
@@ -231,6 +235,33 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None):
                 outfile.write(outline)
 
     return cnvkit_output_directory + base + "_CNV_GAIN.bed"
+
+
+def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
+    if not purity and not ploidy:
+        print("Warning: Rescaling called without --ploidy or --purity. Rescaling will have no effect.")
+    if cnsfile is None:
+        cnsfile = cnvkit_output_directory + base + ".cns"
+
+    p3p = "python3"
+    if args.python3_path:
+        if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
+            args.python3_path += "/python3"
+
+        p3p = args.python3_path
+
+    if not ckpy_path.endswith("/cnvkit.py"):
+        ckpy_path += "/cnvkit.py"
+
+    cmd = "{} {} call {} -m clonal".format(p3p, ckpy_path, cnsfile)
+    if purity:
+        cmd += " --purity " + str(purity)
+    if ploidy:
+        cmd += " --ploidy " + str(ploidy)
+
+    cmd += " -o " + cnvkit_output_directory + base + "_rescaled.cns"
+    print("Rescaling CNVKit calls\n" + cmd)
+    call(cmd, shell=True)
 
 
 def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sname, cngain, cnsize_min):
@@ -313,6 +344,9 @@ if __name__ == '__main__':
                         help="Specify a custom $AA_DATA_REPO path FOR PRELIMINARY STEPS ONLY(!). Will not override "
                              "bash variable during AA")
     parser.add_argument("--aa_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
+    parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
+    parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)", default=None)
+    parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)", default=None)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sorted_bam", help="Sorted BAM file (aligned to an AA-supported reference.)")
     group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
@@ -488,8 +522,16 @@ if __name__ == '__main__':
         if not os.path.exists(cnvkit_output_directory):
             os.mkdir(cnvkit_output_directory)
 
-        run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam)
-        args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase)
+        run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam, normal=args.normal_bam,
+                   refG=ref)
+        if args.ploidy or args.purity:
+            rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
+                                 purity=args.purity)
+            rescaling = True
+        else:
+            rescaling = False
+
+        args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase, rescaled=rescaling)
 
     if args.cnv_bed.endswith(".cns"):
         args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, args.cnv_bed)
