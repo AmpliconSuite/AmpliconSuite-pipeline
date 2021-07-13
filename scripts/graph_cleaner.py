@@ -329,8 +329,8 @@ if __name__ == '__main__':
     parser.add_argument("--graph_list", help="Text file listing paths to all graphs to clean", type=str)
     parser.add_argument("--max_hop_size", help="Maximum size of everted read hop (default 4000)", type=float,
                         default=4000)
-    parser.add_argument("--max_hop_support", help="Maximum number of discordant read pairs to consider as hop "
-                                                  "(default (10)", type=int, default=10)
+    parser.add_argument("--max_hop_support", help="Maximum number of discordant read pairs to consider as artificial "
+                                                  "hop (default (10)", type=int, default=10)
     parser.add_argument("--filter_non_everted", help="Filter non-everted hops", action='store_true', default=False)
 
     args = parser.parse_args()
