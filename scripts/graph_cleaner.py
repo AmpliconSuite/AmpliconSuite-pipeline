@@ -14,7 +14,7 @@ max_hop = 800
 
 
 # read graph file
-def read_graph(graphf, maxhopsize):
+def read_graph(graphf, maxhopsize, filter_non_everted, max_support):
     intD = defaultdict(IntervalTree)
     edge_line_list = []
     dbp_set = set()
@@ -44,12 +44,23 @@ def read_graph(graphf, maxhopsize):
                 lchrom, lpos, ldir = left[0], int(left[1][:-1]), left[1][-1]
                 right = pair[1].rsplit(":")
                 rchrom, rpos, rdir = right[0], int(right[1][:-1]), right[1][-1]
+                support = 1
+                if fields[0] == "discordant":
+                    support = int(fields[3])
 
-                # expected orientation: ldir == "+" and rdir == "-":
-                if fields[0] == "discordant" and rchrom == lchrom and abs(rpos - lpos) <= maxhopsize and rdir == '-' and ldir == '+':
-                    print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(rpos - lpos)))
-                    removed_count+=1
-                    continue
+                # expected orientation: ldir == "+" and rdir == "-", on concordant but backwards for discordant:
+                if support <= max_support:
+                    if fields[0] == "discordant" and rchrom == lchrom and 0 < lpos - rpos <= maxhopsize and \
+                            ldir == '+' and rdir == '-':
+                        print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
+                        removed_count+=1
+                        continue
+
+                    if fields[0] == "discordant" and rchrom == lchrom and 0 < lpos - rpos <= maxhopsize and \
+                            ldir == '-' and rdir == '+' and filter_non_everted:
+                        print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
+                        removed_count+=1
+                        continue
 
                 edge_line_list.append(line)
                 if line.startswith("discordant"):
@@ -316,7 +327,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Remove spurious sequence artifact edges from AA graph")
     parser.add_argument("-g", help="path to graph", type=str)
     parser.add_argument("--graph_list", help="Text file listing paths to all graphs to clean", type=str)
-    parser.add_argument("--max_hop_size", help="Maximum size of everted read hop", type=float, default=4000)
+    parser.add_argument("--max_hop_size", help="Maximum size of everted read hop (default 4000)", type=float,
+                        default=4000)
+    parser.add_argument("--max_hop_support", help="Maximum number of discordant read pairs to consider as hop "
+                                                  "(default (10)", type=int, default=10)
+    parser.add_argument("--filter_non_everted", help="Filter non-everted hops", action='store_true', default=False)
+
     args = parser.parse_args()
 
     if not args.g and not args.graph_list:
@@ -336,7 +352,8 @@ if __name__ == '__main__':
         print("Cleaning " + gfile)
         p, f = os.path.split(gfile)
         outname = f.rsplit("_graph.txt")[0] + "_cleaned_graph.txt"
-        seg_intd, edge_line_list, dbp_set, removed_count = read_graph(gfile, max_hop)
+        seg_intd, edge_line_list, dbp_set, removed_count = read_graph(gfile, max_hop, args.filter_non_everted,
+                                                                      args.max_hop_support)
         # compute the fraction of segments over 50 kbp
         print("Initial proportion over 25kbp:", proportion_over_size(seg_intd))
         if removed_count > 0:
