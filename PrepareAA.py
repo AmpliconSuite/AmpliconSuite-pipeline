@@ -162,22 +162,17 @@ def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
         curr_chrom = f.rsplit(".vcf.gz")[0].rsplit("_")[-2:]
         chrom_vcf_d[curr_chrom[0] + curr_chrom[1]] = f
 
-    chr_nums = [x.lstrip("chr") for x in chr_names]
-    numeric_chr_names = []
-    for x in chr_nums:
-        try:
-            numeric_chr_names.append(int(x))
-        except ValueError:
-            numeric_chr_names.append(x)
+    # chr_nums = [x.lstrip("chr") for x in chr_names]
+    pre_chr_str_names = [str(x) for x in range(1, 23)] + ["X", "Y"]
 
     # sort the elements
     # include the header from the first one
     if args.ref != "GRCh37":
-        sorted_chr_names = ["chr" + str(x) for x in sorted(numeric_chr_names)]
+        sorted_chr_names = ["chr" + str(x) for x in pre_chr_str_names]
         call("zcat " + chrom_vcf_d["chrM"] + " | awk '$4 != \"N\"' > " + merged_vcf_file, shell=True)
 
     else:
-        sorted_chr_names = [str(x) for x in sorted(numeric_chr_names)]
+        sorted_chr_names = [str(x) for x in pre_chr_str_names]
         call("zcat " + chrom_vcf_d["MT"] + " | awk '$4 != \"N\"' > " + merged_vcf_file, shell=True)
 
     # zcat the rest, grepping out all header lines starting with "#"
