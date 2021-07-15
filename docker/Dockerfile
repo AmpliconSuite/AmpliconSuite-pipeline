@@ -12,11 +12,11 @@ RUN mkdir -p /home/programs
 
 #Download libraries for AA
 RUN apt-get update
-RUN apt-get install -y software-properties-common
+RUN apt-get install -f software-properties-common -y
 RUN add-apt-repository universe -y
 RUN apt-get install -y python2
-ADD https://bootstrap.pypa.io/get-pip.py /home/
-RUN python2 get-pip.py
+ADD https://bootstrap.pypa.io/pip/2.7/get-pip.py /home/programs
+RUN python2 /home/programs/get-pip.py
 RUN pip2 --version
 #RUN pip2 install --upgrade pip
 RUN apt-get update
