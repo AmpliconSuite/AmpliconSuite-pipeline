@@ -38,7 +38,7 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
         cmd = "bwa index " + ref
         call(cmd, shell=True)
 
-    print("Performing alignment and sorting")
+    print("\nPerforming alignment and sorting")
     if usingDeprecatedSamtools:
         cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 3G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref, fastqs, outname, outname)
@@ -48,11 +48,11 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
 
     print(cmd)
     call(cmd, shell=True)
-    print("Performing duplicate removal & indexing")
+    print("\nPerforming duplicate removal & indexing")
     cmd_list = ["samtools", "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
     print(" ".join(cmd_list))
     call(cmd_list)
-    print("Running samtools index")
+    print("\nRunning samtools index")
     cmd_list = ["samtools", "index", "{}.cs.rmdup.bam".format(outname)]
     print(" ".join(cmd_list))
     call(cmd_list)
@@ -62,10 +62,13 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
     return outname + ".cs.rmdup.bam"
 
 
-def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions):
+def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None):
     # Freebayes cmd-line args
     # -f is fasta
     # -r is region to call
+    fb_exec = "freebayes"
+    if fb_path:
+        fb_exec = fb_path + "/" + fb_exec
     while True:
         try:
             curr_region_tup = regions.pop()
@@ -76,9 +79,9 @@ def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions):
         print(curr_region_string + ". " + str(len(regions)) + " items remaining.")
         vcf_file = outdir + sname + "_" + curr_region_tup[0] + "_" + curr_region_tup[2] + ".vcf"
         replace_filter_field_func = "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\""
-        cmd = "freebayes --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 \
-        --strict-vcf -f {} -r {} {} | {} > {}".format(ref, curr_region_string, bam_file, replace_filter_field_func,
-                                                      vcf_file)
+        cmd = "{} --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 \
+        --strict-vcf -f {} -r {} {} | {} > {}".format(fb_exec, ref, curr_region_string, bam_file,
+                                                      replace_filter_field_func, vcf_file)
         call(cmd, shell=True)
         # gzip the new VCF
         call("gzip -f " + vcf_file, shell=True)
@@ -94,14 +97,13 @@ def run_canvas(canvas_dir, bam_file, vcf_file, outdir, removed_regions_bed, snam
     # -g: "folder with genome.fa and genomesize xml
     # -f: regions to ignore
 
-    print("Calling Canvas")
+    print("\nCalling Canvas")
     ref_repo = canvas_dir + "/canvasdata/" + args.ref + "/"
     # cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={}\
     # -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir,bam_file, \
     # vcf_file, ploidy_vcf, sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
-    cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} \
-    -r {} -g {} -f {} > {}/canvas_stdout.log".format(canvas_dir, bam_file, vcf_file, ploidy_vcf,
-                                                     sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
+    cmd = "{}/Canvas Germline-WGS -b {} --sample-b-allele-vcf={} --ploidy-vcf={} -n {} -o {} -r {} -g {} -f {} > {}/canvas_stdout.log".format(
+        canvas_dir, bam_file, vcf_file, ploidy_vcf, sname, outdir, ref, ref_repo, removed_regions_bed, outdir)
 
     print(cmd)
     call(cmd, shell=True, executable="/bin/bash")
@@ -126,7 +128,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, normal=None, refG=None, vcf
         ckpy_path += "/cnvkit.py"
 
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
-    print("Running CNVKit batch")
+    print("\nRunning CNVKit batch")
     if args.normal_bam:
         cmd = "{} {} batch {} -m wgs --fasta {} -p {} -d {} --normal {}".format(p3p, ckpy_path, bamfile, refG, nthreads,
                                                                                         outdir, normal)
@@ -145,7 +147,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, normal=None, refG=None, vcf
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
-    print("Running CNVKIt segment")
+    print("\nRunning CNVKIt segment")
     # TODO: possibly include support for adding VCF calls.
     cmd = "{} {} segment {} {} -p {} -o {}".format(p3p, ckpy_path, cnrFile, rscript_str, nthreads, cnsFile)
     print(cmd)
@@ -153,7 +155,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, normal=None, refG=None, vcf
 
 
 def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
-    print("Merging VCFs and zipping")
+    print("\nMerging VCFs and zipping")
     # collect the vcf files to merge
     merged_vcf_file = outdir + sname + "_merged.vcf"
     relevant_vcfs = [x for x in vcf_list if any([i in x for i in chr_names])]
@@ -169,22 +171,31 @@ def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
     # include the header from the first one
     if args.ref != "GRCh37":
         sorted_chr_names = ["chr" + str(x) for x in pre_chr_str_names]
-        if "chrM" in chrom_vcf_d:
-            call("zcat " + chrom_vcf_d["chrM"] + " | awk '$4 != \"N\"' > " + merged_vcf_file, shell=True)
+        cmd = "zcat " + chrom_vcf_d["chrM"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
 
     else:
         sorted_chr_names = [str(x) for x in pre_chr_str_names]
-        if "MT" in chrom_vcf_d:
-            call("zcat " + chrom_vcf_d["MT"] + " | awk '$4 != \"N\"' > " + merged_vcf_file, shell=True)
+        cmd = "zcat " + chrom_vcf_d["MT"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
+
+    print(cmd)
+    call(cmd, shell=True)
 
     # zcat the rest, grepping out all header lines starting with "#"
+    print(sorted_chr_names)
     for i in sorted_chr_names:
         if i == "chrM" or i == "MT":
             continue
-        call("zcat " + chrom_vcf_d[i + "p"] + " | grep -v \"^#\" | awk '$4 != \"N\"' >> " + merged_vcf_file, shell=True)
-        call("zcat " + chrom_vcf_d[i + "q"] + " | grep -v \"^#\" | awk '$4 != \"N\"' >> " + merged_vcf_file, shell=True)
 
-    call("gzip -f " + merged_vcf_file, shell=True)
+        cmd_p = "zcat " + chrom_vcf_d[i + "p"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
+        cmd_q = "zcat " + chrom_vcf_d[i + "q"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
+        print(cmd_p)
+        call(cmd_p, shell=True)
+        print(cmd_q)
+        call(cmd_q, shell=True)
+
+    cmd = "gzip -f " + merged_vcf_file
+    print(cmd)
+    call(cmd, shell=True)
 
     return merged_vcf_file + ".gz"
 
@@ -262,7 +273,7 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
 
 
 def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sname, cngain, cnsize_min):
-    print("Running amplified_intervals")
+    print("\nRunning amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
     cmd = "python2 {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out \
     {}".format(AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min), AA_seeds_filename)
@@ -273,7 +284,7 @@ def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sn
 
 
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref):
-    print("Running AA with default arguments (& downsample " + str(
+    print("\nRunning AA with default arguments (& downsample " + str(
         downsample) + "). To change settings run AA separately.")
     cmd = "python2 {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --out \
             {}/{}".format(AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, AA_outdir, sname)
@@ -337,6 +348,9 @@ if __name__ == '__main__':
                              ">3.4)")
     parser.add_argument("--python3_path",
                         help="Specify custom path to python3, if needed when using CNVKit (requires python3)")
+    parser.add_argument("--freebayes_dir", help="Path to directory where freebayes executable exists (not the path to "
+                                                "the executable itself). Only needed for Canvas and freebayes is not "
+                                                "installed on system path.", default=None)
     parser.add_argument("--aa_data_repo",
                         help="Specify a custom $AA_DATA_REPO path FOR PRELIMINARY STEPS ONLY(!). Will not override "
                              "bash variable during AA")
@@ -426,6 +440,8 @@ if __name__ == '__main__':
 
     # prompt user to clear old results
     elif runCNV == "Canvas":
+        try: input = raw_input
+        except NameError: pass
         user_input = input(
             "Canvas output files already exist here.\n Clear old Canvas results? (y/n) Highly recommended - will give "
             "error otherwise: ")
@@ -482,15 +498,17 @@ if __name__ == '__main__':
     if runCNV == "Canvas":
         if not merged_vcf_file:
             # Run FreeBayes, one instance per chromosome
+            print("\nRunning freebayes")
+            print("Using freebayes version:")
+            call("freebayes --version", shell=True)
             freebayes_output_directory = args.output_directory + "/freebayes_vcfs/"
             if not os.path.exists(freebayes_output_directory):
                 os.mkdir(freebayes_output_directory)
 
-            print("Running freebayes")
             threadL = []
             for i in range(int(args.nthreads)):
                 threadL.append(workerThread(i, run_freebayes, ref, args.sorted_bam, freebayes_output_directory, sname,
-                                            args.nthreads, regions))
+                                            args.nthreads, regions, args.freebayes_dir))
                 threadL[i].start()
 
             for t in threadL:
