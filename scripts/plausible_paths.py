@@ -190,8 +190,8 @@ parser = argparse.ArgumentParser(
     description="Attempt to identify a longest path in the breakpoint graph consistent with CN ratios")
 parser.add_argument("-g", "--graph", help="AA-formatted graph file", required=True)
 parser.add_argument("--scaling_factor", help="Estimated CN of elements appearing once in the amplicon, defaults to "
-                                             "median CN in graph however highly recommend user provide this value based "
-                                             "on manual inspection of the graph", type=float)
+                                             "median CN in graph however highly recommend user provide this value based"
+                                             " on manual inspection of the graph", type=float)
 parser.add_argument("--remove_short_jumps",
                     help="Remove very short discordant edges ( < 800 bp) which are not inversions", action="store_true")
 parser.add_argument("--keep_all_LC", help="Keep all longest cyclic paths of same score", action="store_true",
