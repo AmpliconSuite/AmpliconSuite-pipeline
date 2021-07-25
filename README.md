@@ -115,15 +115,17 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. We do not control thread usage of Canvas. Recommend 12 or more threads to be used.
 
+- `--sorted_bam [sample.cs.bam] OR --fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
+
 - `--canvas_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`) Path to directory containing the Canvas executable and `canvasdata/` subdirectory.
 
 - `--cnvkit_dir [/path/to/cnvkit.py]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--canvas_dir`) Path to directory containing cnvkit.py.
 
 - `--rscript_path [/path/to/Rscript]` (Required if system Rscript version < 3.5 and using `--cnvkit_dir`). Specify a path to a local installation of Rscript compatible with CNVkit.
 
-- `--python3_path` Specify custom path to python3, if needed when using CNVKit (which requires python3)
+- `--python3_path` (Optional) Specify custom path to python3, if needed when using CNVKit (which requires python3).
 
-- `--sorted_bam [sample.cs.bam] | --fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
+- `--freebayes_dir` (Optional) Specify custom path to freebayes installation folder (not path to executable). Only applied if using Canvas. Assumes freebayes on system path if not set.
 
 - `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
 
