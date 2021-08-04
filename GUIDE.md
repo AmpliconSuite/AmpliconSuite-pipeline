@@ -188,7 +188,7 @@ At the moment, we do not support adding additional tracks of data into the plot 
     
 - **AA has been running for more than 60 hours. What's wrong?**
     - Please ensure that you selected your CNV seeds appropriately. If you use a CN cutoff any lower than 4, and size < 10 kbp,
-     there can be a great many false positive focal amplifications. Secondly, please ensure you used `amplified_intervals.py` to select the CNV seeds appropriately.
+     there can be a great many false positive focal amplifications. Secondly, and very importantly, please ensure you used `amplified_intervals.py` to select the CNV seeds appropriately. If AA is running for > 1 week, please check that you are using the latest version of the data repo maintained by jluebeck, and consider changing `--cnsize_min 100000 --cngain 5`, and moving up from there with your cutoffs.
      
 - **In the amplicon visualizations, what are the different edge colors?**
     - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf).
@@ -208,5 +208,8 @@ At the moment, we do not support adding additional tracks of data into the plot 
  
 - **In the cycles file, what do the paths that begin/end with '0+' mean?** 
     - These indicate that the path is non-cylic, and proceeds or is preceeded by the next reference coordinate.  
+
+- **I am receiving warnings staring with `[root:WARNING]	dnlist0:`, what do these mean?**
+    - These warnings are harmless and expected parts of AA outputs, please ignore them. We will try to change them to debug level of logging in the future.
 #
  
