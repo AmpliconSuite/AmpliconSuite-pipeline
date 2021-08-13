@@ -210,11 +210,12 @@ or
 This will output an AA graph file(s) `/path/to/my_sample_ampliconX_cleaned_graph.txt`.
 
 ### - `graph_to_bed.py`
-Create a bed file of the graph segments and a bedpe file of the disordant graph edges.
+Create a bed file of the graph segments and a bedpe file of the disordant graph edges. Can also filter to only get segments with CN above `--min_cn`. 
+Setting `--unmerged` will not merge adjacent graph segments and will print the graph segment CN in the last column.
 
 Usage:
 
-`./scripts/graph_to_bed.py -g /path/to/sample_amplicon_graph.txt [--unmerged]`
+`./scripts/graph_to_bed.py -g /path/to/sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
 
 ### - `plausible_paths.py`
 Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified.

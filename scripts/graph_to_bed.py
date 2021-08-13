@@ -79,7 +79,7 @@ def merge_intervals(cn_segs):
     return msegs
 
 
-def make_bed(intD, min_cn = 0, unmerged = False):
+def make_bed(intD, min_cn=0, unmerged=False):
     # sort by chromosome name
     sortablenames = []
     realnames = intD.keys()
@@ -119,14 +119,16 @@ def write_bed(bedlist, ofname):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert segments in graph files to .bed format")
+    parser = argparse.ArgumentParser(description="Convert segments in graph files to .bed format. If CN column is "
+                                                 "desired, must set --unmerged.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-g", "--graph", help="Path to graph file. Either --graph or --input specifying a list are "
                                              "required", type=str)
     group.add_argument("-i", "--input", help="Path to list of files to use. Each line containing the path to a graph "
                                              "file in the last column", type=str)
     parser.add_argument("--min_cn", type=float, help="Minimum CN to report region (default 0)", default=0.0)
-    parser.add_argument("--unmerged", help="Do not merge adjacent intervals from graph file", action='store_true', default=False)
+    parser.add_argument("--unmerged", help="Do not merge adjacent intervals from graph file", action='store_true',
+                        default=False)
     parser.add_argument("--add_chr_tag", help="Add \'chr\' to the beginning of chromosome names in input files",
                         action='store_true', default=False)
     # parser.add_argument("--graph_edge_bedpe", help="Also report a .bedpe file of all breakpoint graph edges (default "
