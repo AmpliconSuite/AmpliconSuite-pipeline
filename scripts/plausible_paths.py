@@ -196,6 +196,9 @@ parser.add_argument("--remove_short_jumps",
                     help="Remove very short discordant edges ( < 800 bp) which are not inversions", action="store_true")
 parser.add_argument("--keep_all_LC", help="Keep all longest cyclic paths of same score", action="store_true",
                     default=False)
+parser.add_argument("--minimum_cn_for_median_calculation", help="If not setting scaling factor manually, set a minimum "
+                                                                "copy number for the scaling factor median amplified CN"
+                                                                "calculation (default 4.5)", type=float, default=4.5)
 
 args = parser.parse_args()
 
@@ -207,7 +210,7 @@ if args.scaling_factor:
 
 else:
     print("using median as scaling factor")
-    scaling_factor = np.median([x for x in raw_cn.values() if x > 4.5])
+    scaling_factor = np.median([x for x in raw_cn.values() if x > args.minimum_cn_for_median_calculation])
 
 print("scaling factor: ", scaling_factor)
 scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
