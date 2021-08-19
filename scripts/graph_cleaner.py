@@ -50,13 +50,13 @@ def read_graph(graphf, maxhopsize, filter_non_everted, max_support):
 
                 # expected orientation: ldir == "+" and rdir == "-", on concordant but backwards for discordant:
                 if support <= max_support:
-                    if fields[0] == "discordant" and rchrom == lchrom and 0 < lpos - rpos <= maxhopsize and \
+                    if fields[0] == "discordant" and rchrom == lchrom and 0 < abs(lpos - rpos) <= maxhopsize and \
                             ldir == '+' and rdir == '-':
                         print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
                         removed_count+=1
                         continue
 
-                    if fields[0] == "discordant" and rchrom == lchrom and 0 < lpos - rpos <= maxhopsize and \
+                    if fields[0] == "discordant" and rchrom == lchrom and 0 < abs(lpos - rpos) <= maxhopsize and \
                             ldir == '-' and rdir == '+' and filter_non_everted:
                         print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
                         removed_count+=1
