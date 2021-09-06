@@ -3,11 +3,13 @@
 # author: Jens Luebeck (jluebeck [at] ucsd.edu)
 
 import os
-import sys
 import copy
-import numpy as np
 import argparse
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 id_to_coords = {}
 end_to_id = {}
@@ -152,6 +154,17 @@ def get_scaled_cns(raw_cn, scaling_factor):
     return scaled_cns
 
 
+def get_median_cn(min_cn_cutoff, runmode, min_cn_seg_size=100):
+    useable_cns = [y for x,y in raw_cn.items() if id_to_coords[x][2] - id_to_coords[x][1] > min_cn_seg_size]
+    m_u_cn = max(useable_cns)
+    if runmode == 'isolated':
+        p10 = m_u_cn/10.0 if m_u_cn > 10000 else m_u_cn/20.0
+        min_cn_cutoff = max(p10, min_cn_cutoff)
+
+    print("Setting min cn cutoff to " + str(min_cn_cutoff))
+    return np.median([x for x in useable_cns if x > min_cn_cutoff])
+
+
 def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname):
     with open(ofname, 'w') as outfile:
         postups = [v for k, v in sorted(id_to_coords.items()) if k > 0]
@@ -186,6 +199,50 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname):
                     pweights[pind] + ";Segments=" + ",".join(fmtP) + "\n")
 
 
+def get_cmap(n, name='hsv'):
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
+    RGB color; the keyword argument name must be a standard mpl colormap name.'''
+    return plt.cm.get_cmap(name, n)
+
+def plot_cn_and_multiplicity():
+    us_id, us_scn, us_rcn, us_cols = [], [], [], []
+    cmap = get_cmap(len(set(scaled_cns.values()))+1)
+    for x,y in scaled_cns.items():
+        us_id.append(int(x))
+        us_scn.append(y)
+        us_rcn.append(raw_cn[x])
+        us_cols.append(cmap(y))
+
+    sorted_cns, sorted_ids, sorted_mults, sorted_cols = zip(*sorted(zip(us_rcn, us_id, us_scn, us_cols)))
+    # plt.style.use('ggplot')
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    x_pos = list(range(len(sorted_ids)))
+
+    ax1.bar(x_pos, sorted_cns, color=sorted_cols)
+
+    ax1.set_ylim(bottom=0)
+    ymin, ymax = ax1.get_ylim()
+    ax2_yticks = [x*scaling_factor for x in range(0, int(max(sorted_mults)) + 1)]
+    ax1.set_ylim(bottom=0, top = max(ax2_yticks[-1], ymax))
+    ymin, ymax = ax1.get_ylim()
+    ax2.set_ylim(bottom=0, top=ymax)
+    ax2.set_yticks(ax2_yticks)
+    ax2.set_yticklabels([str(x) for x in range(0, int(max(sorted_mults)) + 1)])
+
+    for x, m in zip(x_pos, sorted_mults):
+        ax1.hlines(m*scaling_factor, x, x+1, color='k')
+        ax1.hlines(m*scaling_factor - 0.5*scaling_factor, x, x+1, color='lightgrey',linestyles='dashed')
+        ax1.hlines(m*scaling_factor + 0.5*scaling_factor, x, x+1, color='lightgrey',linestyles='dashed')
+
+
+    plt.xlabel("Segment ID")
+    plt.xticks(x_pos, sorted_ids)
+    # plt.xticks(rotation=90, fontsize=1)
+    ax1.set_xticklabels(sorted_ids, rotation=90, fontsize=3)
+    plt.savefig(ofpre + "_CN_multiplcity_plot.png", dpi=300)
+
+
 parser = argparse.ArgumentParser(
     description="Attempt to identify a longest path in the breakpoint graph consistent with CN ratios")
 parser.add_argument("-g", "--graph", help="AA-formatted graph file", required=True)
@@ -199,18 +256,25 @@ parser.add_argument("--keep_all_LC", help="Keep all longest cyclic paths of same
 parser.add_argument("--minimum_cn_for_median_calculation", help="If not setting scaling factor manually, set a minimum "
                                                                 "copy number for the scaling factor median amplified CN"
                                                                 "calculation (default 4.5)", type=float, default=4.5)
+# parser.add_argument("--length_estimate", help="Target size of the path (in kbp)", type=float)
+parser.add_argument("--runmode", help="Default mode is 'bulk' for bulk WGS. Also supports 'isolated' mode for PFGE or "
+                        "targeted sequencing.", choices=['bulk', 'isolated'])
 
 args = parser.parse_args()
 
 read_graph(args.graph, args.remove_short_jumps)
 # print(len(edgeDict)/2, "edges will be considered")
 
+ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
+ofname = ofpre + "_candidate_cycles.txt"
+
 if args.scaling_factor:
     scaling_factor = args.scaling_factor
 
 else:
     print("using median as scaling factor")
-    scaling_factor = np.median([x for x in raw_cn.values() if x > args.minimum_cn_for_median_calculation])
+    # scaling_factor = np.median([x for x in raw_cn.values() if x > args.minimum_cn_for_median_calculation])
+    scaling_factor = get_median_cn(args.minimum_cn_for_median_calculation, args.runmode)
 
 print("scaling factor: ", scaling_factor)
 scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
@@ -225,6 +289,8 @@ scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
 
 # print("starting search from ",maxSeg, maxEC)
 # longest_path, longestCyclicPath = DFS(maxSeg)
+
+plot_cn_and_multiplicity()
 
 longest_cps = []
 longest_path = []
@@ -243,11 +309,12 @@ for av, cn in scaled_cns.items():
                 longestCyclicPath = clcp
                 longest_cps = [longestCyclicPath]
 
+total_amp_content = sum([x[2] - x[1] for s, x in id_to_coords.items() if s > 0 and scaled_cns[s] > 0])
+print(total_amp_content, " amplified length\n")
+
 print(longest_path, "longest noncyclic")
 print(longestCyclicPath, "longest cyclic")
 
-total_amp_content = sum([x[2] - x[1] for s, x in id_to_coords.items() if s > 0 and scaled_cns[s] > 0])
-print(total_amp_content, " amplified length")
 
 pweights = []
 if not args.keep_all_LC:
@@ -255,12 +322,13 @@ if not args.keep_all_LC:
 
 else:
     # remove duplicates
-    print("removing duplicates")
+    print("\nremoving duplicate paths\n")
     longest_cps = remove_duplicate_paths(longest_cps)
     longest_cps.append(longest_path)
     paths = longest_cps
 
 for p in paths:
+    print(p)
     cn_remainder_counts = copy.copy(scaled_cns)
     path_amp_content = 0
     seen = set()
@@ -278,6 +346,8 @@ for p in paths:
     for s in sorted(cn_remainder_counts.keys()):
         if cn_remainder_counts[s] > 0:
             print(s, cn_remainder_counts[s])
+
+    print("")
 
 ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
 write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname)
