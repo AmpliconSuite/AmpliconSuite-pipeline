@@ -155,17 +155,18 @@ def get_scaled_cns(raw_cn, scaling_factor):
 
 
 def get_median_cn(min_cn_cutoff, runmode, min_cn_seg_size=100):
-    useable_cns = [y for x,y in raw_cn.items() if id_to_coords[x][2] - id_to_coords[x][1] > min_cn_seg_size]
+    useable_cns = [y for x,y in raw_cn.items() if abs(id_to_coords[x][2] - id_to_coords[x][1]) > min_cn_seg_size]
     m_u_cn = max(useable_cns)
     if runmode == 'isolated':
         p10 = m_u_cn/10.0 if m_u_cn > 10000 else m_u_cn/20.0
         min_cn_cutoff = max(p10, min_cn_cutoff)
 
     print("Setting min cn cutoff to " + str(min_cn_cutoff))
-    return np.median([x for x in useable_cns if x > min_cn_cutoff])
+    #return np.median([x for x in useable_cns if x > min_cn_cutoff])
+    return np.percentile([x for x in useable_cns if x > min_cn_cutoff], 40)
 
 
-def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname):
+def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens):
     with open(ofname, 'w') as outfile:
         postups = [v for k, v in sorted(id_to_coords.items()) if k > 0]
         pchrom, pstart, pend, iind, sind = postups[0][0], postups[0][1], postups[0][2], 1, 1
@@ -196,17 +197,18 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname):
 
                 outfile.write(
                     "Cycle=" + str(pind + 1) + ";Copy_count=" + str(scaling_factor) + ";ProportionAmplifiedExplained=" +
-                    pweights[pind] + ";Segments=" + ",".join(fmtP) + "\n")
+                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" + "\n")
 
 
-def get_cmap(n, name='hsv'):
+def get_cmap(n, name='jet'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
     return plt.cm.get_cmap(name, n)
 
+
 def plot_cn_and_multiplicity():
     us_id, us_scn, us_rcn, us_cols = [], [], [], []
-    cmap = get_cmap(len(set(scaled_cns.values()))+1)
+    cmap = get_cmap(len(set(scaled_cns.values())))
     for x,y in scaled_cns.items():
         us_id.append(int(x))
         us_scn.append(y)
@@ -235,12 +237,11 @@ def plot_cn_and_multiplicity():
         ax1.hlines(m*scaling_factor - 0.5*scaling_factor, x, x+1, color='lightgrey',linestyles='dashed')
         ax1.hlines(m*scaling_factor + 0.5*scaling_factor, x, x+1, color='lightgrey',linestyles='dashed')
 
-
     plt.xlabel("Segment ID")
     plt.xticks(x_pos, sorted_ids)
     # plt.xticks(rotation=90, fontsize=1)
     ax1.set_xticklabels(sorted_ids, rotation=90, fontsize=3)
-    plt.savefig(ofpre + "_CN_multiplcity_plot.png", dpi=300)
+    plt.savefig(ofpre + "_CN_multiplicity_plot.png", dpi=300)
 
 
 parser = argparse.ArgumentParser(
@@ -327,8 +328,12 @@ else:
     longest_cps.append(longest_path)
     paths = longest_cps
 
+plens = []
 for p in paths:
     print(p)
+    plen = sum([abs(id_to_coords[k][1] - id_to_coords[k][2]) for k in p])
+    plens.append(plen)
+    print("Path length: " + str(plen))
     cn_remainder_counts = copy.copy(scaled_cns)
     path_amp_content = 0
     seen = set()
@@ -350,4 +355,4 @@ for p in paths:
     print("")
 
 ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
-write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname)
+write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens)
