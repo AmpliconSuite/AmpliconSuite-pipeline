@@ -163,10 +163,28 @@ def get_median_cn(min_cn_cutoff, runmode, min_cn_seg_size=100):
 
     print("Setting min cn cutoff to " + str(min_cn_cutoff))
     #return np.median([x for x in useable_cns if x > min_cn_cutoff])
-    return np.percentile([x for x in useable_cns if x > min_cn_cutoff], 40)
+    return np.percentile([x for x in useable_cns if x > min_cn_cutoff], 40), min_cn_cutoff
 
 
-def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens):
+def compute_wrmsr(scaling_factor, scaled_cns, path, raw_cn, min_cn_cutoff):
+    wmse = 0
+    mult = defaultdict(int)
+    for x in path:
+        s = abs(x)
+        seen.add(s)
+        mult[s] += 1
+
+    for s, c in scaled_cns.items():
+        # l = (id_to_coords[s][2] - id_to_coords[s][1])/1000.0
+        if c > 0:
+            yo = mult[s]*scaling_factor
+            ye = raw_cn[s]
+            wmse += ((yo - ye)**2)
+
+    return round((wmse/len(scaled_cns))**0.5, 3)
+
+
+def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs):
     with open(ofname, 'w') as outfile:
         postups = [v for k, v in sorted(id_to_coords.items()) if k > 0]
         pchrom, pstart, pend, iind, sind = postups[0][0], postups[0][1], postups[0][2], 1, 1
@@ -197,7 +215,8 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, ple
 
                 outfile.write(
                     "Cycle=" + str(pind + 1) + ";Copy_count=" + str(scaling_factor) + ";ProportionAmplifiedExplained=" +
-                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" + "\n")
+                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" + ";WRMSE=" +
+                    str(perrs[pind]) + "\n")
 
 
 def get_cmap(n, name='jet'):
@@ -268,6 +287,7 @@ read_graph(args.graph, args.remove_short_jumps)
 
 ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
 ofname = ofpre + "_candidate_cycles.txt"
+min_cn_cutoff = args.minimum_cn_for_median_calculation
 
 if args.scaling_factor:
     scaling_factor = args.scaling_factor
@@ -275,7 +295,7 @@ if args.scaling_factor:
 else:
     print("using median as scaling factor")
     # scaling_factor = np.median([x for x in raw_cn.values() if x > args.minimum_cn_for_median_calculation])
-    scaling_factor = get_median_cn(args.minimum_cn_for_median_calculation, args.runmode)
+    scaling_factor, min_cn_cutoff = get_median_cn(args.minimum_cn_for_median_calculation, args.runmode)
 
 print("scaling factor: ", scaling_factor)
 scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
@@ -329,10 +349,12 @@ else:
     paths = longest_cps
 
 plens = []
+perrs = []
 for p in paths:
     print(p)
     plen = sum([abs(id_to_coords[k][1] - id_to_coords[k][2]) for k in p])
     plens.append(plen)
+    perrs.append(compute_wrmsr(scaling_factor, scaled_cns, p, raw_cn, min_cn_cutoff))
     print("Path length: " + str(plen))
     cn_remainder_counts = copy.copy(scaled_cns)
     path_amp_content = 0
@@ -355,4 +377,4 @@ for p in paths:
     print("")
 
 ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
-write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens)
+write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs)
