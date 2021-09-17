@@ -166,22 +166,20 @@ def get_median_cn(min_cn_cutoff, runmode, min_cn_seg_size=100):
     return np.percentile([x for x in useable_cns if x > min_cn_cutoff], 40), min_cn_cutoff
 
 
-def compute_wrmsr(scaling_factor, scaled_cns, path, raw_cn, min_cn_cutoff):
-    wmse = 0
+def compute_rmsr(scaling_factor, scaled_cns, path, raw_cn):
+    mse = 0
     mult = defaultdict(int)
     for x in path:
         s = abs(x)
-        seen.add(s)
         mult[s] += 1
 
     for s, c in scaled_cns.items():
-        # l = (id_to_coords[s][2] - id_to_coords[s][1])/1000.0
         if c > 0:
             yo = mult[s]*scaling_factor
             ye = raw_cn[s]
-            wmse += ((yo - ye)**2)
+            mse += ((yo - ye)**2)
 
-    return round((wmse/len(scaled_cns))**0.5, 3)
+    return round((mse/len(scaled_cns))**0.5, 3)
 
 
 def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs):
@@ -215,7 +213,7 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, ple
 
                 outfile.write(
                     "Cycle=" + str(pind + 1) + ";Copy_count=" + str(scaling_factor) + ";ProportionAmplifiedExplained=" +
-                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" + ";WRMSE=" +
+                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" + ";RMSR=" +
                     str(perrs[pind]) + "\n")
 
 
@@ -354,7 +352,7 @@ for p in paths:
     print(p)
     plen = sum([abs(id_to_coords[k][1] - id_to_coords[k][2]) for k in p])
     plens.append(plen)
-    perrs.append(compute_wrmsr(scaling_factor, scaled_cns, p, raw_cn, min_cn_cutoff))
+    perrs.append(compute_rmsr(scaling_factor, scaled_cns, p, raw_cn, min_cn_cutoff))
     print("Path length: " + str(plen))
     cn_remainder_counts = copy.copy(scaled_cns)
     path_amp_content = 0

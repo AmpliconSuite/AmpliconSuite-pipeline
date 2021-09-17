@@ -221,7 +221,7 @@ Usage:
 Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified.
 `plausible_paths` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
 searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
-The output will be an AA-formatted cycles file with additional annotations for length and fit score ("WRMSE", lower is better).
+The output will be an AA-formatted cycles file with additional annotations for length and fit score ("RMSR", based on root mean square residual of copy numbers. Lower score is better).
 The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path.
 
 ### - `bfb_foldback_detection.py [deprecated]`
