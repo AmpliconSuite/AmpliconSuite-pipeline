@@ -352,7 +352,7 @@ for p in paths:
     print(p)
     plen = sum([abs(id_to_coords[k][1] - id_to_coords[k][2]) for k in p])
     plens.append(plen)
-    perrs.append(compute_rmsr(scaling_factor, scaled_cns, p, raw_cn, min_cn_cutoff))
+    perrs.append(compute_rmsr(scaling_factor, scaled_cns, p, raw_cn))
     print("Path length: " + str(plen))
     cn_remainder_counts = copy.copy(scaled_cns)
     path_amp_content = 0
