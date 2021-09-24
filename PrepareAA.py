@@ -357,17 +357,20 @@ if __name__ == '__main__':
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
     parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)", default=None)
     parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)", default=None)
+    parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
+                        action='store_true')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sorted_bam", help="Sorted BAM file (aligned to an AA-supported reference.)")
     group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
     group2 = parser.add_mutually_exclusive_group(required=True)
     group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
                         "intervals immediately.", action='store_true')
-    group2.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should "
-                        "be: chr start end name cngain", default="")
+    group2.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
+                        " be: chr start end name cngain", default="")
     group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
                         "(reference files organized by reference name).", default="")
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
+
 
     args = parser.parse_args()
     print(str(datetime.now()))
@@ -544,8 +547,11 @@ if __name__ == '__main__':
     if args.cnv_bed.endswith(".cns"):
         args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, args.cnv_bed)
 
-    amplified_interval_bed = run_amplified_intervals(args.cnv_bed, args.sorted_bam, outdir, sname, args.cngain,
+    if not args.no_filter:
+        amplified_interval_bed = run_amplified_intervals(args.cnv_bed, args.sorted_bam, outdir, sname, args.cngain,
                                                      args.cnsize_min)
+    else:
+        amplified_interval_bed = args.cnv_bed
 
     # Run AA
     if args.run_AA:

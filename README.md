@@ -2,7 +2,7 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19 (or GRCh37) and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.1**
+PrepareAA supports hg19 (or GRCh37) and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.2**
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 
@@ -144,6 +144,8 @@ A description of other command line arguments for PrepareAA is provided below
 - `--reuse_canvas` (Optional) Reuse the Canvas results from a previous run. Default: False
 
 - `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps. Bed file with CN estimate in last column or CNVKit .cns file.
+
+- `--no_filter`: (Optional) Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions. 
 
 - `--normal_bam [matched_normal.bam]` (Optional) Specify a matched normal BAM file for CNVKit. Not used by AA itself.
 
