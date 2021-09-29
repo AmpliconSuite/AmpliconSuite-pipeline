@@ -6,12 +6,13 @@ import os
 import copy
 import argparse
 from collections import defaultdict
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 id_to_coords = {}
+id_to_len = {}
 end_to_id = {}
 start_to_id = {}
 
@@ -24,10 +25,11 @@ len_zero_segs = set()
 
 
 # DFS recursion
-def DFSUtil(v, currPath, usedCN, lcp):
+def DFSUtil(v, currPath, usedCN, lcp, clen):
     # Mark the current node as visited
     usedCN[abs(v)] += 1
     currPath.append(v)
+    clen += id_to_len[v]
 
     # Recur for all the vertices
     # adjacent to this vertex
@@ -37,8 +39,8 @@ def DFSUtil(v, currPath, usedCN, lcp):
         lcp = currPath
 
     for i in currEdgeSet:
-        if usedCN[abs(i)] < scaled_cns[abs(i)]:
-            retPath, clcp = DFSUtil(i, copy.copy(currPath), copy.copy(usedCN), copy.copy(lcp))
+        if usedCN[abs(i)] < scaled_cns[abs(i)] and clen < max_length:
+            retPath, clcp = DFSUtil(i, copy.copy(currPath), copy.copy(usedCN), copy.copy(lcp), clen)
             if len(retPath) > len(cLPath):
                 cLPath = retPath
 
@@ -52,9 +54,10 @@ def DFSUtil(v, currPath, usedCN, lcp):
 def DFS(v):
     usedCN = [0] * len(edgeDict)
     currPath, lcp = [], []
+    clen = 0
 
     # Call the recursive helper function
-    lp, lcp = DFSUtil(v, currPath, usedCN, lcp)
+    lp, lcp = DFSUtil(v, currPath, usedCN, lcp, clen)
     return lp, lcp
 
 
@@ -92,6 +95,8 @@ def read_graph(graphf, skip_short_jumps):
 
                 id_to_coords[seqN] = (chrom, p1, p2)
                 id_to_coords[-1 * seqN] = (chrom, p2, p1)
+                id_to_len[seqN] = abs(p2 - p1)
+                id_to_len[-1 * seqN] = abs(p2 - p1)
 
                 end_to_id[(chrom, p2)] = seqN
                 start_to_id[(chrom, p1)] = seqN
@@ -155,14 +160,14 @@ def get_scaled_cns(raw_cn, scaling_factor):
 
 
 def get_median_cn(min_cn_cutoff, runmode, min_cn_seg_size=100):
-    useable_cns = [y for x,y in raw_cn.items() if abs(id_to_coords[x][2] - id_to_coords[x][1]) > min_cn_seg_size]
+    useable_cns = [y for x, y in raw_cn.items() if abs(id_to_coords[x][2] - id_to_coords[x][1]) > min_cn_seg_size]
     m_u_cn = max(useable_cns)
     if runmode == 'isolated':
-        p10 = m_u_cn/10.0 if m_u_cn > 10000 else m_u_cn/20.0
+        p10 = m_u_cn / 10.0 if m_u_cn > 10000 else m_u_cn / 20.0
         min_cn_cutoff = max(p10, min_cn_cutoff)
 
     print("Setting min cn cutoff to " + str(min_cn_cutoff))
-    #return np.median([x for x in useable_cns if x > min_cn_cutoff])
+    # return np.median([x for x in useable_cns if x > min_cn_cutoff])
     return np.percentile([x for x in useable_cns if x > min_cn_cutoff], 40), min_cn_cutoff
 
 
@@ -175,11 +180,11 @@ def compute_rmsr(scaling_factor, scaled_cns, path, raw_cn):
 
     for s, c in scaled_cns.items():
         if c > 0:
-            yo = mult[s]*scaling_factor
+            yo = mult[s] * scaling_factor
             ye = raw_cn[s]
-            mse += ((yo - ye)**2)
+            mse += ((yo - ye) ** 2)
 
-    return round((mse/len(scaled_cns))**0.5, 3)
+    return round((mse / len(scaled_cns)) ** 0.5, 3)
 
 
 def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs):
@@ -226,7 +231,7 @@ def get_cmap(n, name='jet'):
 def plot_cn_and_multiplicity():
     us_id, us_scn, us_rcn, us_cols = [], [], [], []
     cmap = get_cmap(len(set(scaled_cns.values())))
-    for x,y in scaled_cns.items():
+    for x, y in scaled_cns.items():
         us_id.append(int(x))
         us_scn.append(y)
         us_rcn.append(raw_cn[x])
@@ -242,17 +247,17 @@ def plot_cn_and_multiplicity():
 
     ax1.set_ylim(bottom=0)
     ymin, ymax = ax1.get_ylim()
-    ax2_yticks = [x*scaling_factor for x in range(0, int(max(sorted_mults)) + 1)]
-    ax1.set_ylim(bottom=0, top = max(ax2_yticks[-1], ymax))
+    ax2_yticks = [x * scaling_factor for x in range(0, int(max(sorted_mults)) + 1)]
+    ax1.set_ylim(bottom=0, top=max(ax2_yticks[-1], ymax))
     ymin, ymax = ax1.get_ylim()
     ax2.set_ylim(bottom=0, top=ymax)
     ax2.set_yticks(ax2_yticks)
     ax2.set_yticklabels([str(x) for x in range(0, int(max(sorted_mults)) + 1)])
 
     for x, m in zip(x_pos, sorted_mults):
-        ax1.hlines(m*scaling_factor, x, x+1, color='k')
-        ax1.hlines(m*scaling_factor - 0.5*scaling_factor, x, x+1, color='lightgrey',linestyles='dashed')
-        ax1.hlines(m*scaling_factor + 0.5*scaling_factor, x, x+1, color='lightgrey',linestyles='dashed')
+        ax1.hlines(m * scaling_factor, x, x + 1, color='k')
+        ax1.hlines(m * scaling_factor - 0.5 * scaling_factor, x, x + 1, color='lightgrey', linestyles='dashed')
+        ax1.hlines(m * scaling_factor + 0.5 * scaling_factor, x, x + 1, color='lightgrey', linestyles='dashed')
 
     plt.xlabel("Segment ID")
     plt.xticks(x_pos, sorted_ids)
@@ -273,10 +278,12 @@ parser.add_argument("--keep_all_LC", help="Keep all longest cyclic paths of same
                     default=False)
 parser.add_argument("--minimum_cn_for_median_calculation", help="If not setting scaling factor manually, set a minimum "
                                                                 "copy number for the scaling factor median amplified CN"
-                                                                "calculation (default 4.5)", type=float, default=4.5)
+                                                                " calculation (default 4.5)", type=float, default=4.5)
 # parser.add_argument("--length_estimate", help="Target size of the path (in kbp)", type=float)
 parser.add_argument("--runmode", help="Default mode is 'bulk' for bulk WGS. Also supports 'isolated' mode for PFGE or "
-                        "targeted sequencing.", choices=['bulk', 'isolated'])
+                                      "targeted sequencing.", choices=['bulk', 'isolated'])
+parser.add_argument("--max_length", dest="max_length", help="Maximum length of allowed paths in kbp (default: "
+                                                        "unconstrained)", type=float, default=sys.float_info.max/1000)
 
 args = parser.parse_args()
 
@@ -286,6 +293,7 @@ read_graph(args.graph, args.remove_short_jumps)
 ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
 ofname = ofpre + "_candidate_cycles.txt"
 min_cn_cutoff = args.minimum_cn_for_median_calculation
+max_length = args.max_length * 1000
 
 if args.scaling_factor:
     scaling_factor = args.scaling_factor
@@ -334,7 +342,6 @@ print(total_amp_content, " amplified length\n")
 print(longest_path, "longest noncyclic")
 print(longestCyclicPath, "longest cyclic")
 
-
 pweights = []
 if not args.keep_all_LC:
     paths = [longestCyclicPath, longest_path]
@@ -350,7 +357,7 @@ plens = []
 perrs = []
 for p in paths:
     print(p)
-    plen = sum([abs(id_to_coords[k][1] - id_to_coords[k][2]) for k in p])
+    plen = sum([id_to_len[k] for k in p])
     plens.append(plen)
     perrs.append(compute_rmsr(scaling_factor, scaled_cns, p, raw_cn))
     print("Path length: " + str(plen))
