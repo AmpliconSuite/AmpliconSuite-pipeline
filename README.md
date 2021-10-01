@@ -2,7 +2,7 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19 (or GRCh37) and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.3**
+PrepareAA supports hg19 (or GRCh37) and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.4**
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 

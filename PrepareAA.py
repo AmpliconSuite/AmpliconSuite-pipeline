@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# author: Jens Luebeck (jluebeck [at] ucsd.edu)
+
 import argparse
 from datetime import datetime
 import gzip

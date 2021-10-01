@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# author: Jens Luebeck (jluebeck [at] ucsd.edu)
+
 import argparse
 from collections import defaultdict
 import os
