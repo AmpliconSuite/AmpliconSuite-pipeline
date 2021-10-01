@@ -269,10 +269,9 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, ple
             norm_rmse = perrs[pind]
             if p:
                 if glob_filters:
+                    filter_string = glob_filters
                     if norm_rmse > 1:
-                        glob_filters += "RMSR"
-
-                    filter_string=glob_filters
+                        filter_string += "RMSR"
 
                 elif norm_rmse > 1:
                     filter_string = "RMSR"
@@ -288,7 +287,7 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, ple
                 outfile.write(
                     "Cycle=" + str(pind + 1) + ";Copy_count=" + str(scaling_factor) + ";ProportionAmplifiedExplained=" +
                     pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" +
-                    ";Norm_RMSR=" + str(norm_rmse) + ";FILTER=" + filter_string + "\n")
+                    ";Norm_RMSR=" + str(norm_rmse) + ";DBI=" + str(dbi) + ";FILTER=" + filter_string + "\n")
 
 
 def get_cmap(n, name='jet'):
