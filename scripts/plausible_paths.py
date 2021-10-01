@@ -23,6 +23,9 @@ edgeDict = defaultdict(set)
 raw_cn = defaultdict(float)
 len_zero_segs = set()
 
+# cutoff for filtering of paths
+dbi_cutoff = 0.433
+
 
 # DFS recursion
 def DFSUtil(v, currPath, usedCN, lcp, clen):
@@ -39,7 +42,7 @@ def DFSUtil(v, currPath, usedCN, lcp, clen):
         lcp = currPath
 
     for i in currEdgeSet:
-        if usedCN[abs(i)] < scaled_cns[abs(i)] and clen < max_length:
+        if usedCN[abs(i)] < scaled_cns[abs(i)] and clen + id_to_len[i] < max_length:
             retPath, clcp = DFSUtil(i, copy.copy(currPath), copy.copy(usedCN), copy.copy(lcp), clen)
             if len(retPath) > len(cLPath):
                 cLPath = retPath
@@ -82,6 +85,7 @@ def remove_duplicate_paths(candidates):
 
 # read the graph and make dictionary of edges
 def read_graph(graphf, skip_short_jumps):
+    discordant_edgecount = 0
     with open(graphf) as infile:
         seqN = 0
         for line in infile:
@@ -141,7 +145,10 @@ def read_graph(graphf, skip_short_jumps):
                     edgeDict[leftI].add(-1 * rightI)
                     edgeDict[-1 * rightI].add(leftI)
 
-            # print(fields[1], leftI, rightI)
+                if fields[0] == "discordant":
+                    discordant_edgecount += 1
+
+    return discordant_edgecount
 
 
 def get_scaled_cns(raw_cn, scaling_factor):
@@ -174,20 +181,68 @@ def get_median_cn(min_cn_cutoff, runmode, min_cn_seg_size=100):
 def compute_rmsr(scaling_factor, scaled_cns, path, raw_cn):
     mse = 0
     mult = defaultdict(int)
+    max_raw_cn = max(raw_cn.values())
+
     for x in path:
         s = abs(x)
         mult[s] += 1
 
     for s, c in scaled_cns.items():
         if c > 0:
-            yo = mult[s] * scaling_factor
-            ye = raw_cn[s]
+            # yo = mult[s] * scaling_factor / max_raw_cn
+            # ye = raw_cn[s] / max_raw_cn
+            yo = mult[s]
+            ye = raw_cn[s] / scaling_factor
             mse += ((yo - ye) ** 2)
 
-    return round((mse / len(scaled_cns)) ** 0.5, 3)
+    return (mse / len(scaled_cns)) ** 0.5
+
+# Compute 1d_davies_bouldin with min max normalization
+def compute_1d_davies_bouldin(scaling_factor, scaled_cns, raw_cn, keep_zero_cn=False):
+    # cns_non_zero_mult = [x for x in raw_cn.values() if x/scaling_factor < 0.5]
+    # rmin, rmax = min(cns_non_zero_mult), max(cns_non_zero_mult)
+    if keep_zero_cn:
+    #     rmin = 0
+        csi = 0
+    else:
+        csi = 1
+    #
+    # # min_max_d = rmax - rmin
+    # min_max_d = 1
+
+    n_clusts = int(max(scaled_cns.values())) + 1
+    clusters = [[] for _ in range(n_clusts)]
+    # reformat into cluster
+    for s, v in scaled_cns.items():
+        clusters[int(v)].append(raw_cn[s])
+
+    # compute the centroids of each
+    centroids = [np.mean(cx) if len(cx) > 1 else 0 for cx in clusters]
+
+    # compute the scatters
+    scatters = [sum([abs(j - centroids[i]) for j in cx])/len(cx) if len(cx) > 1 else 0 for i, cx in enumerate(clusters)]
+
+    dvals = []
+    # go from 1 to skip the CN 0 cluster
+    for i in range(csi, n_clusts):
+        if not len(clusters[i]) > 1:
+            continue
+
+        maxdi = 0
+        for j in range(csi, n_clusts):
+            if i == j or not len(clusters[j]) > 1:
+                continue
+
+            Rij = (scatters[i] + scatters[j])/abs(centroids[i] - centroids[j])
+            maxdi = max(maxdi, Rij)
+
+        if maxdi > 0:
+            dvals.append(maxdi)
+
+    return np.mean(dvals)
 
 
-def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs):
+def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs, glob_filters):
     with open(ofname, 'w') as outfile:
         postups = [v for k, v in sorted(id_to_coords.items()) if k > 0]
         pchrom, pstart, pend, iind, sind = postups[0][0], postups[0][1], postups[0][2], 1, 1
@@ -211,15 +266,29 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, ple
             outfile.write("\t".join(sl) + "\n")
 
         for pind, p in enumerate(paths):
+            norm_rmse = perrs[pind]
             if p:
+                if glob_filters:
+                    if norm_rmse > 1:
+                        glob_filters += "RMSR"
+
+                    filter_string=glob_filters
+
+                elif norm_rmse > 1:
+                    filter_string = "RMSR"
+
+                else:
+                    filter_string = "PASS"
+
+                filter_string.rstrip(",")
                 fmtP = [str(abs(x)) + "+" if x > 0 else str(abs(x)) + "-" for x in p]
                 if p[0] not in edgeDict[p[-1]]:
                     fmtP = ["0+", ] + fmtP + ["0-", ]
 
                 outfile.write(
                     "Cycle=" + str(pind + 1) + ";Copy_count=" + str(scaling_factor) + ";ProportionAmplifiedExplained=" +
-                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" + ";RMSR=" +
-                    str(perrs[pind]) + "\n")
+                    pweights[pind] + ";Segments=" + ",".join(fmtP) + ";Length=" + str(plens[pind]) + "bp" +
+                    ";Norm_RMSR=" + str(norm_rmse) + ";FILTER=" + filter_string + "\n")
 
 
 def get_cmap(n, name='jet'):
@@ -282,18 +351,21 @@ parser.add_argument("--minimum_cn_for_median_calculation", help="If not setting 
 # parser.add_argument("--length_estimate", help="Target size of the path (in kbp)", type=float)
 parser.add_argument("--runmode", help="Default mode is 'bulk' for bulk WGS. Also supports 'isolated' mode for PFGE or "
                                       "targeted sequencing.", choices=['bulk', 'isolated'])
-parser.add_argument("--max_length", dest="max_length", help="Maximum length of allowed paths in kbp (default: "
-                                                        "unconstrained)", type=float, default=sys.float_info.max/1000)
+parser.add_argument("--max_length", help="Maximum length of allowed paths in kbp (default: unconstrained)", type=float,
+                    default=sys.float_info.max/2000)
+parser.add_argument("--max_length_overshoot_factor", help="Allowable overshoot over maximum length estimate, default "
+                                                "allows 10 percent overshoot (default 1.1)", type=float, default=1.1)
 
 args = parser.parse_args()
 
-read_graph(args.graph, args.remove_short_jumps)
+de_count = read_graph(args.graph, args.remove_short_jumps)
 # print(len(edgeDict)/2, "edges will be considered")
 
 ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
 ofname = ofpre + "_candidate_cycles.txt"
 min_cn_cutoff = args.minimum_cn_for_median_calculation
-max_length = args.max_length * 1000
+max_length = round(args.max_length_overshoot_factor * args.max_length * 1000)
+glob_filters = ""
 
 if args.scaling_factor:
     scaling_factor = args.scaling_factor
@@ -306,6 +378,20 @@ else:
 print("scaling factor: ", scaling_factor)
 scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
 
+dbi = compute_1d_davies_bouldin(scaling_factor, scaled_cns, raw_cn, keep_zero_cn=True)
+print("Davies-Bouldin index for segment multiplicties CN clusters: ", dbi)
+if dbi > dbi_cutoff:
+    print("Warning: CN clustering is poor quality. CN multiplicities may be inaccurate!\n")
+    glob_filters += "DBI,"
+
+
+if float(de_count)/max(scaled_cns.values()) < 1:
+    print("Warning: ratio of maximum multiplicy to number of graph edges is < 1. Undetected breakpoint edges "
+          "may exist in this genomic region!\n")
+    glob_filters += "EDGE_RATIO,"
+
+plot_cn_and_multiplicity()
+
 # An alternate way to do the exploration, using only the node with highest degree as starting position
 # maxSeg = None
 # maxEC = 0
@@ -316,8 +402,6 @@ scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
 
 # print("starting search from ",maxSeg, maxEC)
 # longest_path, longestCyclicPath = DFS(maxSeg)
-
-plot_cn_and_multiplicity()
 
 longest_cps = []
 longest_path = []
@@ -337,10 +421,10 @@ for av, cn in scaled_cns.items():
                 longest_cps = [longestCyclicPath]
 
 total_amp_content = sum([x[2] - x[1] for s, x in id_to_coords.items() if s > 0 and scaled_cns[s] > 0])
-print(total_amp_content, " amplified length\n")
+print(total_amp_content, "bp amplified content\n")
 
-print(longest_path, "longest noncyclic")
-print(longestCyclicPath, "longest cyclic")
+print("longest noncyclic path: ", longest_path)
+print("longest cyclic: ", longestCyclicPath, )
 
 pweights = []
 if not args.keep_all_LC:
@@ -382,4 +466,4 @@ for p in paths:
     print("")
 
 ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
-write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs)
+write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs, glob_filters)
