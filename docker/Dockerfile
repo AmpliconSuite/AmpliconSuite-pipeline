@@ -34,7 +34,7 @@ unzip \
 wget \
 zlib1g-dev
 RUN apt-get install -y python3-matplotlib python3-numpy python3-scipy
-RUN pip2 install Cython pysam Flask intervaltree matplotlib numpy scipy
+RUN pip2 install Cython pysam==0.15.2 Flask intervaltree matplotlib numpy scipy
 RUN pip2 install --upgrade matplotlib
 
 ## CNVkit & dependencies
