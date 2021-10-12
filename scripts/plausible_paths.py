@@ -24,7 +24,8 @@ raw_cn = defaultdict(float)
 len_zero_segs = set()
 
 # cutoff for filtering of paths
-dbi_cutoff = 0.433
+dbi_cutoff = 0.37
+amp_content_to_length_ratio_cutoff = 1.4
 
 
 # DFS recursion
@@ -391,6 +392,13 @@ if float(de_count)/max(scaled_cns.values()) < 1:
 
 plot_cn_and_multiplicity()
 
+total_amp_content = sum([x[2] - x[1] for s, x in id_to_coords.items() if s > 0 and scaled_cns[s] > 0])
+print(total_amp_content, "bp amplified content\n")
+
+if total_amp_content / max_length > amp_content_to_length_ratio_cutoff:
+    print("Warning: Amplified content significantly longer than estimated maximum size.\n")
+    glob_filters += "AMP_CONTENT,"
+
 # An alternate way to do the exploration, using only the node with highest degree as starting position
 # maxSeg = None
 # maxEC = 0
@@ -419,8 +427,6 @@ for av, cn in scaled_cns.items():
                 longestCyclicPath = clcp
                 longest_cps = [longestCyclicPath]
 
-total_amp_content = sum([x[2] - x[1] for s, x in id_to_coords.items() if s > 0 and scaled_cns[s] > 0])
-print(total_amp_content, "bp amplified content\n")
 
 print("longest noncyclic path: ", longest_path)
 print("longest cyclic: ", longestCyclicPath, )
