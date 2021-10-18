@@ -24,7 +24,8 @@ raw_cn = defaultdict(float)
 len_zero_segs = set()
 
 # cutoff for filtering of paths
-dbi_cutoff = 0.37
+dbi_cutoff = 0.3
+rmsr_cutoff = 0.9
 amp_content_to_length_ratio_cutoff = 1.4
 
 
@@ -273,7 +274,7 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, min_length,
                 if glob_filters:
                     filter_string += glob_filters
 
-                if norm_rmse > 1:
+                if norm_rmse > rmsr_cutoff:
                     filter_string += "RMSR,"
 
                 if plens[pind] < min_length:
