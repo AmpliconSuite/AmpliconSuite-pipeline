@@ -243,7 +243,7 @@ def compute_1d_davies_bouldin(scaling_factor, scaled_cns, raw_cn, keep_zero_cn=F
     return np.mean(dvals)
 
 
-def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs, glob_filters):
+def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, min_length, ofname, plens, perrs, glob_filters):
     with open(ofname, 'w') as outfile:
         postups = [v for k, v in sorted(id_to_coords.items()) if k > 0]
         pchrom, pstart, pend, iind, sind = postups[0][0], postups[0][1], postups[0][2], 1, 1
@@ -269,18 +269,20 @@ def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, ple
         for pind, p in enumerate(paths):
             norm_rmse = perrs[pind]
             if p:
+                filter_string = ""
                 if glob_filters:
-                    filter_string = glob_filters
-                    if norm_rmse > 1:
-                        filter_string += "RMSR"
+                    filter_string += glob_filters
 
-                elif norm_rmse > 1:
-                    filter_string = "RMSR"
+                if norm_rmse > 1:
+                    filter_string += "RMSR,"
 
-                else:
+                if plens[pind] < min_length:
+                    filter_string += "MIN_LENGTH,"
+
+                if filter_string == "":
                     filter_string = "PASS"
 
-                filter_string.rstrip(",")
+                filter_string = filter_string.rstrip(",")
                 fmtP = [str(abs(x)) + "+" if x > 0 else str(abs(x)) + "-" for x in p]
                 if p[0] not in edgeDict[p[-1]]:
                     fmtP = ["0+", ] + fmtP + ["0-", ]
@@ -355,6 +357,8 @@ parser.add_argument("--max_length", help="Maximum length of allowed paths in kbp
                     default=sys.float_info.max/2000)
 parser.add_argument("--max_length_overshoot_factor", help="Allowable overshoot over maximum length estimate, default "
                                                 "allows 10 percent overshoot (default 1.1)", type=float, default=1.1)
+parser.add_argument("--min_length", help="Flag paths shorter than the argument (in kbp) as being below the minimum path"
+                                         " length (default 0)", type=float, default=0.0)
 
 args = parser.parse_args()
 
@@ -365,6 +369,7 @@ ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
 ofname = ofpre + "_candidate_cycles.txt"
 min_cn_cutoff = args.minimum_cn_for_median_calculation
 max_length = round(args.max_length_overshoot_factor * args.max_length * 1000)
+min_length = args.min_length * 1000
 glob_filters = ""
 
 if args.scaling_factor:
@@ -471,4 +476,4 @@ for p in paths:
     print("")
 
 ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
-write_cycles_file(paths, id_to_coords, pweights, scaling_factor, ofname, plens, perrs, glob_filters)
+write_cycles_file(paths, id_to_coords, pweights, scaling_factor, min_length, ofname, plens, perrs, glob_filters)
