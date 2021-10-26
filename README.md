@@ -162,7 +162,17 @@ PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependenci
 If using PrepareAA in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using PrepareAA to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
 
 
-### Additional analysis scripts
+### Additional analysis tools and scripts
+
+### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
+Formerly called `plausible_paths.py`. Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
+`plausible_paths` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
+searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
+The output will be an AA-formatted cycles file with additional annotations for length and fit score ("RMSR", based on root mean square residual of copy numbers. 
+Lower score is better, as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering).
+The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path. A full explanation of arguments is available with `-h`.
+
+`PrepareAA/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
 
    ### - `bedpe_bed_from_cycles.py`
 Contains code for parsing a _cycles.txt file output from AmpliconArchitect and formatting as .bedpe (breakpoints) or .bed (sequences).
@@ -219,15 +229,6 @@ Usage:
 
 `./scripts/graph_to_bed.py -g /path/to/sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
 
-### - `plausible_paths.py`
-Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
-`plausible_paths` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
-searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
-The output will be an AA-formatted cycles file with additional annotations for length and fit score ("RMSR", based on root mean square residual of copy numbers. 
-Lower score is better, as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering).
-The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path. A full explanation of arguments is available with `-h`.
-
-`PrepareAA/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
 
 ### - `bfb_foldback_detection.py [deprecated]`
 **This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-# author: Jens Luebeck (jluebeck [at] ucsd.edu)
+__version__ = "0.1.0"
+__author__ = "Jens Luebeck (jluebeck [at] ucsd.edu)"
 
 import os
 import copy
@@ -360,6 +361,8 @@ parser.add_argument("--max_length_overshoot_factor", help="Allowable overshoot o
                                                 "allows 10 percent overshoot (default 1.1)", type=float, default=1.1)
 parser.add_argument("--min_length", help="Flag paths shorter than the argument (in kbp) as being below the minimum path"
                                          " length (default 0)", type=float, default=0.0)
+parser.add_argument("--min_length_undershoot_factor", help="Allowable undershoot for minimum length estimate, default "
+                                                "allows 90 percent of minimum (default 0.9)", type=float, default=0.9)
 
 args = parser.parse_args()
 
@@ -369,8 +372,8 @@ de_count = read_graph(args.graph, args.remove_short_jumps)
 ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
 ofname = ofpre + "_candidate_cycles.txt"
 min_cn_cutoff = args.minimum_cn_for_median_calculation
-max_length = round(args.max_length_overshoot_factor * args.max_length * 1000)
-min_length = args.min_length * 1000
+max_length = round(args.max_length * 1000 * args.max_length_overshoot_factor)
+min_length = round(args.min_length * 1000 * args.min_length_undershoot_factor)
 glob_filters = ""
 
 if args.scaling_factor:
