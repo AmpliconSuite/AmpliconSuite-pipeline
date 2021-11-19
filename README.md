@@ -2,7 +2,7 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19 (or GRCh37) and hg38. PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.4**
+PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.4**
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 
@@ -129,7 +129,7 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
 
-- `--ref ["hg19"]`: (Optional) Name of ref genome version ("hg19","GRCh37","GRCh38"). Default: "hg19".
+- `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","mm10","GRCm38").
 
 - `--vcf [your_file.vcf]`: (Optional) Supply your own VCF to skip the freebayes step.
 

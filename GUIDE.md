@@ -161,7 +161,7 @@ This will take a while to run. Expect between 30 minutes-6 hours, but sometimes 
 
 Now, we can run a classification of the AA output to determine if ecDNA is present. You will have to install [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) separately. 
 ```
-python amplicon_classifier.py --ref [hg19, GRCh37, or GRCh38] --cycles [/path/to/amplicon_cycles.txt] --graph [/path/to/amplicon_graph.txt] > classifier_stdout.log
+python amplicon_classifier.py --ref [hg19, GRCh37, GRCh38, mm10, GRCm38] --cycles [/path/to/amplicon_cycles.txt] --graph [/path/to/amplicon_graph.txt] > classifier_stdout.log
 ``` 
 You can also run this on a batch of AA amplicons all at once by following the instructions in the [AmpliconClassifier README](https://github.com/jluebeck/AmpliconClassifier).
 
