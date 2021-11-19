@@ -87,7 +87,8 @@ def trim_seeds(seeddict, filt_regions):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Break AA seeds on elements which AA cannot analyze.")
-    parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38"], required=True)
+    parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "mm10",
+                        "GRCm38"], required=True)
     parser.add_argument("--seeds", help="path to bed file of seed regions", type=str, required=True)
     parser.add_argument("--minsize", help="Minimum trimmed seed size to keep", type=float, default=50000)
     args = parser.parse_args()
