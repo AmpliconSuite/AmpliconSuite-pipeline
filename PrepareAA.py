@@ -111,7 +111,7 @@ def run_canvas(canvas_dir, bam_file, vcf_file, outdir, removed_regions_bed, snam
     call(cmd, shell=True, executable="/bin/bash")
 
 
-def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, normal=None, refG=None, vcf=None):
+def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None, refG=None, vcf=None):
     # CNVkit cmd-line args
     # -m wgs: wgs data
     # -y: assume chrY present
@@ -149,9 +149,10 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, normal=None, refG=None, vcf
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
-    print("\nRunning CNVKIt segment")
+    print("\nRunning CNVKit segment")
     # TODO: possibly include support for adding VCF calls.
-    cmd = "{} {} segment {} {} -p {} -o {}".format(p3p, ckpy_path, cnrFile, rscript_str, nthreads, cnsFile)
+    cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(p3p, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
+                                                         cnsFile)
     print(cmd)
     call(cmd, shell=True)
 
@@ -171,7 +172,7 @@ def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
 
     # sort the elements
     # include the header from the first one
-    if args.ref != "GRCh37":
+    if args.ref != "GRCh37" and args.ref != "GRCm38":
         sorted_chr_names = ["chr" + str(x) for x in pre_chr_str_names]
         cmd = "zcat " + chrom_vcf_d["chrM"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
 
@@ -307,8 +308,8 @@ def get_ref_sizes(ref_genome_size_file):
 
 def get_ref_centromeres(ref_name):
     centromere_dict = {}
-    fnameD = {"GRCh38": "GRCh38_centromere.bed", "GRCh37": "human_g1k_v37_centromere.bed",
-              "hg19": "hg19_centromere.bed"}
+    fnameD = {"GRCh38": "GRCh38_centromere.bed", "GRCh37": "human_g1k_v37_centromere.bed", "hg19": "hg19_centromere.bed",
+              "mm10": "mm10_centromere.bed", "GRCm38": "GRCm38_centromere.bed"}
     with open(AA_REPO + ref_name + "/" + fnameD[ref_name]) as infile:
         for line in infile:
             fields = line.rstrip().rsplit("\t")
@@ -334,7 +335,8 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--sample_name", help="sample name", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA and CNV calling", required=True)
     parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
-    parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38"], default="hg19")
+    parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
+                        "GRCm38"], required=True)
     parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
                         "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
                         )
@@ -359,6 +361,9 @@ if __name__ == '__main__':
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
     parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)", default=None)
     parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)", default=None)
+    parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
+                        "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
+                        'hmm-germline', 'none'], default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -406,7 +411,10 @@ if __name__ == '__main__':
         runCNV = "CNVkit"
 
     # Paths of all the repo files needed
-    refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa"}
+    refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa", "mm10": "mm10.fa",
+                 "GRCm38": "GRCm38.fa"}
+    if args.ref == "hg38":
+        args.ref = "GRCh38"
     gdir = AA_REPO + args.ref + "/"
     ref = gdir + refFnames[args.ref]
     ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
@@ -535,8 +543,8 @@ if __name__ == '__main__':
         if not os.path.exists(cnvkit_output_directory):
             os.mkdir(cnvkit_output_directory)
 
-        run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam, normal=args.normal_bam,
-                   refG=ref)
+        run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
+                   seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, refG=ref)
         if args.ploidy or args.purity:
             rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
                                  purity=args.purity)
