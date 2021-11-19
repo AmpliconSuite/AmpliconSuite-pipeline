@@ -2,7 +2,7 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.4**
+PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.5**
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 
@@ -115,7 +115,7 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. We do not control thread usage of Canvas. Recommend 12 or more threads to be used.
 
-- `--sorted_bam [sample.cs.bam] OR --fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
+- `--sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
 
 - `--canvas_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`) Path to directory containing the Canvas executable and `canvasdata/` subdirectory.
 
