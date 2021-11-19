@@ -487,21 +487,21 @@ if __name__ == '__main__':
     bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
     centromere_dict = get_ref_centromeres(args.ref)
 
-    # chunk the genome by chr
-    chr_sizes = get_ref_sizes(ref_genome_size_file)
-    regions = []
-    for key, value in chr_sizes.items():
-        try:
-            cent_tup = centromere_dict[key]
-            regions.append((key, "0-" + cent_tup[0], "p"))
-            regions.append((key, cent_tup[1] + "-" + value, "q"))
-
-        # handle mitochondrial contig
-        except KeyError:
-            regions.append((key, "0-" + value, ""))
-
     # coordinate CNV calling
     if runCNV == "Canvas":
+        # chunk the genome by chr
+        chr_sizes = get_ref_sizes(ref_genome_size_file)
+        regions = []
+        for key, value in chr_sizes.items():
+            try:
+                cent_tup = centromere_dict[key]
+                regions.append((key, "0-" + cent_tup[0], "p"))
+                regions.append((key, cent_tup[1] + "-" + value, "q"))
+
+            # handle mitochondrial contig
+            except KeyError:
+                regions.append((key, "0-" + value, ""))
+
         if not merged_vcf_file:
             # Run FreeBayes, one instance per chromosome
             print("\nRunning freebayes")
