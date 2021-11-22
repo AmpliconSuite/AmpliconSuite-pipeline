@@ -9,6 +9,8 @@ import argparse
 from collections import defaultdict
 import sys
 
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -199,6 +201,7 @@ def compute_rmsr(scaling_factor, scaled_cns, path, raw_cn):
             mse += ((yo - ye) ** 2)
 
     return (mse / len(scaled_cns)) ** 0.5
+
 
 # Compute 1d_davies_bouldin with min max normalization
 def compute_1d_davies_bouldin(scaling_factor, scaled_cns, raw_cn, keep_zero_cn=False):

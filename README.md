@@ -13,6 +13,7 @@ Depending on what input data you are using, PrepareAA (PAA) may require the foll
 - [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
 - [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
 - (If using Canvas) [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is only required if using Canvas - but not if supplying your own VCF calls to Canvas)
+- Some optional scripts packaged with PrepareAA require the `intervaltree` python package. `pip install intervaltree`
 
 **Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
@@ -174,11 +175,8 @@ The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) 
 
 `PrepareAA/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
 
-   ### - `bedpe_bed_from_cycles.py`
-Contains code for parsing a _cycles.txt file output from AmpliconArchitect and formatting as .bedpe (breakpoints) or .bed (sequences).
-
    ### - `breakpoints_to_bed.py`
-Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
+Requires `intervaltree` python package pre-installed. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
 
    ### - `convert_cns_to_bed.py`
 Many users will choose to run CNVKit outside of PrepareAA and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
@@ -191,7 +189,7 @@ Usage:
 This will output a bed file which can be fed into PrepareAA. 
 
    ### - `cycles_to_bed.py`
-Write an AA cycles file as a series of bed files, one for each decomposition. Segments are merged and sorted, and order and orientation of segments is lost.
+Requires `intervaltree` python package pre-installed. Write an AA cycles file as a series of bed files, one for each decomposition. Segments are merged and sorted, and order and orientation of segments is lost.
 
    ### - `seed_trimmer.py`
 AA seeds are not designed to be larger than 10 Mbp - as that passes the upper limit of what is considered a 'focal amplification'.
@@ -206,7 +204,7 @@ This will output a bed file `/path/to/my_seeds_trimmed.bed`, which can then be f
 
 
 ### - `graph_cleaner.py`
-Sequencing artifacts can lead to numerous spurious short breakpoint edges. This script attempts to remove edges which conform to artifactual profiles. 
+Requires `intervaltree` python package pre-installed. Sequencing artifacts can lead to numerous spurious short breakpoint edges. This script attempts to remove edges which conform to artifactual profiles. 
 Namely, very short everted (inside-out read pair) orientation edges. These will appear as numerous short brown 'spikes' in the AA amplicon image.
 This script removes them from the graph file.
 
@@ -222,7 +220,7 @@ or
 This will output an AA graph file(s) `/path/to/my_sample_ampliconX_cleaned_graph.txt`.
 
 ### - `graph_to_bed.py`
-Create a bed file of the graph segments and a bedpe file of the disordant graph edges. Can also filter to only get segments with CN above `--min_cn`. 
+Requires `intervaltree` python package pre-installed. Create a bed file of the graph segments and a bedpe file of the disordant graph edges. Can also filter to only get segments with CN above `--min_cn`. 
 Setting `--unmerged` will not merge adjacent graph segments and will print the graph segment CN in the last column.
 
 Usage:
@@ -233,8 +231,7 @@ Usage:
 ### - `bfb_foldback_detection.py [deprecated]`
 **This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**
 
-
-Script can be used to detect possible BFB-like signatures from AA graph files (documentation below).
+Requires `intervaltree` python package pre-installed. Script can be used to detect possible BFB-like signatures from AA graph files (documentation below).
 
 To use the `bfb_foldback_detection.py` script on AA output, please create a two column file with the name of the graph file in column 1 and the path to the graph file in column 2. The rest of the command-line arguments are as follows.
 
