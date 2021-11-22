@@ -13,7 +13,7 @@ Depending on what input data you are using, PrepareAA (PAA) may require the foll
 - [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
 - [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
 - (If using Canvas) [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is only required if using Canvas - but not if supplying your own VCF calls to Canvas)
-- Some optional scripts packaged with PrepareAA require the `intervaltree` python package. `pip install intervaltree`
+- Some optional scripts packaged with PrepareAA require the `numpy`, `matplotlib` and `intervaltree`, python packages. All of which can be installed with `pip`, `conda` or similar. 
 
 **Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
