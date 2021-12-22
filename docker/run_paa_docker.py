@@ -125,7 +125,7 @@ else:
 	argstring += " --cnvkit_dir /home/programs/cnvkit.py"
 
 if args.cnvkit_segmentation:
-	argstring += "-- cnvkit_segmentation " + args.cnvkit_segmentation
+	argstring += " --cnvkit_segmentation " + args.cnvkit_segmentation
 
 if not args.run_AA:
 	argstring += " --run_AA"
