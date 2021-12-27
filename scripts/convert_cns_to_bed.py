@@ -13,11 +13,12 @@ def convert_cnvkit_cns_to_seeds(cns_file, base):
         head = next(infile).rstrip().rsplit("\t")
         for line in infile:
             fields = line.rstrip().rsplit("\t")
-            # s, e = int(fields[1]), int(fields[2])
+            s, e = int(fields[1]), int(fields[2])
             cn_r = float(fields[4])
             cn = 2 ** (cn_r + 1)
-            outline = "\t".join(fields[0:3] + ["CNVkit", str(cn)]) + "\n"
-            outfile.write(outline)
+            if not cn < args.min_cn:
+                outline = "\t".join(fields[0:3] + ["size=" + str(e - s), str(cn)]) + "\n"
+                outfile.write(outline)
 
     return ofname
 
@@ -53,6 +54,7 @@ if __name__ == '__main__':
     arggroup = parser.add_mutually_exclusive_group(required=True)
     arggroup.add_argument("--input_list", help="File containing list of .cns files (one per line)", type=str)
     arggroup.add_argument("--cns_file", help="Single .cns file (mutually exclusive with --input list", type=str)
+    parser.add_argument("--min_cn", help="Only keep raw CN values above this cutoff (default 0)", type=float, default=0.0)
     args = parser.parse_args()
 
     if args.input_list:

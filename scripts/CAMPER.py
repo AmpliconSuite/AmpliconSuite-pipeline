@@ -156,11 +156,11 @@ def read_graph(graphf, skip_short_jumps):
     return discordant_edgecount
 
 
-def get_scaled_cns(raw_cn, scaling_factor):
+def get_scaled_cns(raw_cn, scaling_factor, min_cn_cutoff):
     scaled_cns = {}
     for s, c in raw_cn.items():
         ratio = c / scaling_factor
-        if ratio < 0.5:
+        if ratio < 0.5 or c < min_cn_cutoff:
             scaled_cns[s] = 0
             print("dropped", s, c)
 
@@ -366,13 +366,18 @@ parser.add_argument("--min_length", help="Flag paths shorter than the argument (
                                          " length (default 0)", type=float, default=0.0)
 parser.add_argument("--min_length_undershoot_factor", help="Allowable undershoot for minimum length estimate, default "
                                                 "allows 90 percent of minimum (default 0.9)", type=float, default=0.9)
+parser.add_argument("-o","--outname", help="Prefix for output files (default is graph file prefix)", default=None)
 
 args = parser.parse_args()
 
 de_count = read_graph(args.graph, args.remove_short_jumps)
 # print(len(edgeDict)/2, "edges will be considered")
 
-ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
+if not args.outname:
+    ofpre = os.path.basename(args.graph).rsplit("_graph.txt")[0]
+else:
+    ofpre = args.outname
+
 ofname = ofpre + "_candidate_cycles.txt"
 min_cn_cutoff = args.minimum_cn_for_median_calculation
 max_length = round(args.max_length * 1000 * args.max_length_overshoot_factor)
@@ -388,7 +393,7 @@ else:
     scaling_factor, min_cn_cutoff = get_median_cn(args.minimum_cn_for_median_calculation, args.runmode)
 
 print("scaling factor: ", scaling_factor)
-scaled_cns = get_scaled_cns(raw_cn, scaling_factor)
+scaled_cns = get_scaled_cns(raw_cn, scaling_factor, min_cn_cutoff)
 
 dbi = compute_1d_davies_bouldin(scaling_factor, scaled_cns, raw_cn, keep_zero_cn=True)
 print("Davies-Bouldin index for segment multiplicties CN clusters: ", dbi)
@@ -482,5 +487,4 @@ for p in paths:
 
     print("")
 
-ofname = os.path.basename(args.graph).rsplit("_graph.txt")[0] + "_candidate_cycles.txt"
 write_cycles_file(paths, id_to_coords, pweights, scaling_factor, min_length, ofname, plens, perrs, glob_filters)
