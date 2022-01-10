@@ -8,7 +8,7 @@ Please check out the **detailed guide** on running AA [available here](https://g
 
 ### Prerequisites:
 Depending on what input data you are using, PrepareAA (PAA) may require the following tools to be installed beforehand:
-- The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) is recommended for PrepareAA. The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu) must be downloaded and used.
+- The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) is recommended for PrepareAA. The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu) must be downloaded and used. **We have also released a testing version of the mm10 mouse genome data repo available separately [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz)**.
 - [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
 - [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
 - [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
