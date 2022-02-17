@@ -10,6 +10,7 @@ from subprocess import call
 import sys
 import threading
 
+PY3_PATH = "python3"  # updated by command-line arg if specified
 
 # generic worker thread function
 class workerThread(threading.Thread):
@@ -119,23 +120,16 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     # -p: number of threads
     # -f: reference genome fasta
     bamBase = os.path.splitext(os.path.basename(bamfile))[0]
-    p3p = "python3"
-    if args.python3_path:
-        if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
-            args.python3_path += "/python3"
-
-        p3p = args.python3_path
-
     if not ckpy_path.endswith("/cnvkit.py"):
         ckpy_path += "/cnvkit.py"
 
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
     print("\nRunning CNVKit batch")
     if args.normal_bam:
-        cmd = "{} {} batch {} -m wgs --fasta {} -p {} -d {} --normal {}".format(p3p, ckpy_path, bamfile, refG, nthreads,
+        cmd = "{} {} batch {} -m wgs --fasta {} -p {} -d {} --normal {}".format(PY3_PATH, ckpy_path, bamfile, refG, nthreads,
                                                                                         outdir, normal)
     else:
-        cmd = "{} {} batch -m wgs -r {} -p {} -d {} {}".format(p3p, ckpy_path, ckRef, nthreads, outdir, bamfile)
+        cmd = "{} {} batch -m wgs -r {} -p {} -d {} {}".format(PY3_PATH, ckpy_path, ckRef, nthreads, outdir, bamfile)
 
     print(cmd)
     call(cmd, shell=True)
@@ -151,7 +145,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     cnsFile = outdir + bamBase + ".cns"
     print("\nRunning CNVKit segment")
     # TODO: possibly include support for adding VCF calls.
-    cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(p3p, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
+    cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
                                                          cnsFile)
     print(cmd)
     call(cmd, shell=True)
@@ -214,7 +208,6 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 
             else:
                 fields = line.rstrip().rsplit("\t")
-                line_dict = dict(zip(head_fields, fields))
                 if "GAIN" in fields[2]:
                     chrom = fields[0]
                     start = fields[1]
@@ -254,17 +247,10 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
     if cnsfile is None:
         cnsfile = cnvkit_output_directory + base + ".cns"
 
-    p3p = "python3"
-    if args.python3_path:
-        if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
-            args.python3_path += "/python3"
-
-        p3p = args.python3_path
-
     if not ckpy_path.endswith("/cnvkit.py"):
         ckpy_path += "/cnvkit.py"
 
-    cmd = "{} {} call {} -m clonal".format(p3p, ckpy_path, cnsfile)
+    cmd = "{} {} call {} -m clonal".format(PY3_PATH, ckpy_path, cnsfile)
     if purity:
         cmd += " --purity " + str(purity)
     if ploidy:
@@ -291,9 +277,21 @@ def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref
         downsample) + "). To change settings run AA separately.")
     cmd = "python2 {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --out \
             {}/{}".format(AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, AA_outdir, sname)
-
     print(cmd)
     call(cmd, shell=True)
+
+
+def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
+    # make input file
+    class_output = AC_outdir + sname
+    cmd = "{}/make_input.sh {} {}".format(AC_src, AA_outdir, class_output)
+    print(cmd)
+    call(cmd, shell=True)
+
+    # run AC on input file
+    input_file = class_output + ".input"
+    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} --o {} --annotate_cycles_file --report_complexity".format(
+        PY3_PATH, AC_src, input_file, ref, class_output)
 
 
 def get_ref_sizes(ref_genome_size_file):
@@ -335,6 +333,8 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--sample_name", help="sample name", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA and CNV calling", required=True)
     parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
+    parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
+                        action='store_true')
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
                         "GRCm38"], required=True)
     parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
@@ -348,8 +348,7 @@ if __name__ == '__main__':
                         "1.0)", action='store_true', default=False)
     parser.add_argument("--rscript_path", help="Specify custom path to Rscript, if needed when using CNVKit "
                         "(which requires R version >3.4)")
-    parser.add_argument("--python3_path", help="Specify custom path to python3, if needed when using CNVKit (requires "
-                        "python3)")
+    parser.add_argument("--python3_path", help="If needed, specify a custom path to python3.")
     parser.add_argument("--freebayes_dir", help="Path to directory where freebayes executable exists (not the path to "
                         "the executable itself). Only needed for Canvas and freebayes is not installed on system path.",
                         default=None)
@@ -377,7 +376,6 @@ if __name__ == '__main__':
     group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
                         "(reference files organized by reference name).", default="")
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
-
 
     args = parser.parse_args()
     print(str(datetime.now()))
@@ -409,6 +407,12 @@ if __name__ == '__main__':
 
     elif args.cnvkit_dir:
         runCNV = "CNVkit"
+
+    if args.python3_path:
+        if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
+            args.python3_path += "/python3"
+
+        PY3_PATH = args.python3_path
 
     # Paths of all the repo files needed
     refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa", "mm10": "mm10.fa",
@@ -446,18 +450,10 @@ if __name__ == '__main__':
 
     # prompt user to clear old results
     elif runCNV == "Canvas":
-        try: input = raw_input
-        except NameError: pass
-        user_input = input(
-            "Canvas output files already exist here.\n Clear old Canvas results? (y/n) Highly recommended - will give "
-            "error otherwise: ")
-        if user_input.lower() == "y" or user_input.lower() == "yes":
-            print("Clearing results")
-            call("rm -rf {}/TempCNV*".format(canvas_output_directory), shell=True)
-            call("rm -rf {}/Logging".format(canvas_output_directory), shell=True)
-            call("rm -rf {}/Checkpoints".format(canvas_output_directory), shell=True)
-        else:
-            print("NOT CLEARING OLD CANVAS OUTPUT. THIS IS NOT RECOMMENDED.")
+        print("Clearing previous Canvas results")
+        call("rm -rf {}/TempCNV*".format(canvas_output_directory), shell=True)
+        call("rm -rf {}/Logging".format(canvas_output_directory), shell=True)
+        call("rm -rf {}/Checkpoints".format(canvas_output_directory), shell=True)
 
     elif args.cnv_bed and not os.path.isfile(args.cnv_bed):
         sys.stderr.write("Specified CNV bed file does not exist: " + args.cnv_bed + "\n")
@@ -565,11 +561,28 @@ if __name__ == '__main__':
 
     # Run AA
     if args.run_AA:
-        AA_outdir = outdir + "/" + sname + "_AA_results"
+        AA_outdir = outdir + "/" + sname + "_AA_results/"
         if not os.path.exists(AA_outdir):
             os.mkdir(AA_outdir)
 
         run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample, args.ref, args.AA_runmode)
+
+        # Run AC
+        if args.run_AC:
+            try:
+                AC_SRC = os.environ['AC_SRC']
+                AC_outdir = outdir + "/" + sname + "_classification/"
+                if not os.path.exists(AC_outdir):
+                    os.mkdir(AC_outdir)
+
+                run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
+
+            except KeyError:
+                sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
+
+
+
+
 
     print("Completed\n")
     print(str(datetime.now()))
