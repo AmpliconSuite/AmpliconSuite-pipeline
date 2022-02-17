@@ -292,6 +292,8 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     input_file = class_output + ".input"
     cmd = "{} {}/amplicon_classifier.py -i {} --ref {} --o {} --annotate_cycles_file --report_complexity".format(
         PY3_PATH, AC_src, input_file, ref, class_output)
+    print(cmd)
+    call(cmd, shell=True)
 
 
 def get_ref_sizes(ref_genome_size_file):
@@ -350,8 +352,8 @@ if __name__ == '__main__':
                         "(which requires R version >3.4)")
     parser.add_argument("--python3_path", help="If needed, specify a custom path to python3.")
     parser.add_argument("--freebayes_dir", help="Path to directory where freebayes executable exists (not the path to "
-                        "the executable itself). Only needed for Canvas and freebayes is not installed on system path.",
-                        default=None)
+                        "the executable itself). Only needed if using Canvas and freebayes is not installed on system "
+                        "path.", default=None)
     parser.add_argument("--aa_data_repo", help="Specify a custom $AA_DATA_REPO path FOR PRELIMINARY STEPS ONLY(!). Will"
                         " not override bash variable during AA")
     parser.add_argument("--aa_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
@@ -579,10 +581,6 @@ if __name__ == '__main__':
 
             except KeyError:
                 sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
-
-
-
-
 
     print("Completed\n")
     print(str(datetime.now()))
