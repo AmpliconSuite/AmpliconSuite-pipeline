@@ -290,7 +290,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     # run AC on input file
     input_file = class_output + ".input"
-    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} --o {} --annotate_cycles_file --report_complexity".format(
+    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {} --annotate_cycles_file --report_complexity".format(
         PY3_PATH, AC_src, input_file, ref, class_output)
     print(cmd)
     call(cmd, shell=True)
