@@ -17,7 +17,7 @@ parser.add_argument("--run_AA", help="Run AA after all files prepared. Default o
 parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
 					action='store_true')
 parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
-																		"GRCm38"], required=True)
+																		"GRCm38"])
 # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
 # 								  "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
 # 					)
@@ -62,6 +62,10 @@ group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 
 
 args = parser.parse_args()
+
+if args.fastqs and not args.ref:
+	sys.stderr.write("Must specify --ref when providing unaligned fastq files.")
+	sys.exit(1)
 
 if not args.output_directory:
 	args.output_directory = os.getcwd()
