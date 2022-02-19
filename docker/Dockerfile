@@ -23,6 +23,7 @@ RUN apt-get update
 RUN apt-get install -y \
 bcftools \
 bwa \
+fontconfig \
 gfortran \
 libbz2-dev \
 liblzma-dev \
@@ -36,6 +37,7 @@ zlib1g-dev
 RUN apt-get install -y python3-matplotlib python3-numpy python3-scipy
 RUN pip2 install Cython pysam==0.15.2 Flask intervaltree matplotlib numpy scipy
 RUN pip2 install --upgrade matplotlib
+RUN fc-cache -f
 
 ## CNVkit & dependencies
 RUN apt-get install -y python3-pip
@@ -67,7 +69,7 @@ RUN echo export MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses >> ~/.bashr
 RUN cd /home/programs/mosek/8/tools/platform/linux64x86/python/2/ && python2 setup.py install
 RUN echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
 RUN echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
-RUN echo export AR_SRC=/home/programs/AmpliconClassifier-master/src >> ~/.bashrc
+RUN echo export AC_SRC=/home/programs/AmpliconClassifier-master/src >> ~/.bashrc
 ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/jluebeck/AmpliconClassifier/archive/master.zip /home/programs
