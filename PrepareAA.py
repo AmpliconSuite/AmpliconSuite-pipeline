@@ -371,7 +371,8 @@ if __name__ == '__main__':
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--bam", "--sorted_bam", help="Coordinate sorted BAM file (aligned to an AA-supported reference.)")
+    group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
+                                                     "reference.)")
     group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
     group2 = parser.add_mutually_exclusive_group(required=True)
     group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
