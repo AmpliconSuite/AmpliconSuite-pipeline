@@ -384,12 +384,21 @@ if __name__ == '__main__':
                         "(reference files organized by reference name).", default="")
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
 
-    args = parser.parse_args()
-    print(str(datetime.now()))
-    logfile = open(args.sample_name + '_timing_log.txt', 'w')
-    logfile.write("#stage\twalltime(seconds)\n")
     ta = time.time()
     ti = ta
+    args = parser.parse_args()
+    print(str(datetime.now()))
+    # set an output directory if user did not specify
+    if not args.output_directory:
+        args.output_directory = os.getcwd()
+
+    # Make and clear necessary directories.
+    # make the output directory location if it does not exist
+    if not os.path.exists(args.output_directory):
+        os.mkdir(args.output_directory)
+
+    logfile = open(args.output_directory + "/" + args.sample_name + '_timing_log.txt', 'w')
+    logfile.write("#stage\twalltime(seconds)\n")
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
     if args.aa_data_repo:
@@ -469,15 +478,6 @@ if __name__ == '__main__':
         if args.canvas_dir and not os.path.exists(args.canvas_dir):
             sys.stderr.write("Could not locate Canvas data repo folder\n")
             sys.exit(1)
-
-    # set an output directory if user did not specify
-    if not args.output_directory:
-        args.output_directory = os.getcwd()
-
-    # Make and clear necessary directories.
-    # make the output directory location if it does not exist
-    if not os.path.exists(args.output_directory):
-        os.mkdir(args.output_directory)
 
     canvas_output_directory = args.output_directory + "/canvas_output/"
     if not os.path.exists(canvas_output_directory) and runCNV == "Canvas":

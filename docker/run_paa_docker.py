@@ -136,10 +136,10 @@ else:
 if args.cnvkit_segmentation:
 	argstring += " --cnvkit_segmentation " + args.cnvkit_segmentation
 
-if not args.run_AA:
+if args.run_AA:
 	argstring += " --run_AA"
 
-if not args.run_AC:
+if args.run_AC:
 	argstring += " --run_AC"
 
 print("Creating a docker script with the following argstring:")
