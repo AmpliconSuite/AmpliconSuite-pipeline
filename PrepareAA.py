@@ -10,6 +10,8 @@ from subprocess import call
 import sys
 import threading
 
+import check_reference
+
 PY3_PATH = "python3"  # updated by command-line arg if specified
 
 # generic worker thread function
@@ -338,10 +340,8 @@ if __name__ == '__main__':
     parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
                         action='store_true')
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
-                        "GRCm38"], required=True)
-    parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
-                        "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
-                        )
+                        "GRCm38"])
+
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
@@ -354,6 +354,9 @@ if __name__ == '__main__':
     parser.add_argument("--freebayes_dir", help="Path to directory where freebayes executable exists (not the path to "
                         "the executable itself). Only needed if using Canvas and freebayes is not installed on system "
                         "path.", default=None)
+    parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
+                        "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
+                        )
     parser.add_argument("--aa_data_repo", help="Specify a custom $AA_DATA_REPO path FOR PRELIMINARY STEPS ONLY(!). Will"
                         " not override bash variable during AA")
     parser.add_argument("--aa_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
@@ -368,7 +371,7 @@ if __name__ == '__main__':
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--sorted_bam", help="Sorted BAM file (aligned to an AA-supported reference.)")
+    group.add_argument("--bam", "--sorted_bam", help="Coordinate sorted BAM file (aligned to an AA-supported reference.)")
     group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
     group2 = parser.add_mutually_exclusive_group(required=True)
     group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
@@ -382,6 +385,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(str(datetime.now()))
 
+    # Check if expected system paths and files are present. Check if provided argument combinations are valid.
     if args.aa_data_repo:
         os.environ['AA_DATA_REPO'] = args.aa_data_repo
 
@@ -403,6 +407,10 @@ if __name__ == '__main__':
         sys.stderr.write("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
         sys.exit(1)
 
+    if args.fastqs and not args.ref:
+        sys.stderr.write("Must specify --ref when providing unaligned fastq files.")
+        sys.exit(1)
+
     runCNV = None
     if args.canvas_dir:
         runCNV = "Canvas"
@@ -416,9 +424,26 @@ if __name__ == '__main__':
 
         PY3_PATH = args.python3_path
 
-    # Paths of all the repo files needed
+    # Detect the reference genome version
     refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa", "mm10": "mm10.fa",
                  "GRCm38": "GRCm38.fa"}
+
+    faidict = {}
+    if args.sorted_bam:
+        if args.ref:
+            faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
+
+        else:
+            for k, v in refFnames.items():
+                faidict[k] = AA_REPO + args.ref + "/" + v + ".fai"
+
+        determined_ref = check_reference.check_ref(args.sorted_bam, faidict)
+        if not determined_ref:
+            sys.exit(1)
+
+        args.ref = determined_ref
+
+    # Paths of all the repo files needed
     if args.ref == "hg38":
         args.ref = "GRCh38"
     gdir = AA_REPO + args.ref + "/"
@@ -429,7 +454,7 @@ if __name__ == '__main__':
     merged_vcf_file = args.vcf
     if not os.path.isfile(ploidy_vcf) or not os.path.isfile(removed_regions_bed):
         sys.stderr.write(str(os.listdir(gdir)) + "\n")
-        sys.stderr.write("PrepareAA data repo files not found in AA data repo. Did you place them prior to running?\n")
+        sys.stderr.write("PrepareAA data repo files not found in AA data repo. Please update your data repo.\n")
         sys.exit(1)
 
     # check if user gave a correct path to Canvas data repo
@@ -442,6 +467,7 @@ if __name__ == '__main__':
     if not args.output_directory:
         args.output_directory = os.getcwd()
 
+    # Make and clear necessary directories.
     # make the output directory location if it does not exist
     if not os.path.exists(args.output_directory):
         os.mkdir(args.output_directory)
@@ -465,8 +491,7 @@ if __name__ == '__main__':
     outdir = args.output_directory + "/"
 
     print("Running PrepareAA on sample: " + sname)
-
-    # Check if Fastqs provided
+    # Begin PrepareAA pipeline
     if args.fastqs:
         # Run BWA
         fastqs = " ".join(args.fastqs)
