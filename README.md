@@ -2,25 +2,36 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process. **Current version: 0.931.5**
+PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
+**Current version: 0.1032.1**
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 
 ### Prerequisites:
-Depending on what input data you are using, PrepareAA (PAA) may require the following tools to be installed beforehand:
-- The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) is recommended for PrepareAA. The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu) must be downloaded and used. **We have also released a testing version of the mm10 mouse genome data repo available separately [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz)**.
-- [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
-- [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
-- [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
-- (If using Canvas) [freebayes](https://github.com/ekg/freebayes) (version 1.3.1 or greater, freebayes is only required if using Canvas - but not if supplying your own VCF calls to Canvas)
-- Some optional scripts packaged with PrepareAA require the `numpy`, `matplotlib` and `intervaltree`, python packages. All of which can be installed with `pip`, `conda` or similar. 
+PrepareAA supports both `python2` and `python3`, however AmpliconArchitect currently requires `python2` and CNVKit requires `python3`.
+`Python3` support for AmpliconArchitect is coming. 
 
-**Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
+Depending on what input data you are starting from, PrepareAA (PAA) may require the following tools to be installed beforehand:
+- (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
+- (required) The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu)
+must also be downloaded and used. **We have released a testing version of the mm10 mouse genome data repo available [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz)**.
+- (optional) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
+- (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
+- (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
+- (optional) [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
+- (required if using Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (not required if supplying your own VCF calls to Canvas)
+- Some optional scripts packaged with PrepareAA require the `numpy`, `matplotlib` and `intervaltree` python packages. Can be installed with `pip`, `conda` or similar. 
+
+PrepareAA assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
+
+PrepareAA has been tested with Ubuntu 16.04+ and CentOS 7. PrepareAA's optional dependencies related to CNV calling will not work on CentOS 6.
+
+
+**Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires
+`python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 **Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`, which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
 
-
-PrepareAA assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables. This is already standard for most users.
 
 ### Standalone configuration
 
@@ -31,6 +42,9 @@ In the directory you want to run AA in, do
 Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/AmpliconArchitect)) for AA installation instructions. AA must be installed to use PAA.
 
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed.
+
+PrepareAA with CNVKit will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
+
 
 ### PrepareAA Docker 
 A dockerized version of PAA is available in the docker folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
@@ -56,9 +70,9 @@ A dockerized version of PAA is available in the docker folder. It will install b
 
 2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
 
-An example command might look like:
+An example docker command might look like:
 
-`PrepareAA/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --ref hg19 --sorted_bam /path/to/bamfile.bam --run_cnvkit`
+`PrepareAA/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --bam /path/to/bamfile.bam --run_AA --run_AC`
 
 **Please make sure your output directory specified for `-o` is writeable.** 
 
@@ -67,27 +81,27 @@ Two example standard runs of PrepareAA:
 
 #### Starting from .fastq files, using Canvas for seed generation.
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --canvas_dir /path/to/canvas/canvas_exec_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz [--run_AA]
+/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --canvas_dir /path/to/canvas/canvas_exec_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref hg19 [--run_AA] [--run_AC]
 ```
 
 or
 
 #### Starting from sorted .bam, using CNVkit for seed generation
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --sorted_bam sample.cs.rmdup.bam [--run_AA]
+/path/to/PrepareAA/PrepareAA.py -s sample_name -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.cs.rmdup.bam [--run_AA] [--run_AC]
 ```
 
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
+`--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
 
-PrepareAA with CNVKit will also function on sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
 ##### Starting from intermediate steps
-* If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--sorted_bam`.
+* If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--bam`.
 
 
 * If using your own CNV calls:
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads  --cnv_bed your_cnvs.bed  (--fastqs sample_r1.fastq sample_r2.fastq | --sorted_bam sample.cs.bam) [--run_AA]
+/path/to/PrepareAA/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fastq sample_r2.fastq | --bam sample.cs.bam) [--run_AA] [--run_AC]
 ```
 Where the CNV bed file is formatted as (**without a header present**):
 
@@ -116,7 +130,7 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. We do not control thread usage of Canvas. Recommend 12 or more threads to be used.
 
-- `--sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
+- `--bam | --sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
 
 - `--canvas_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`) Path to directory containing the Canvas executable and `canvasdata/` subdirectory.
 
@@ -130,7 +144,9 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
 
-- `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","mm10","GRCm38").
+- `--run_AC`: (Optional) Run AmpliconClassifier following AA. No effect if `--run_AA` not set.
+
+- `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","mm10","GRCm38"). This will be auto-detected if it is not set.
 
 - `--vcf [your_file.vcf]`: (Optional) Supply your own VCF to skip the freebayes step.
 
@@ -155,8 +171,6 @@ A description of other command line arguments for PrepareAA is provided below
   setting a higher `--cn_gain` threshold for low purity samples undergoing correction.
 
 - `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVKit. Not used by AA itself.
-
-PrepareAA has been tested with Ubuntu 16.04 and CentOS 7. PrepareAA's dependencies (related to CNV calling) will not work on CentOS 6.
 
 
 ### FAQ

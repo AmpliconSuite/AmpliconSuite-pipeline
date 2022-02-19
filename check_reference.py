@@ -12,11 +12,15 @@ chrom_range = set(chrom_range)
 # get a subset of the chromosome names/lengths from a .fai file.
 def get_ref_seq_lens(ref_genome_size_file):
     chr_sizes = {}
-    with open(ref_genome_size_file) as infile:
-        for line in infile:
-            fields = line.rstrip().rsplit()
-            if fields[0] in chrom_range:
-                chr_sizes[fields[0]] = int(fields[1]) - 1
+    try:
+        with open(ref_genome_size_file) as infile:
+            for line in infile:
+                fields = line.rstrip().rsplit()
+                if fields[0] in chrom_range:
+                    chr_sizes[fields[0]] = int(fields[1])
+
+    except IOError:
+        pass
 
     return chr_sizes
 
@@ -24,7 +28,7 @@ def get_ref_seq_lens(ref_genome_size_file):
 # read bam header and store info
 def get_bam_header(bamf):
     cmd = 'samtools view -H ' + bamf
-    return subprocess.check_output(cmd, shell=True, text=True)
+    return subprocess.check_output(cmd, shell=True).decode("utf-8")
 
 
 # extract sequence lengths and ids
@@ -62,7 +66,8 @@ def check_ref(bamf, ref_to_fai_dict):
     bamSeqLenD = extract_seq_info(bam_header)
     for refName, fai_path in ref_to_fai_dict.items():
         ref_len_d = get_ref_seq_lens(fai_path)
-        if match_ref(bamSeqLenD, ref_len_d):
+        matched = match_ref(bamSeqLenD, ref_len_d)
+        if matched:
             print("Matched " + bamf + " to reference genome " + refName)
             return refName
 

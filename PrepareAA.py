@@ -9,6 +9,7 @@ import os
 from subprocess import call
 import sys
 import threading
+import time
 
 import check_reference
 
@@ -385,6 +386,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(str(datetime.now()))
+    logfile = open(args.sample_name + '_timing_log.txt', 'w')
+    logfile.write("#stage\truntime(seconds)\n")
+    ta = time.time()
+    ti = ta
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
     if args.aa_data_repo:
@@ -439,10 +444,11 @@ if __name__ == '__main__':
                 faidict[k] = AA_REPO + k + "/" + v + ".fai"
 
         determined_ref = check_reference.check_ref(args.sorted_bam, faidict)
-        if not determined_ref:
+        if not determined_ref and not args.ref:
             sys.exit(1)
 
-        args.ref = determined_ref
+        elif not args.ref:
+            args.ref = determined_ref
 
     # Paths of all the repo files needed
     if args.ref == "hg38":
@@ -477,7 +483,7 @@ if __name__ == '__main__':
     if not os.path.exists(canvas_output_directory) and runCNV == "Canvas":
         os.mkdir(canvas_output_directory)
 
-    # prompt user to clear old results
+    # clear old results Canvas results
     elif runCNV == "Canvas":
         print("Clearing previous Canvas results")
         call("rm -rf {}/TempCNV*".format(canvas_output_directory), shell=True)
@@ -491,6 +497,9 @@ if __name__ == '__main__':
     sname = args.sample_name
     outdir = args.output_directory + "/"
 
+    tb = time.time()
+    logfile.write("Initialization:\t" + "{:.2f}".format(tb - ta) + "\n")
+    ta = tb
     print("Running PrepareAA on sample: " + sname)
     # Begin PrepareAA pipeline
     if args.fastqs:
@@ -509,8 +518,11 @@ if __name__ == '__main__':
         print("Finished indexing")
 
     bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
-    centromere_dict = get_ref_centromeres(args.ref)
 
+    tb = time.time()
+    logfile.write("Alignment and bam indexing:\t" + "{:.2f}".format(tb - ta) + "\n")
+    ta = tb
+    centromere_dict = get_ref_centromeres(args.ref)
     # coordinate CNV calling
     if runCNV == "Canvas":
         # chunk the genome by chr
@@ -581,12 +593,18 @@ if __name__ == '__main__':
     if args.cnv_bed.endswith(".cns"):
         args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, args.cnv_bed)
 
+    tb = time.time()
+    logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
+    ta = tb
     if not args.no_filter:
         amplified_interval_bed = run_amplified_intervals(args.cnv_bed, args.sorted_bam, outdir, sname, args.cngain,
                                                      args.cnsize_min)
     else:
         amplified_interval_bed = args.cnv_bed
 
+    tb = time.time()
+    logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
+    ta = tb
     # Run AA
     if args.run_AA:
         AA_outdir = outdir + "/" + sname + "_AA_results/"
@@ -594,6 +612,9 @@ if __name__ == '__main__':
             os.mkdir(AA_outdir)
 
         run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample, args.ref, args.AA_runmode)
+        tb = time.time()
+        logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
+        ta = tb
 
         # Run AC
         if args.run_AC:
@@ -608,5 +629,11 @@ if __name__ == '__main__':
             except KeyError:
                 sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
 
+            tb = time.time()
+            logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
+
     print("Completed\n")
     print(str(datetime.now()))
+    tf = time.time()
+    logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
+    logfile.close()

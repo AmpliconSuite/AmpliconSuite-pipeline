@@ -14,6 +14,8 @@ parser.add_argument("-o", "--output_directory", help="output directory names (wi
 parser.add_argument("-s", "--sample_name", help="sample name", required=True)
 parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA and CNV calling", required=True)
 parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
+parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
+					action='store_true')
 parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
 																		"GRCm38"], required=True)
 # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
@@ -48,7 +50,7 @@ parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to id
 parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
 									  " be: chr start end name cngain", default="")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--sorted_bam", help="Sorted BAM file (aligned to an AA-supported reference.)")
+group.add_argument("--sorted_bam", "--bam", help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
@@ -129,6 +131,9 @@ if args.cnvkit_segmentation:
 
 if not args.run_AA:
 	argstring += " --run_AA"
+
+if not args.run_AC:
+	argstring += " --run_AC"
 
 print("Creating a docker script with the following argstring:")
 print(argstring + "\n")
