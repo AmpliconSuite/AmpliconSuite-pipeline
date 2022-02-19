@@ -387,7 +387,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(str(datetime.now()))
     logfile = open(args.sample_name + '_timing_log.txt', 'w')
-    logfile.write("#stage\truntime(seconds)\n")
+    logfile.write("#stage\twalltime(seconds)\n")
     ta = time.time()
     ti = ta
 
