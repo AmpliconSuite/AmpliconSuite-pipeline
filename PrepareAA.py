@@ -436,7 +436,7 @@ if __name__ == '__main__':
 
         else:
             for k, v in refFnames.items():
-                faidict[k] = AA_REPO + args.ref + "/" + v + ".fai"
+                faidict[k] = AA_REPO + k + "/" + v + ".fai"
 
         determined_ref = check_reference.check_ref(args.sorted_bam, faidict)
         if not determined_ref:
