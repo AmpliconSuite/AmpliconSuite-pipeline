@@ -100,9 +100,12 @@ except KeyError:
 cnvdir, cnvname = os.path.split(args.cnv_bed)
 
 # assemble an argstring
-argstring = "--ref " + args.ref + " -t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
+argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
 			str(args.cnsize_min) + " --downsample " + str(args.downsample) + " -s " + args.sample_name + \
 			" -o /home/output"
+
+if args.ref:
+	argstring += " --ref " + args.ref
 
 if args.sorted_bam:
 	bamdir, bamname = os.path.split(args.sorted_bam)
