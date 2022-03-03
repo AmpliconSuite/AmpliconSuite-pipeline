@@ -459,6 +459,9 @@ if __name__ == '__main__':
         elif not args.ref:
             args.ref = determined_ref
 
+        elif args.ref and not determined_ref:
+            print("WARNING! The BAM file did not match " + args.ref)
+
     # Paths of all the repo files needed
     if args.ref == "hg38":
         args.ref = "GRCh38"
