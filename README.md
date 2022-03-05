@@ -47,7 +47,7 @@ PrepareAA with CNVKit will also function on coordinate-sorted CRAM files, [provi
 
 
 ### PrepareAA Docker 
-A dockerized version of PAA is available in the docker folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
+A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
 
 1. Docker:
     * Install docker: `https://docs.docker.com/install/`
