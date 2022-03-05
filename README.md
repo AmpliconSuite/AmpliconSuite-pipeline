@@ -1,4 +1,4 @@
-## PrepareAA
+# PrepareAA
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
@@ -7,7 +7,8 @@ PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm3
 
 Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
 
-### Prerequisites:
+
+## Prerequisites:
 PrepareAA supports both `python2` and `python3`, however AmpliconArchitect currently requires `python2` and CNVKit requires `python3`.
 `Python3` support for AmpliconArchitect is coming. 
 
@@ -76,7 +77,8 @@ An example docker command might look like:
 
 **Please make sure your output directory specified for `-o` is writeable.** 
 
-### Usage
+
+## Usage
 Two example standard runs of PrepareAA:
 
 #### Starting from .fastq files, using Canvas for seed generation.
@@ -180,7 +182,7 @@ Check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master
 If using PrepareAA in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using PrepareAA to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
 
 
-### Additional analysis tools and scripts
+## Additional analysis tools and scripts
 
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
 Formerly called `plausible_paths.py`. Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
