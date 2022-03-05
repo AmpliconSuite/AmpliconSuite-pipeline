@@ -16,7 +16,7 @@ Depending on what input data you are starting from, PrepareAA (PAA) may require 
 - (required) The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu)
 must also be downloaded and used. **We have released a testing version of the mm10 mouse genome data repo available [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz)**.
 - (optional) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
-- (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file aligned to the AA reference genome)
+- (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted BAM file. PrepareAA supports versions >= 1.0 and < 1.0)
 - (optional) [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
 - (required if using Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (not required if supplying your own VCF calls to Canvas)
