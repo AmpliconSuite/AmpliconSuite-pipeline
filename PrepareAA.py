@@ -398,7 +398,7 @@ if __name__ == '__main__':
         os.mkdir(args.output_directory)
 
     logfile = open(args.output_directory + "/" + args.sample_name + '_timing_log.txt', 'w')
-    logfile.write("#stage\twalltime(seconds)\n")
+    logfile.write("#stage:\twalltime(seconds)\n")
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
     if args.aa_data_repo:
@@ -413,6 +413,10 @@ if __name__ == '__main__':
 
     except KeyError:
         sys.stderr.write("AA_DATA_REPO bash variable not found. AmpliconArchitect may not be properly installed.\n")
+        sys.exit(1)
+
+    if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
+        sys.stderr.write("coverage.stats file not found in " + AA_REPO + "\nPlease see installation instructions.\n")
         sys.exit(1)
 
     try:
