@@ -13,6 +13,8 @@ import time
 
 import check_reference
 
+__version__ = "0.1032.2"
+
 PY3_PATH = "python3"  # updated by command-line arg if specified
 
 # generic worker thread function
@@ -371,6 +373,8 @@ if __name__ == '__main__':
                         'hmm-germline', 'none'], default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
+    parser.add_argument("-v", "--version", action='version',
+                        version='PrepareAA version {version} \n'.format(version=__version__))
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
@@ -388,6 +392,7 @@ if __name__ == '__main__':
     ti = ta
     args = parser.parse_args()
     print(str(datetime.now()))
+    print("PrepareAA version " + __version__ + "\n")
     # set an output directory if user did not specify
     if not args.output_directory:
         args.output_directory = os.getcwd()
