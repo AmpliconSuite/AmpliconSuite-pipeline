@@ -2,25 +2,26 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19 (or GRCh37), hg38 as well as mouse genome mm10 (or GRCm38). PrepareAA can also be invoked to start at intermediate stages of the data preparation process.
-**Current version: 0.1032.1**
+PrepareAA supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). PrepareAA can invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier.
+**Current version: 0.1032.2**
 
-Please check out the **detailed guide** on running AA [available here](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and see some FAQs.
+Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running AA to learn about best practices and see some FAQs.
 
 
 ## Prerequisites:
 PrepareAA supports both `python2` and `python3`, however AmpliconArchitect currently requires `python2` and CNVKit requires `python3`.
-`Python3` support for AmpliconArchitect is coming. 
+`Python3` support for AmpliconArchitect is coming soon. 
 
 Depending on what input data you are starting from, PrepareAA (PAA) may require the following tools to be installed beforehand:
 - (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
 - (required) The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu)
-must also be downloaded and used. **We have released a testing version of the mm10 mouse genome data repo available [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz)**.
+must also be downloaded and used. The mm10 mouse data repo is available separately [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz).
+  - Larger versions of the individual data repos containing bwa index files are provided [here](https://github.com/jluebeck/PrepareAA/blob/master/data_repo_urls.txt). Recommended if starting from unaligned fastq reads.
 - (optional) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
 - (optional) [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
-- (required if using Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (not required if supplying your own VCF calls to Canvas)
+  - (required for Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (unless providing your own VCF calls to Canvas)
 - Some optional scripts packaged with PrepareAA require the `numpy`, `matplotlib` and `intervaltree` python packages. Can be installed with `pip`, `conda` or similar. 
 
 PrepareAA assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
@@ -42,7 +43,7 @@ In the directory you want to run AA in, do
 
 Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/AmpliconArchitect)) for AA installation instructions. AA must be installed to use PAA.
 
-Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed.
+Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://github.com/jluebeck/PrepareAA/blob/master/data_repo_urls.txt).
 
 PrepareAA with CNVKit will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
@@ -58,11 +59,13 @@ A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/r
     * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/` or `https://www.mosek.com/try/`)
     * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
-    * Download from `https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu`
+    * Download from `https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu` or use the links 
+[here](https://github.com/jluebeck/PrepareAA/blob/master/data_repo_urls.txt) to download bwa pre-indexed individual data repos.
     * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
         ```bash
         tar zxf data_repo.tar.gz
         echo export AA_DATA_REPO=$PWD/data_repo >> ~/.bashrc
+        cd $AA_DATA_REPO && touch coverage.stats && chmod a+r coverage.stats
         source ~/.bashrc
         ```
 #### Obtain PrepareAA image and execution script:
