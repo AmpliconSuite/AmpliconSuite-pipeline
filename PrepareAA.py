@@ -239,7 +239,7 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, res
             s, e = int(fields[1]), int(fields[2])
             cn_r = float(fields[4])
             cn = 2 ** (cn_r + 1)
-            if cn >= args.cngain and e - s >= args.cnsize_min:
+            if cn >= args.cngain:  # do not filter on size since amplified_intervals.py will merge small ones.
                 outline = "\t".join(fields[0:3] + ["CNVkit", str(cn)]) + "\n"
                 outfile.write(outline)
 
