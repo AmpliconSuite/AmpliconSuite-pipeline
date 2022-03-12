@@ -269,8 +269,7 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
 def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sname, cngain, cnsize_min):
     print("\nRunning amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-    cmd = "python2 {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out \
-    {}".format(AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min), AA_seeds_filename)
+    cmd = "python2 {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min), AA_seeds_filename)
     print(cmd)
     call(cmd, shell=True)
 
@@ -280,8 +279,7 @@ def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sn
 def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref, runmode):
     print("\nRunning AA with default arguments (& downsample " + str(
         downsample) + "). To change settings run AA separately.")
-    cmd = "python2 {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --out \
-            {}/{}".format(AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, AA_outdir, sname)
+    cmd = "python2 {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --out {}/{}".format(AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, AA_outdir, sname)
     print(cmd)
     call(cmd, shell=True)
 
@@ -630,7 +628,9 @@ if __name__ == '__main__':
 
         # Run AC
         if args.run_AC:
-            try:
+            if 'AC_SRC' not in os.environ:
+                sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
+            else:
                 AC_SRC = os.environ['AC_SRC']
                 AC_outdir = outdir + "/" + sname + "_classification/"
                 if not os.path.exists(AC_outdir):
@@ -638,11 +638,8 @@ if __name__ == '__main__':
 
                 run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
 
-            except KeyError:
-                sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
-
-            tb = time.time()
-            logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
+                tb = time.time()
+                logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
     print("Completed\n")
     print(str(datetime.now()))
