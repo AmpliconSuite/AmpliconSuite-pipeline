@@ -628,18 +628,18 @@ if __name__ == '__main__':
 
         # Run AC
         if args.run_AC:
-            if 'AC_SRC' not in os.environ:
-                sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
-            else:
-                AC_SRC = os.environ['AC_SRC']
-                AC_outdir = outdir + "/" + sname + "_classification/"
-                if not os.path.exists(AC_outdir):
-                    os.mkdir(AC_outdir)
+            # if 'AC_SRC' not in os.environ:
+            #     sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
+            # else:
+            AC_SRC = os.environ['AC_SRC']
+            AC_outdir = outdir + "/" + sname + "_classification/"
+            if not os.path.exists(AC_outdir):
+                os.mkdir(AC_outdir)
 
-                run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
+            run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
 
-                tb = time.time()
-                logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
+            tb = time.time()
+            logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
     print("Completed\n")
     print(str(datetime.now()))
