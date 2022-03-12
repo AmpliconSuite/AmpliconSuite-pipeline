@@ -3,6 +3,8 @@ AA_DATA_REPO=/home/data_repo
 export AA_DATA_REPO
 AA_SRC=/home/programs/AmpliconArchitect-master/src
 export AA_SRC
+AC_SRC=/home/programs/AmpliconClassifier-main
+export AC_SRC
 MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses
 export MOSEKLM_LICENSE_FILE
 NCM_HOME=/home/programs/NGSCheckMate-master/
