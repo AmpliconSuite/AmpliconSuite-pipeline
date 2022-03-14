@@ -459,7 +459,8 @@ if __name__ == '__main__':
         args.ref = "mm10"
 
     for rname in refFnames.keys():
-        refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
+        if os.path.exists(AA_REPO + "/" + rname):
+            refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
 
     faidict = {}
     if args.sorted_bam:
