@@ -401,6 +401,10 @@ if __name__ == '__main__':
     if not os.path.exists(args.output_directory):
         os.mkdir(args.output_directory)
 
+    if "/" in args.sample_name:
+        sys.stderr.write("Sample name -s cannot be a path. Specify output directory with -o.\n")
+        sys.exit(1)
+
     logfile = open(args.output_directory + "/" + args.sample_name + '_timing_log.txt', 'w')
     logfile.write("#stage:\twalltime(seconds)\n")
 
