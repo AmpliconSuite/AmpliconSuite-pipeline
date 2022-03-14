@@ -598,7 +598,7 @@ if __name__ == '__main__':
         args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
 
     elif runCNV == "CNVkit":
-        cnvkit_output_directory = args.output_directory + "/cnvkit_output/"
+        cnvkit_output_directory = args.output_directory + "/" + sname + "_cnvkit_output/"
         if not os.path.exists(cnvkit_output_directory):
             os.mkdir(cnvkit_output_directory)
 
