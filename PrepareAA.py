@@ -285,6 +285,7 @@ def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref
 
 
 def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
+    print("\nRunning AC")
     # make input file
     class_output = AC_outdir + sname
     cmd = "{}/make_input.sh {} {}".format(AC_src, AA_outdir, class_output)
@@ -447,8 +448,18 @@ if __name__ == '__main__':
         PY3_PATH = args.python3_path
 
     # Detect the reference genome version
-    refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa", "mm10": "mm10.fa",
-                 "GRCm38": "GRCm38.fa"}
+    # refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa", "mm10": "mm10.fa",
+    #              "GRCm38": "GRCm38.fa"}
+    refFnames = {x: None for x in ["hg19", "GRCh37", "GRCh38", "mm10"]}
+
+    # Paths of all the repo files needed
+    if args.ref == "hg38":
+        args.ref = "GRCh38"
+    if args.ref == "GRCm38":
+        args.ref = "mm10"
+
+    for rname in refFnames.keys():
+        refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
 
     faidict = {}
     if args.sorted_bam:
@@ -469,9 +480,6 @@ if __name__ == '__main__':
         elif args.ref and not determined_ref:
             print("WARNING! The BAM file did not match " + args.ref)
 
-    # Paths of all the repo files needed
-    if args.ref == "hg38":
-        args.ref = "GRCh38"
     gdir = AA_REPO + args.ref + "/"
     ref = gdir + refFnames[args.ref]
     ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"

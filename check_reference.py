@@ -9,6 +9,17 @@ chrom_range.extend(["chr" + x for x in chrom_range])
 chrom_range = set(chrom_range)
 
 
+def get_ref_fname(aa_dr_path, rname):
+    with open(aa_dr_path + "/" + rname + "/file_list.txt") as infile:
+        for line in infile:
+            fields = line.rstrip().rsplit()
+            if fields[0] == "fa_file":
+                return fields[1]
+
+    sys.stderr.write("ERROR: AA data repo 'file_list.txt' not found!\n")
+    return None
+
+
 # get a subset of the chromosome names/lengths from a .fai file.
 def get_ref_seq_lens(ref_genome_size_file):
     chr_sizes = {}
