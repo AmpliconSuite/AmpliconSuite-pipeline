@@ -20,6 +20,7 @@ def read_graph(graphf, maxhopsize, filter_non_everted, filter_source, max_suppor
     intD = defaultdict(IntervalTree)
     edge_line_list = []
     dbp_set = set()
+    seen_bps = set()
     removed_count = 0
     with open(graphf) as infile:
         for line in infile:
@@ -69,10 +70,16 @@ def read_graph(graphf, maxhopsize, filter_non_everted, filter_source, max_suppor
                         removed_count += 1
                         continue
 
-                edge_line_list.append(line)
-                if line.startswith("discordant"):
-                    dbp_set.add((lchrom, lpos))
-                    dbp_set.add((rchrom, rpos))
+                if fields[1] not in seen_bps:
+                    edge_line_list.append(line)
+                    if line.startswith("discordant"):
+                        dbp_set.add((lchrom, lpos))
+                        dbp_set.add((rchrom, rpos))
+
+                    seen_bps.add(fields[1])
+
+                else:
+                    print("Removing duplicate edge: " + fields[1])
 
     return intD, edge_line_list, dbp_set, removed_count
 
