@@ -16,7 +16,7 @@ max_hop = 800
 
 
 # read graph file
-def read_graph(graphf, maxhopsize, filter_non_everted, max_support):
+def read_graph(graphf, maxhopsize, filter_non_everted, filter_source, max_support):
     intD = defaultdict(IntervalTree)
     edge_line_list = []
     dbp_set = set()
@@ -62,6 +62,11 @@ def read_graph(graphf, maxhopsize, filter_non_everted, max_support):
                             ldir == '-' and rdir == '+' and filter_non_everted:
                         print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
                         removed_count+=1
+                        continue
+
+                    if fields[0] == "source" and filter_source:
+                        print("Removing: " + line.rstrip())
+                        removed_count += 1
                         continue
 
                 edge_line_list.append(line)
@@ -124,7 +129,7 @@ def ClusterIntervalsFromSortedList(seg_intd, dbp_set):
         for b in intervals[1:]:
             can_merge = False
             has_orphan = is_orphan(a, chrom, dbp_set) or is_orphan(b, chrom, dbp_set)
-            if b.begin - a.end == 1 and has_orphan:
+            if 0 <= b.begin - a.end <= 1 and has_orphan:
                 if not (chrom, a.end) in dbp_set and not (chrom, b.begin) in dbp_set:  # endpoints can be joined
                     can_merge = True
                     curr_clust.append(b)
@@ -334,6 +339,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_hop_support", help="Maximum number of discordant read pairs to consider as artificial "
                                                   "hop (default (10)", type=int, default=10)
     parser.add_argument("--filter_non_everted", help="Filter non-everted hops", action='store_true', default=False)
+    parser.add_argument("--filter_source", help="Filter and remove source edges", action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -355,7 +361,7 @@ if __name__ == '__main__':
         p, f = os.path.split(gfile)
         outname = f.rsplit("_graph.txt")[0] + "_cleaned_graph.txt"
         seg_intd, edge_line_list, dbp_set, removed_count = read_graph(gfile, max_hop, args.filter_non_everted,
-                                                                      args.max_hop_support)
+                                                                      args.filter_source, args.max_hop_support)
         # compute the fraction of segments over 50 kbp
         print("Initial proportion over 25kbp:", proportion_over_size(seg_intd))
         if removed_count > 0:
