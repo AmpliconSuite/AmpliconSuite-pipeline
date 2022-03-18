@@ -41,7 +41,7 @@ In the directory you want to run AA in, do
 
 `git clone https://github.com/jluebeck/PrepareAA.git`
 
-Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/AmpliconArchitect)) for AA installation instructions. AA must be installed to use PAA.
+Please see the [jluebeck/AmpliconArchitect fork](https://github.com/jluebeck/AmpliconArchitect) for AA installation instructions. AA must be installed to use PAA.
 
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
 
