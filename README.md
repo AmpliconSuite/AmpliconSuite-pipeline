@@ -15,8 +15,8 @@ PrepareAA supports both `python2` and `python3`, however AmpliconArchitect curre
 Depending on what input data you are starting from, PrepareAA (PAA) may require the following tools to be installed beforehand:
 - (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
 - (required) The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu)
-must also be downloaded and used. The mm10 mouse data repo is available separately [here](https://aamousedatarepo.s3.us-west-1.amazonaws.com/mm10/mm10.tar.gz).
-  - Larger versions of the individual data repos containing bwa index files are provided [here](https://github.com/jluebeck/PrepareAA/blob/master/data_repo_urls.txt). Recommended if starting from unaligned fastq reads.
+must also be downloaded and used.
+  - mm10 and larger versions of the individual data repos containing bwa index files are provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Recommended if starting from unaligned fastq reads.
 - (optional) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
@@ -43,7 +43,7 @@ In the directory you want to run AA in, do
 
 Please see the [jluebeck/AmpliconArchitect fork]((https://github.com/jluebeck/AmpliconArchitect)) for AA installation instructions. AA must be installed to use PAA.
 
-Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://github.com/jluebeck/PrepareAA/blob/master/data_repo_urls.txt).
+Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
 
 PrepareAA with CNVKit will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
@@ -60,7 +60,7 @@ A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/r
     * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
     * Download from `https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu` or use the links 
-[here](https://github.com/jluebeck/PrepareAA/blob/master/data_repo_urls.txt) to download bwa pre-indexed individual data repos.
+[here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to download bwa pre-indexed individual data repos.
     * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
         ```bash
         tar zxf data_repo.tar.gz
