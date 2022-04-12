@@ -13,7 +13,7 @@ import time
 
 import check_reference
 
-__version__ = "0.1032.2"
+__version__ = "0.1032.3"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 
@@ -48,10 +48,10 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
 
     print("\nPerforming alignment and sorting")
     if usingDeprecatedSamtools:
-        cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 3G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
+        cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref, fastqs, outname, outname)
     else:
-        cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 3G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
+        cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref, fastqs, outname, outname)
 
     print(cmd)
@@ -152,6 +152,14 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     # TODO: possibly include support for adding VCF calls.
     cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
                                                          cnsFile)
+    print(cmd)
+    call(cmd, shell=True)
+
+    print("\nCleaning up temporary files")
+    cmd = "rm {}/*tmp.bed {}/*.cnn".format(outdir, outdir)
+    print(cmd)
+    call(cmd, shell=True)
+    cmd = "gzip " + cnrFile
     print(cmd)
     call(cmd, shell=True)
 
@@ -298,7 +306,6 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
         PY3_PATH, AC_src, input_file, ref, class_output)
     print(cmd)
     call(cmd, shell=True)
-
 
 def get_ref_sizes(ref_genome_size_file):
     chr_sizes = {}
