@@ -136,6 +136,9 @@ else:
 if args.cnvkit_segmentation:
 	argstring += " --cnvkit_segmentation " + args.cnvkit_segmentation
 
+if args.no_filter:
+	argstring += " --no_filter"
+
 if args.run_AA:
 	argstring += " --run_AA"
 
