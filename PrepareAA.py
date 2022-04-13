@@ -307,6 +307,13 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     print(cmd)
     call(cmd, shell=True)
 
+    # make the AC output table
+    classification_file = class_output + "_amplicon_classification_profiles.tsv"
+    cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
+                                                                              classification_file)
+    print(cmd)
+    call(cmd, shell=True)
+
 def get_ref_sizes(ref_genome_size_file):
     chr_sizes = {}
     with open(ref_genome_size_file) as infile:
