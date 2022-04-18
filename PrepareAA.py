@@ -13,7 +13,7 @@ import time
 
 import check_reference
 
-__version__ = "0.1032.3"
+__version__ = "0.1032.4"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 
