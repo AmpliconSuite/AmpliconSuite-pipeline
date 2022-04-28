@@ -71,7 +71,7 @@ CNV callers. **We do not recommend default ASCAT calls for AA CNV seed generatio
 #
 
 ### Filtering and selecting seeds from CNV data
-Focal amplifications are somewhat aribtrarily defined as regions of the genome with a CN > 4 and 10 kbp < size < 10 Mbp.
+Focal amplifications are somewhat aribtrarily defined as regions of the genome with a CN > 5 and 10 kbp < size < 10 Mbp.
 
 **Selecting appropriate seed regions from the CNV estimates is critical to properly running AA**.
 
