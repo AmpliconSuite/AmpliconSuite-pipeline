@@ -9,6 +9,7 @@ from intervaltree import IntervalTree
 
 # Break AA seeds on known low mappability, centromere, segmental duplication regions.
 # This enables AA to better handle ultra-long AA seeds that can sometimes arise depending on the choice of CNV caller.
+# assumes CN in last column
 
 
 # read a bed file into a dictionary of interval trees, where keys are chromosomes
@@ -71,11 +72,17 @@ def read_filt_regions(ref):
 
 
 # create a new seed tree of regions that have filtered regions trimmed out
-def trim_seeds(seeddict, filt_regions):
+def trim_seeds(seeddict, filt_regions, cn_cut):
     updated_seeds = defaultdict(IntervalTree)
     for k, ivalt in seeddict.items():
         updated_seed_tree = copy.copy(ivalt)
         for ival in ivalt:
+            if ival.data and ival.end - ival.begin >= 10000000 and ival.data[-1] <= cn_cut*1.5:
+                updated_seed_tree.discard(ival)
+
+            if ival.data and ival.data[-1] <= cn_cut:
+                updated_seed_tree.discard(ival)
+
             if ival.end - ival.begin > 1000000:
                 for h in filt_regions[k][ival.begin: ival.end]:
                     updated_seed_tree.chop(h.begin - 250, h.end + 250)
@@ -89,17 +96,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Break AA seeds on elements which AA cannot analyze.")
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "mm10",
                         "GRCm38"], required=True)
-    parser.add_argument("--seeds", help="path to bed file of seed regions", type=str, required=True)
+    parser.add_argument("--cnv_bed", help="path to bed file of CNV calls (CN in last column) to pre-filter", type=str,
+                        required=True)
     parser.add_argument("--minsize", help="Minimum trimmed seed size to keep", type=float, default=50000)
+    parser.add_argument("--cngain", help="CN gain threshold to consider for AA seeding", type=float, default=4.5)
+
     args = parser.parse_args()
 
-    p, f = os.path.split(args.seeds)
+    p, f = os.path.split(args.cnv_bed)
     outname = p + os.path.splitext(f)[0] + "_trimmed.bed"
 
     print("Reading seeds and filter regions")
-    seeddict = read_bed(args.seeds, keepdat=True)
+    seeddict = read_bed(args.cnv_bed, keepdat=True)
     filt_regions = read_filt_regions(args.ref)
     print("Updating seeds")
-    updated_seeds = trim_seeds(seeddict, filt_regions)
+    updated_seeds = trim_seeds(seeddict, filt_regions, args.cngain)
     write_bed(outname, updated_seeds, args.minsize)
     print(outname)
