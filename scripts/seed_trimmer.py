@@ -77,10 +77,10 @@ def trim_seeds(seeddict, filt_regions, cn_cut):
     for k, ivalt in seeddict.items():
         updated_seed_tree = copy.copy(ivalt)
         for ival in ivalt:
-            if ival.data and ival.end - ival.begin >= 10000000 and ival.data[-1] <= cn_cut*1.5:
+            if ival.data and ival.end - ival.begin >= 10000000 and float(ival.data[-1]) <= cn_cut*1.5:
                 updated_seed_tree.discard(ival)
 
-            if ival.data and ival.data[-1] <= cn_cut:
+            if ival.data and float(ival.data[-1]) <= cn_cut:
                 updated_seed_tree.discard(ival)
 
             if ival.end - ival.begin > 1000000:
