@@ -14,9 +14,9 @@ PrepareAA supports both `python2` and `python3`, however AmpliconArchitect curre
 
 Depending on what input data you are starting from, PrepareAA (PAA) may require the following tools to be installed beforehand:
 - (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
-- (required) The development AmpliconArchitect [data repo](https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu)
+- (required) The development AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/)
 must also be downloaded and used.
-  - mm10 and larger versions of the individual data repos containing bwa index files are provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Recommended if starting from unaligned fastq reads.
+  - mm10 and larger versions of the individual data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Recommended if starting from unaligned fastq reads.
 - (optional) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
@@ -32,7 +32,8 @@ PrepareAA has been tested with Ubuntu 16.04+ and CentOS 7. PrepareAA's optional 
 **Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires
 `python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
-**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`, which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
+**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,
+which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
 
 
 ### Standalone installation
@@ -145,6 +146,8 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--python3_path` (Optional) Specify custom path to python3, if needed when using CNVKit (which requires python3).
 
+- `--aa_python_interpreter` (Optional) By default PrepareAA will use the system's default `python` path. If you would like to use a different python version with AA, set this to either the path to the interpreter or `python3` or `python2` (default `python`)
+
 - `--freebayes_dir` (Optional) Specify custom path to freebayes installation folder (not path to executable). Only applied if using Canvas. Assumes freebayes on system path if not set.
 
 - `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
@@ -176,6 +179,12 @@ A description of other command line arguments for PrepareAA is provided below
   setting a higher `--cn_gain` threshold for low purity samples undergoing correction.
 
 - `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVKit. Not used by AA itself.
+
+- `--cnvkit_segmentation` Segmentation method for CNVKit (if used), defaults to CNVKit "
+                        "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
+                        'hmm-germline', 'none'] 
+
+- `--AA_runmode [FULL, BPGRAPH, CYCLES, SVVIEW]` (Optional, default `FULL`). See AA documentation for more info.
 
 
 ### FAQ
@@ -219,7 +228,7 @@ which can and should be invoked on any seeds > 10 Mbp. This script should be run
 
 Usage:
 
-`./scripts/seed_trimmer.py --seeds /path/to/my_seeds.bed --ref hg19/GRCh37/GRCh38 [--minsize 50000]`
+`./scripts/seed_trimmer.py --cnv_bed /path/to/my_cnvs.bed --ref hg19/GRCh37/GRCh38/mm10 [--minsize 50000] [--cngain 4.5]`
 
 This will output a bed file `/path/to/my_seeds_trimmed.bed`, which can then be fed into `amplified_intervals.py`. 
 
