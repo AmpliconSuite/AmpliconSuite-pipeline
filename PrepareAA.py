@@ -248,7 +248,7 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, res
             s, e = int(fields[1]), int(fields[2])
             cn_r = float(fields[4])
             cn = 2 ** (cn_r + 1)
-            if cn >= args.cngain or nofilter:  # do not filter on size since amplified_intervals.py will merge small ones.
+            if cn >= args.cngain or nofilter or rescaled:  # do not filter on size since amplified_intervals.py will merge small ones.
                 outline = "\t".join(fields[0:3] + ["CNVkit", str(cn)]) + "\n"
                 outfile.write(outline)
 
@@ -335,6 +335,8 @@ def get_ref_centromeres(ref_name):
               "mm10": "mm10_centromere.bed", "GRCm38": "GRCm38_centromere.bed"}
     with open(AA_REPO + ref_name + "/" + fnameD[ref_name]) as infile:
         for line in infile:
+            if not "centromere" in line and not "acen" in line:
+                continue
             fields = line.rstrip().rsplit("\t")
             if fields[0] not in centromere_dict:
                 centromere_dict[fields[0]] = (fields[1], fields[2])
@@ -664,11 +666,13 @@ if __name__ == '__main__':
     logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
     ta = tb
     if not args.no_filter:
+        if args.use_CN_prefilter:
+            args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, centromere_dict, chr_sizes,
+                                                                 args.cngain, args.output_directory)
+
         amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
                                                          outdir, sname, args.cngain, args.cnsize_min)
-        if args.use_CN_prefilter:
-            amplified_interval_bed = cnv_prefilter.prefilter_bed(amplified_interval_bed, centromere_dict, chr_sizes,
-                                                                 args.cngain, args.output_directory)
+
     else:
         amplified_interval_bed = args.cnv_bed
 
