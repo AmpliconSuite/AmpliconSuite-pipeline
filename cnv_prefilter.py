@@ -59,6 +59,7 @@ def prefilter_bed(bedfile, centromere_dict, chr_sizes, cngain, outdir):
 
     bname = outdir + "/" + bedfile.rsplit("/")[-1].rsplit(".bed")[0] + "_pre_filtered.bed"
     with open(bname, 'w') as outfile:
-        outfile.write("\t".join([str(x) for x in filt_entries]) + "\n")
+        for entry in filt_entries:
+            outfile.write("\t".join([str(x) for x in entry]) + "\n")
 
     return bname
