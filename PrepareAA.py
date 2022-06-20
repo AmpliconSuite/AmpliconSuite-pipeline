@@ -12,8 +12,9 @@ import threading
 import time
 
 import check_reference
+import cnv_prefilter
 
-__version__ = "0.1032.4"
+__version__ = "0.1203.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 
@@ -233,7 +234,7 @@ def convert_canvas_cnv_to_seeds(canvas_output_directory):
 
 
 # Read the CNVkit .cns files
-def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, rescaled=False):
+def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, rescaled=False, nofilter=False):
     if cnsfile is None:
         if not rescaled:
             cnsfile = cnvkit_output_directory + base + ".cns"
@@ -247,7 +248,7 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, res
             s, e = int(fields[1]), int(fields[2])
             cn_r = float(fields[4])
             cn = 2 ** (cn_r + 1)
-            if cn >= args.cngain:  # do not filter on size since amplified_intervals.py will merge small ones.
+            if cn >= args.cngain or nofilter:  # do not filter on size since amplified_intervals.py will merge small ones.
                 outline = "\t".join(fields[0:3] + ["CNVkit", str(cn)]) + "\n"
                 outfile.write(outline)
 
@@ -274,20 +275,22 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
     call(cmd, shell=True)
 
 
-def run_amplified_intervals(CNV_seeds_filename, sorted_bam, output_directory, sname, cngain, cnsize_min):
+def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, output_directory, sname, cngain, cnsize_min):
     print("\nRunning amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-    cmd = "python2 {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min), AA_seeds_filename)
+    cmd = "{} {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(
+        AA_interpreter, AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min),
+        AA_seeds_filename)
     print(cmd)
     call(cmd, shell=True)
 
     return AA_seeds_filename + ".bed"
 
 
-def run_AA(amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref, runmode):
-    print("\nRunning AA with default arguments (& downsample " + str(
-        downsample) + "). To change settings run AA separately.")
-    cmd = "python2 {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --out {}/{}".format(AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, AA_outdir, sname)
+def run_AA(AA_interpreter, amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref, runmode, extendmode,
+           insert_sdevs):
+    cmd = "{} {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --extendmode {} --insert_sdevs {} --out {}/{}".format(
+        AA_interpreter, AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, extendmode, str(insert_sdevs), AA_outdir, sname)
     print(cmd)
     call(cmd, shell=True)
 
@@ -357,7 +360,6 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
                         "GRCm38"])
-
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
@@ -367,6 +369,9 @@ if __name__ == '__main__':
     parser.add_argument("--rscript_path", help="Specify custom path to Rscript, if needed when using CNVKit "
                         "(which requires R version >3.4)")
     parser.add_argument("--python3_path", help="If needed, specify a custom path to python3.")
+    parser.add_argument("--aa_python_interpreter", help="By default PrepareAA will use the system's default python "
+                        "path. If you would like to use a different python version with AA, set this to either the "
+                        "path to the interpreter or 'python3' or 'python2'", type=str, default='python')
     parser.add_argument("--freebayes_dir", help="Path to directory where freebayes executable exists (not the path to "
                         "the executable itself). Only needed if using Canvas and freebayes is not installed on system "
                         "path.", default=None)
@@ -378,13 +383,25 @@ if __name__ == '__main__':
     parser.add_argument("--aa_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
     parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                         "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
+    parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --extendmode argument to AA. Default "
+                        "mode is 'EXPLORE'", choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"],
+                        default='EXPLORE')
+    parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
+                        "increase for sequencing runs with high variance after insert size selection step. (default "
+                        "3.0)", type=float, default=3.0)
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
     parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)", default=None)
     parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)", default=None)
+    parser.add_argument("--use_CN_prefilter", help="Pre-filter CNV calls on number of copies gained above median "
+                        "chromosome arm CN. Strongly recommended if input CNV calls have been scaled by purity or "
+                        "ploidy. This argument is off by default but is set if --ploidy or --purity is provided for"
+                        "CNVKit.", action='store_true')
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                         "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
                         'hmm-germline', 'none'], default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
+                        action='store_true')
+    parser.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
                         action='store_true')
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
@@ -395,7 +412,7 @@ if __name__ == '__main__':
     group2 = parser.add_mutually_exclusive_group(required=True)
     group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
                         "intervals immediately.", action='store_true')
-    group2.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
+    group2.add_argument("--cnv_bed", "--bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
                         " be: chr start end name cngain", default="")
     group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
                         "(reference files organized by reference name).", default="")
@@ -559,12 +576,21 @@ if __name__ == '__main__':
 
     tb = time.time()
     logfile.write("Alignment and bam indexing:\t" + "{:.2f}".format(tb - ta) + "\n")
+
+    if args.align_only:
+        print("Completed\n")
+        print(str(datetime.now()))
+        tf = time.time()
+        logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
+        logfile.close()
+        sys.exit()
+
     ta = tb
     centromere_dict = get_ref_centromeres(args.ref)
+    chr_sizes = get_ref_sizes(ref_genome_size_file)
     # coordinate CNV calling
     if runCNV == "Canvas":
         # chunk the genome by chr
-        chr_sizes = get_ref_sizes(ref_genome_size_file)
         regions = []
         for key, value in chr_sizes.items():
             try:
@@ -620,6 +646,7 @@ if __name__ == '__main__':
         run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
                    seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, refG=ref)
         if args.ploidy or args.purity:
+            args.use_CN_prefilter = True
             rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
                                  purity=args.purity)
             rescaling = True
@@ -629,14 +656,17 @@ if __name__ == '__main__':
         args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase, rescaled=rescaling)
 
     if args.cnv_bed.endswith(".cns"):
-        args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, args.cnv_bed)
+        args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
 
     tb = time.time()
     logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
     ta = tb
     if not args.no_filter:
-        amplified_interval_bed = run_amplified_intervals(args.cnv_bed, args.sorted_bam, outdir, sname, args.cngain,
-                                                     args.cnsize_min)
+        amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
+                                                         outdir, sname, args.cngain, args.cnsize_min)
+        if args.use_CN_prefilter:
+            amplified_interval_bed = cnv_prefilter.prefilter_bed(amplified_interval_bed, centromere_dict, chr_sizes,
+                                                                 args.cngain, args.output_directory)
     else:
         amplified_interval_bed = args.cnv_bed
 
@@ -649,7 +679,8 @@ if __name__ == '__main__':
         if not os.path.exists(AA_outdir):
             os.mkdir(AA_outdir)
 
-        run_AA(amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample, args.ref, args.AA_runmode)
+        run_AA(args.aa_python_interpreter, amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample,
+               args.ref, args.AA_runmode, args.AA_extendmode, args.AA_insert_sdevs)
         tb = time.time()
         logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb

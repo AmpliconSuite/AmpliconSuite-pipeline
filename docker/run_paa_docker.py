@@ -37,30 +37,37 @@ parser.add_argument("--downsample", type=float, help="AA downsample argument (se
 # parser.add_argument("--aa_data_repo", help="Specify a custom $AA_DATA_REPO path FOR PRELIMINARY STEPS ONLY(!). Will"
 # 										   " not override bash variable during AA")
 # parser.add_argument("--aa_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
-# parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
-# 										 "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
+parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
+					"'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
+parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --extendmode argument to AA. Default "
+                    "mode is 'EXPLORE'", choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"], default='EXPLORE')
+parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
+                        "increase for sequencing runs with high variance after insert size selection step. (default "
+                        "3.0)", type=float, default=3.0)
 parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
 parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)", default=None)
 parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)", default=None)
-parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
-												  "default segmentation method (cbs).",
-					choices=['cbs', 'haar', 'hmm', 'hmm-tumor','hmm-germline', 'none'], default='cbs')
+parser.add_argument("--use_CN_prefilter", help="Pre-filter CNV calls on number of copies gained above median "
+                        "chromosome arm CN. Strongly recommended if input CNV calls have been scaled by purity or "
+                        "ploidy. This argument is off by default but is set if --ploidy or --purity is provided for"
+                        "CNVKit.", action='store_true')
+parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit default"
+					" segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor','hmm-germline', 'none'],
+					default='cbs')
 parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
+					action='store_true')
+parser.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
 					action='store_true')
 parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
 									  " be: chr start end name cngain", default="")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", "--bam", help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
-
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
 # 										   "intervals immediately.", action='store_true')
-
 # group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
 # 										 "(reference files organized by reference name).", default="")
 # group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
-
-
 args = parser.parse_args()
 
 if args.fastqs and not args.ref:
@@ -102,7 +109,8 @@ cnvdir, cnvname = os.path.split(args.cnv_bed)
 # assemble an argstring
 argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
 			str(args.cnsize_min) + " --downsample " + str(args.downsample) + " -s " + args.sample_name + \
-			" -o /home/output"
+			" -o /home/output" + " --AA_extendmode " + args.AA_extendmode + " --AA_runmode " + args.AA_runmode + \
+			"--AA_insert_sdevs" + str(args.AA_insert_sdevs)
 
 if args.ref:
 	argstring += " --ref " + args.ref
@@ -128,6 +136,9 @@ if args.ploidy:
 if args.purity:
 	argstring += " --purity " + str(args.purity)
 
+if args.use_CN_prefilter:
+	argstring += " --use_CN_prefilter"
+
 if args.cnv_bed:
 	argstring += " --cnv_bed /home/bed_dir/" + cnvname
 else:
@@ -138,6 +149,9 @@ if args.cnvkit_segmentation:
 
 if args.no_filter:
 	argstring += " --no_filter"
+
+if args.align_only:
+	argstring += " --align_only"
 
 if args.run_AA:
 	argstring += " --run_AA"
