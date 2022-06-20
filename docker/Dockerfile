@@ -42,7 +42,7 @@ RUN fc-cache -f
 
 RUN pip2 install -r /home/requirements/pip2_requirements.txt
 
-RUN apt-get install -y python3-matplotlib=3.1.2-1ubuntu4 python3-numpy=1:1.17.4-5ubuntu3 python3-scipy=1.3.3-3build1
+#RUN apt-get install -y python3-matplotlib=3.1.2-1ubuntu4 python3-numpy=1:1.17.4-5ubuntu3 python3-scipy=1.3.3-3build1
 RUN apt-get install -y python3-pip
 RUN pip3 install --upgrade pip
 RUN pip3 install -r /home/requirements/pip3_requirements.txt
