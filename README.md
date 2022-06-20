@@ -180,12 +180,20 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVKit. Not used by AA itself.
 
+- `--use_CN_prefilter` (Optional) Pre-filter CNV calls on number of copies gained above median chromosome arm CN. Strongly
+recommended if input CNV calls have been scaled by purity or ploidy. This argument is off by default but is automatically set if `--ploidy`
+or `--purity` is provided for CNVKit. 
+
 - `--cnvkit_segmentation` Segmentation method for CNVKit (if used), defaults to CNVKit "
                         "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
                         'hmm-germline', 'none'] 
 
 - `--AA_runmode [FULL, BPGRAPH, CYCLES, SVVIEW]` (Optional, default `FULL`). See AA documentation for more info.
 
+- `--AA_extendmode [EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL]` (Optional, default `EXPLORE`). See AA documentation for more info.
+
+- `-AA_insert_sdevs [float]` (Optional, default 3.0) See AA documentation for more info.
+ 
 
 ### FAQ
 Check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md)!
