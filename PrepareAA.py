@@ -317,12 +317,14 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     print(cmd)
     call(cmd, shell=True)
 
+
 def get_ref_sizes(ref_genome_size_file):
     chr_sizes = {}
     with open(ref_genome_size_file) as infile:
         for line in infile:
             fields = line.rstrip().rsplit()
-            chr_sizes[fields[0]] = str(int(fields[1]) - 1)
+            if fields:
+                chr_sizes[fields[0]] = str(int(fields[1]) - 1)
 
     return chr_sizes
 
