@@ -60,13 +60,13 @@ A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/r
     * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/` or `https://www.mosek.com/try/`)
     * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
-    * Download from `https://drive.google.com/drive/folders/18T83A12CfipB0pnGsTs3s-Qqji6sSvCu` or use the links 
-[here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to download bwa pre-indexed individual data repos.
+    * Download [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to download data repos with (`_indexed`) or
+    without the bwa reference index included.
     * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
         ```bash
         tar zxf data_repo.tar.gz
         echo export AA_DATA_REPO=$PWD/data_repo >> ~/.bashrc
-        cd $AA_DATA_REPO && touch coverage.stats && chmod a+r coverage.stats
+        cd $AA_DATA_REPO && touch coverage.stats && chmod a+rw coverage.stats
         source ~/.bashrc
         ```
 #### Obtain PrepareAA image and execution script:
