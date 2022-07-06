@@ -84,6 +84,8 @@ An example docker command might look like:
 
 **Please make sure your output directory specified for `-o` is writeable.** 
 
+### Other usage options
+PAA can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 ## Usage
 Two example standard runs of PrepareAA:
