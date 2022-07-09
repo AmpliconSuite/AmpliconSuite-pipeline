@@ -459,8 +459,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
-        sys.stderr.write("coverage.stats file not found in " + AA_REPO + "\nPlease see installation instructions.\n")
-        sys.exit(1)
+        print("coverage.stats file not found in " + AA_REPO + "\nCreating a new coverage.stats file.")
+        cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(AA_REPO, AA_REPO)
+        print(cmd)
+        call(cmd, shell=True)
 
     try:
         AA_SRC = os.environ['AA_SRC']
