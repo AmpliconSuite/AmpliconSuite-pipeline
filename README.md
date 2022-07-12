@@ -70,13 +70,10 @@ A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/r
         source ~/.bashrc
         ```
 #### Obtain PrepareAA image and execution script:
-1. Pull docker image:
-    * `docker pull jluebeck/prepareaa`
-
-2. Clone Github repository to access the runscript
+1. Clone Github repository to access the runscript
     * `git clone https://github.com/jluebeck/PrepareAA.git`
 
-3. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
+2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
 
 An example docker command might look like:
 
