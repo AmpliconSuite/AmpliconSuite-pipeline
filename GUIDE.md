@@ -31,7 +31,7 @@ You may also want to install the additonal programs for classifying outputs ([Am
 ### Preparing the inputs
 ![AA workflow](./images/AA_example.png)
 
-AA takes as input a WGS BAM file, and a user-created BED file of seed regions as inputs. Here we will discuss some of 
+AA takes as input a WGS BAM file (paired-end WGS), and a user-created BED file of seed regions as inputs. Here we will discuss some of 
 the best practices for generating these files.
 
 AA uses external CNV calls to determine which regions it should examine - thes are called **CNV seeds**. 
@@ -59,15 +59,17 @@ Please also note that the AA data repo has reference genome fasta files you can 
 Don't forget to also create the BAM file index! `samtools index [sample].bam`
 
 #### - Creating the CNV bed file:
-In the AA publication, ReadDepth was used as the CNV caller for seeding. However, there are much more modern CNV callers available. **We have found that
-AA is fairly robust to the choice of CNV caller for seed identification**. Some other callers we have used successfully include CNVKit, Canvas, Battenberg, and GATK.
+It is important to remember that the goal of the CNV calls given to AA are simply to identify locations where focal amplifications may exist - that is, there is a locally increased copy number. This means that CNV callers which sensitively segment the reference genome will perform best for focal amplification detection. CNV callers that undersegment the genome may have good performance in genome-wide tool comparisons, but may not work well with AA.
+
+In the AA publication, ReadDepth was used as the CNV caller for seeding. However, there are much more modern CNV callers available. Some other callers we have used successfully include CNVKit, Canvas, Battenberg, and GATK.
 
 If you generate your own file of CNV calls, *please ensure the estimated copy number of these calls is in the last column of the bed file*. 
 Secondly, also ensure that the calls you are using are segmented, and not just raw per-bin estimates. This is not a concern for most users,
 however **if you notice there are > 50 CNV seeds going into AA, there may be something wrong**.   
 
-One increasingly popular CNV caller is ASCAT. We have found that ASCAT run with default settings appears to undersegment the genome as compared to other 
-CNV callers. **We do not recommend default ASCAT calls for AA CNV seed generation**.
+We have found that CNV callers FACETS and ASCAT generally undersegment or create seeds that are too long for AA. **We do not recommend using FACETS or ASCAT for AA seed detection.**
+
+Many modern callers are purity and ploidy aware. Note that while this may help to accurate get globally accurate copy numbers, it can lead to situations where entire chromosome arms surpass your copy number gain threshold for AA! If you are using purity and ploidy corrected calls, please set the `gain` cutoff accordingly, and more importantly set the `--use_CN_prefilter` argument to PrepareAA.
 #
 
 ### Filtering and selecting seeds from CNV data
@@ -84,11 +86,11 @@ If low-complexity/repetive seeds are not filtered from AA, it can cause an exrem
 regions, but it should still be avoided to give them to AA as input. 
 
 If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the PrepareAA/scripts directory (and documented in PrepareAA's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
-The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it.
+The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it. Better yet, giving the CN calls to PrepareAA and setting `--use_CN_prefilter` and invoking AA via PrepareAA will yield the best results.
 #
  
 ### Running AA
-We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file output by `amplified_intervals.py`).
+We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by PrepareAA `amplified_intervals.py`).
 To check if your BAM file is coordinate-sorted, you can take a peek at the BAM file header by doing 
 `samtools view -H your_bamfile.bam | head `. 
 Please make sure you know which reference genome it is aligned to so that you can properly specify the `--ref` argument to AA.
@@ -103,7 +105,7 @@ Note that PrepareAA can run AA on its own by setting `--run_AA`, and AA will aut
 
 **We have recently developed classification methods which take AA output and predict the mechanism(s) of a focal amplification's genesis**.
 This method is called **[AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)**. 
-This tool will output a table describing many important details of the focal amplifications AA discovered.
+This tool will output a table describing many important details of the focal amplifications AA discovered. AmpliconClassifier (AC) can be run by setting `--run_AC` when launching PrepareAA
 
 On its own, AA does not automatically produce a prediction of ecDNA or BFB status. It provides the files though that can be used to make that determination.
 For more details about deciphering the AA outputs on your own, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#outputs).
@@ -183,6 +185,9 @@ At the moment, we do not support adding additional tracks of data into the plot 
 #
 
 ### FAQ
+- **Can I use AA with whole-exome sequencing or RNA-sequencing data?**
+    - AA will fundamentally not work with these data modalities.
+
 - **What coverage is needed for AA?**
     - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA. 
     
