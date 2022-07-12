@@ -25,7 +25,7 @@ Depending on what input data you are starting from, PrepareAA (PAA) may require 
 
 PrepareAA assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
 
-PrepareAA has been tested with Ubuntu 16.04+ and CentOS 7. PrepareAA's optional dependencies related to CNV calling will not work on CentOS 6.
+PrepareAA has been tested with Ubuntu (16.04 and above) and CentOS 7. PrepareAA's optional dependencies related to CNV calling will not work on CentOS 6.
 
 
 **Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires
