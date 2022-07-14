@@ -5,8 +5,10 @@
 import argparse
 from datetime import datetime
 import gzip
+import json
 import os
-from subprocess import call
+import socket
+from subprocess import *
 import sys
 import threading
 import time
@@ -14,9 +16,10 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.1"
+__version__ = "0.1203.2"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
+metadata_dict = {}
 
 # generic worker thread function
 class workerThread(threading.Thread):
@@ -57,6 +60,7 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
 
     print(cmd)
     call(cmd, shell=True)
+    metadata_dict["bwa_cmd"] = cmd
     print("\nPerforming duplicate removal & indexing")
     cmd_list = ["samtools", "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
     print(" ".join(cmd_list))
@@ -129,6 +133,14 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     if not ckpy_path.endswith("/cnvkit.py"):
         ckpy_path += "/cnvkit.py"
 
+    cnvkit_version = Popen([PY3_PATH, ckpy_path, "version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
+    try:
+        cnvkit_version = cnvkit_version.decode('utf-8')
+    except UnicodeError:
+        pass
+
+    metadata_dict["cnvkit_version"] = cnvkit_version
+
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
     print("\nRunning CNVKit batch")
     if args.normal_bam:
@@ -139,6 +151,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
 
     print(cmd)
     call(cmd, shell=True)
+    metadata_dict["cnvkit_cmd"] = cmd + " ; "
     rscript_str = ""
     if args.rscript_path:
         if not args.rscript_path.endswith("/Rscript"):
@@ -155,7 +168,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
                                                          cnsFile)
     print(cmd)
     call(cmd, shell=True)
-
+    metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
     print("\nCleaning up temporary files")
     cmd = "rm {}/*tmp.bed {}/*.cnn".format(outdir, outdir)
     print(cmd)
@@ -283,16 +296,25 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
         AA_seeds_filename)
     print(cmd)
     call(cmd, shell=True)
-
+    metadata_dict["amplified_intervals_cmd"] = cmd
     return AA_seeds_filename + ".bed"
 
 
 def run_AA(AA_interpreter, amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref, runmode, extendmode,
            insert_sdevs):
+    AA_version = Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[1].rstrip()
+    try:
+        AA_version = AA_version.decode('utf-8')
+    except UnicodeError:
+        pass
+
+    metadata_dict["AA_version"] = AA_version
+
     cmd = "{} {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --extendmode {} --insert_sdevs {} --out {}/{}".format(
         AA_interpreter, AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, extendmode, str(insert_sdevs), AA_outdir, sname)
     print(cmd)
     call(cmd, shell=True)
+    metadata_dict["AA_cmd"] = cmd
 
 
 def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
@@ -310,12 +332,21 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     print(cmd)
     call(cmd, shell=True)
 
+    AC_version = Popen([PY3_PATH, AC_src + "/amplicon_classifier.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
+    try:
+        AC_version = AC_version.decode('utf-8')
+    except UnicodeError:
+        pass
+
+    metadata_dict["AC_version"] = AC_version
+
     # make the AC output table
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
     cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
                                                                               classification_file)
     print(cmd)
     call(cmd, shell=True)
+    metadata_dict["AC_cmd"] = cmd
 
 
 def get_ref_sizes(ref_genome_size_file):
@@ -348,6 +379,52 @@ def get_ref_centromeres(ref_name):
                 centromere_dict[fields[0]] = (str(pmin - 20000), str(pmax + 20000))
 
     return centromere_dict
+
+
+def save_run_metadata(outdir, sname, args, launchtime):
+    # make a dictionary that stores
+    # datetime
+    # hostname
+    # ref
+    # PAA command
+    # AA python interpreter version
+    # bwa cmd
+    # CN cmd
+    # AA cmd
+    # PAA version
+    # CNVKit version
+    # AA version
+    # AC version
+
+    metadata_dict["launch_datetime"] = launchtime
+    metadata_dict["hostname"] = socket.gethostname()
+    metadata_dict["ref_genome"] = args.ref
+    aa_python_v = Popen([args.aa_python_interpreter, "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
+    try:
+        aa_python_v = aa_python_v.decode('utf-8')
+    except UnicodeError:
+        pass
+
+    metadata_dict["AA_python_version"] = aa_python_v
+
+    commandstring = ""
+    for arg in sys.argv:
+        if ' ' in arg:
+            commandstring += '"{}" '.format(arg)
+        else:
+            commandstring += "{} ".format(arg)
+
+    metadata_dict["PAA_command"] = commandstring
+    metadata_dict["PAA_version"] = __version__
+
+    for x in ["bwa_cmd", "cnvkit_cmd", "amplified_intervals_cmd", "AA_cmd", "AC_cmd", "cnvkit_version", "AA_version",
+              "AC_version"]:
+        if x not in metadata_dict:
+            metadata_dict[x] = "NA"
+
+    #save the json dict
+    with open(outdir + sname + "_run_metadata.json", 'w') as fp:
+        json.dump(metadata_dict, fp)
 
 
 # MAIN #
@@ -425,7 +502,8 @@ if __name__ == '__main__':
     ta = time.time()
     ti = ta
     args = parser.parse_args()
-    print(str(datetime.now()))
+    launchtime = str(datetime.now())
+    print(launchtime)
     print("PrepareAA version " + __version__ + "\n")
     # set an output directory if user did not specify
     if not args.output_directory:
@@ -708,6 +786,7 @@ if __name__ == '__main__':
             tb = time.time()
             logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
+    save_run_metadata(outdir, sname, args, launchtime)
     print("Completed\n")
     print(str(datetime.now()))
     tf = time.time()
