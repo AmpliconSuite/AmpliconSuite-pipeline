@@ -331,6 +331,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
         PY3_PATH, AC_src, input_file, ref, class_output)
     print(cmd)
     call(cmd, shell=True)
+    metadata_dict["AC_cmd"] = cmd
 
     AC_version = Popen([PY3_PATH, AC_src + "/amplicon_classifier.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
     try:
@@ -340,13 +341,16 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     metadata_dict["AC_version"] = AC_version
 
+
+def make_AC_table(sname, AC_outdir, AC_src, metadata_file):
     # make the AC output table
+    class_output = AC_outdir + sname
+    input_file = class_output + ".input"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
-    cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
-                                                                              classification_file)
+    cmd = "{} {}/make_results_table.py -i {} --classification_file {} --metadata_dict {}".format(
+        PY3_PATH, AC_src, input_file, classification_file, metadata_file)
     print(cmd)
     call(cmd, shell=True)
-    metadata_dict["AC_cmd"] = cmd
 
 
 def get_ref_sizes(ref_genome_size_file):
@@ -422,9 +426,12 @@ def save_run_metadata(outdir, sname, args, launchtime):
         if x not in metadata_dict:
             metadata_dict[x] = "NA"
 
-    #save the json dict
-    with open(outdir + sname + "_run_metadata.json", 'w') as fp:
+    # save the json dict
+    metadata_filename = outdir + sname + "_run_metadata.json"
+    with open(metadata_filename, 'w') as fp:
         json.dump(metadata_dict, fp)
+
+    return metadata_filename
 
 
 # MAIN #
@@ -786,7 +793,10 @@ if __name__ == '__main__':
             tb = time.time()
             logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-    save_run_metadata(outdir, sname, args, launchtime)
+    metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
+    if args.run_AA and args.run_AC:
+        make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename)
+
     print("Completed\n")
     print(str(datetime.now()))
     tf = time.time()
