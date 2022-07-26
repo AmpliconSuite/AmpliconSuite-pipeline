@@ -58,13 +58,13 @@ def mergeIntervals(curr_cycle):
         max = -100000
         for i in range(len(arr)):
             a = arr[i]
-            if a[0] > max:
+            if a[0] > max + 1:
                 if i != 0:
                     m.append([chrom_num, s, max])
                 max = a[1]
                 s = a[0]
             else:
-                if a[1] >= max:
+                if a[1] > max:
                     max = a[1]
 
         # 'max' value gives the last point of
