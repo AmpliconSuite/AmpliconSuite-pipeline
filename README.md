@@ -1,4 +1,5 @@
 # PrepareAA
+![GitHub](https://img.shields.io/github/license/jluebeck/PrepareAA)
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
