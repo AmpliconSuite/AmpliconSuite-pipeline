@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.2"
+__version__ = "0.1203.3"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
