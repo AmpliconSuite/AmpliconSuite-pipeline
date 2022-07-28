@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import sys
 import os
@@ -77,6 +77,15 @@ if args.fastqs and not args.ref:
 if not args.output_directory:
 	args.output_directory = os.getcwd()
 
+if args.output_directory == "/":
+	sys.stderr.write("Output directory should not be root!\n")
+	sys.exit(1)
+
+print("making output directory read/writeable")
+cmd = "chmod a+rw {} -R".format(args.output_directory)
+print(cmd)
+call(cmd, shell=True)
+
 try:
 	AA_REPO = os.environ['AA_DATA_REPO'] + "/"
 
@@ -90,13 +99,6 @@ if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
 	cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(AA_REPO, AA_REPO)
 	print(cmd)
 	call(cmd, shell=True)
-
-# try:
-# 	AA_SRC = os.environ['AA_SRC']
-
-# except KeyError:
-# 	sys.stderr.write("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
-# 	sys.exit(1)
 
 
 try:
