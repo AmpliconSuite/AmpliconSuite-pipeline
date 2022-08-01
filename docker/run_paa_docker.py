@@ -114,6 +114,7 @@ except KeyError:
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
+cnvdir = os.path.abspath(cnvdir)
 
 # assemble an argstring
 argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
@@ -125,6 +126,7 @@ if args.ref:
 	argstring += " --ref " + args.ref
 
 if args.sorted_bam:
+	args.sorted_bam = os.path.abspath(args.sorted_bam)
 	bamdir, bamname = os.path.split(args.sorted_bam)
 	argstring += " --sorted_bam /home/bam_dir/" + bamname
 	if args.normal_bam:
@@ -134,6 +136,7 @@ if args.sorted_bam:
 		norm_bamdir = bamdir
 
 else:
+	args.fastqs[0], args.fastqs[1] = os.path.abspath(args.fastqs[0], args.fastqs[1])
 	_, fq1name = os.path.split(args.fastqs[0])
 	bamdir, fq2name = os.path.split(args.fastqs[1])
 	norm_bamdir = bamdir

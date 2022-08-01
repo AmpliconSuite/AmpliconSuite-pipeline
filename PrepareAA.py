@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.3"
+__version__ = "0.1203.4"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -403,7 +403,8 @@ def save_run_metadata(outdir, sname, args, launchtime):
     metadata_dict["launch_datetime"] = launchtime
     metadata_dict["hostname"] = socket.gethostname()
     metadata_dict["ref_genome"] = args.ref
-    aa_python_v = Popen([args.aa_python_interpreter, "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
+    aapint = args.aa_python_interpreter if args.aa_python_interpreter else "python"
+    aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE).communicate()[1].rstrip()
     try:
         aa_python_v = aa_python_v.decode('utf-8')
     except UnicodeError:
