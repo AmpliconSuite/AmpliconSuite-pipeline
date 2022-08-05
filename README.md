@@ -4,7 +4,7 @@
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
 PrepareAA supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). PrepareAA can invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier.
-**Current version: 0.1203.5**
+**Current version: 0.1203.6**
 
 Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running AA to learn about best practices and see some FAQs.
 
@@ -70,7 +70,7 @@ A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/r
         source ~/.bashrc
         ```
 #### Obtain PrepareAA image and execution script:
-1. Clone Github repository to access the runscript
+1. Clone GitHub repository to access the runscript
     * `git clone https://github.com/jluebeck/PrepareAA.git`
 
 2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
@@ -79,7 +79,7 @@ An example docker command might look like:
 
 `PrepareAA/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --bam /path/to/bamfile.bam --run_AA --run_AC`
 
-**Please make sure your output directory specified for `-o` is writeable.** 
+**You can opt to run the docker image as your current user by setting `--run_as_user`.** 
 
 ### Other usage options
 PAA can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).

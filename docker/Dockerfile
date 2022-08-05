@@ -84,3 +84,12 @@ RUN cd /home/programs && unzip master.zip
 RUN echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc
 RUN cp /home/programs/PrepareAA-master/docker/paa_default_ncm.conf /home/programs/NGSCheckMate-master/ncm.conf
 RUN cp `which cnvkit.py` /home/programs/cnvkit.py
+
+# set up a user
+ARG set_uid
+ARG set_gid
+RUN if [ "$set_uid" = 0 ] || [ "$set_gid" = 0 ]; then echo "cannot set UID or GID to 0" ; fi
+RUN if [ -z "$set_uid" ] || [ -z "$set_gid" ] || [ "$set_uid" = 0 ] || [ "$set_gid" = 0 ]; then groupadd -r -g 65533 aa_user && useradd -r -u 65533 -ms /bin/bash -g 65533 aa_user && echo "using non-custom uid" ; else echo "using custom uid ${set_uid}" && groupadd -r -g $set_gid aa_user && useradd -r -u $set_uid -ms /bin/bash -g $set_gid aa_user ; fi
+RUN chmod a+rw /home
+USER aa_user
+WORKDIR /home

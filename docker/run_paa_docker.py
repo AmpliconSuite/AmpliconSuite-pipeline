@@ -60,6 +60,9 @@ parser.add_argument("--align_only", help="Only perform the alignment stage (do n
 					action='store_true')
 parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
 									  " be: chr start end name cngain", default="")
+parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script. Alternatively, instead of setting this flag"
+					" one can also rebuild the docker image using docker build . -t jluebeck/prepareaa:latest --build-arg set_uid=$UID --build-arg set_gid=$(id -g) ",
+					action='store_true')
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", "--bam", help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
@@ -171,6 +174,13 @@ if args.run_AA:
 if args.run_AC:
 	argstring += " --run_AC"
 
+
+userstring = ""
+if args.run_as_user:
+	#userstring = " --user " + str(os.getuid())
+	userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
+	
+
 print("Creating a docker script with the following argstring:")
 print(argstring + "\n")
 with open("paa_docker.sh", 'w') as outfile:
@@ -178,7 +188,7 @@ with open("paa_docker.sh", 'w') as outfile:
 	outfile.write("export argstring=\"" + argstring + "\"\n")
 
 	# assemble a docker command string
-	dockerstring = "docker run --rm -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\"" + \
+	dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\"" + \
 		" -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
 		":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
 		MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
