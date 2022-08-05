@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.6"
+__version__ = "0.1203.7"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -254,18 +254,18 @@ def convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, base, cnsfile=None, res
         else:
             cnsfile = cnvkit_output_directory + base + "_rescaled.cns"
 
-    with open(cnsfile) as infile, open(cnvkit_output_directory + base + "_CNV_GAIN.bed", 'w') as outfile:
+    with open(cnsfile) as infile, open(cnvkit_output_directory + base + "_CNV_CALLS.bed", 'w') as outfile:
         head = next(infile).rstrip().rsplit("\t")
         for line in infile:
             fields = line.rstrip().rsplit("\t")
             s, e = int(fields[1]), int(fields[2])
             cn_r = float(fields[4])
             cn = 2 ** (cn_r + 1)
-            if cn >= args.cngain or nofilter or rescaled:  # do not filter on size since amplified_intervals.py will merge small ones.
-                outline = "\t".join(fields[0:3] + ["CNVkit", str(cn)]) + "\n"
-                outfile.write(outline)
+            # if cn >= args.cngain or nofilter or rescaled:  # do not filter on size since amplified_intervals.py will merge small ones.
+            outline = "\t".join(fields[0:3] + ["CNVkit", str(cn)]) + "\n"
+            outfile.write(outline)
 
-    return cnvkit_output_directory + base + "_CNV_GAIN.bed"
+    return cnvkit_output_directory + base + "_CNV_CALLS.bed"
 
 
 def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
@@ -481,10 +481,10 @@ if __name__ == '__main__':
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
     parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)", default=None)
     parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)", default=None)
-    parser.add_argument("--use_CN_prefilter", help="Pre-filter CNV calls on number of copies gained above median "
-                        "chromosome arm CN. Strongly recommended if input CNV calls have been scaled by purity or "
-                        "ploidy. This argument is off by default but is set if --ploidy or --purity is provided for"
-                        "CNVKit.", action='store_true')
+    # parser.add_argument("--no_CN_prefilter", help="Pre-filter CNV calls on number of copies gained above median "
+    #                     "chromosome arm CN. Strongly recommended if input CNV calls have been scaled by purity or "
+    #                     "ploidy. This argument is off by default but is set if --ploidy or --purity is provided for"
+    #                     "CNVKit.", action='store_true')
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                         "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
                         'hmm-germline', 'none'], default='cbs')
@@ -738,7 +738,6 @@ if __name__ == '__main__':
         run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
                    seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, refG=ref)
         if args.ploidy or args.purity:
-            args.use_CN_prefilter = True
             rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
                                  purity=args.purity)
             rescaling = True
@@ -753,10 +752,9 @@ if __name__ == '__main__':
     tb = time.time()
     logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
     ta = tb
-    if not args.no_filter:
-        if args.use_CN_prefilter:
-            args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, centromere_dict, chr_sizes,
-                                                                 args.cngain, args.output_directory)
+    if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
+        args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes, args.cngain,
+                                                   args.output_directory)
 
         amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
                                                          outdir, sname, args.cngain, args.cnsize_min)
