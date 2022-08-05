@@ -56,7 +56,7 @@ def prefilter_bed(bedfile, centromere_dict, chr_sizes, cngain, outdir):
         med_cn = compute_cn_median(init_cns)
         for x in init_cns:
             ccg = cngain
-            if x[2] - x[1] > 10000000:
+            if x[2] - x[1] > 5000000:
                 ccg *= 1.5
 
             if x[3] > med_cn + ccg - 2:

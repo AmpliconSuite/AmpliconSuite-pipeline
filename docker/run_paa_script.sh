@@ -15,6 +15,7 @@ ls /home > /home/output/docker_home_manifest.log
 #works for py2 and py3, check if NCM works
 python $NCM_HOME/ncm.py -h >> /home/output/docker_home_manifest.log
 
-
 # works for py2 and py3
 python programs/PrepareAA-master/PrepareAA.py $argstring &> /home/output/PAA_stdout.log
+
+chmod a+rw /home/output/ -R

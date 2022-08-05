@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.4"
+__version__ = "0.1203.5"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -327,8 +327,8 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     # run AC on input file
     input_file = class_output + ".input"
-    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {} --annotate_cycles_file --report_complexity".format(
-        PY3_PATH, AC_src, input_file, ref, class_output)
+    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {} --report_complexity".format(PY3_PATH, AC_src, input_file,
+                                                                                         ref, class_output)
     print(cmd)
     call(cmd, shell=True)
     metadata_dict["AC_cmd"] = cmd
