@@ -1,7 +1,28 @@
 from collections import defaultdict
 import os
 
-from intervaltree import IntervalTree, Interval
+from intervaltree import IntervalTree
+
+
+def merge_intervals(usort_intd, cn_cut=4.5, tol=1):
+    merged_intd = defaultdict(IntervalTree)
+    for chrom, usort_ints in usort_intd.items():
+        # sort ints
+        sort_ints = sorted([x for x in usort_ints if x[2] > cn_cut])
+        # merge sorted ints
+        mi = [sort_ints[0][:2]]
+        for ival in sort_ints[1:]:
+            if ival[0] <= mi[-1][1] + tol:
+                ui = (mi[-1][0], max(ival[1], mi[-1][1]))
+                mi[-1] = ui
+
+            else:
+                mi.append(ival)
+
+        for x in mi:
+            merged_intd[chrom].addi(x[0], x[1])
+
+    return merged_intd
 
 
 # takes list of tuples (chrom, start, end, cn)
@@ -60,6 +81,18 @@ def read_gain_regions(ref):
     return gain_regions
 
 
+def get_continuous_high_regions(bedfile, cngain):
+    raw_input = defaultdict(list)
+    with open(bedfile) as infile:
+        for line in infile:
+            fields = line.rstrip().rsplit("\t")
+            c, s, e = fields[0], int(fields[1]), int(fields[2]) + 1
+            cn = float(fields[-1])
+            raw_input[c].append((s,e,cn))
+
+    return merge_intervals(raw_input, cn_cut=cngain, tol=300000)
+
+
 # take CNV calls (as bed?) - have to update to not do CNV_GAIN
 #input bed file, centromere_dict
 #output: path of prefiltered bed file
@@ -96,6 +129,8 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
             else:
                 print("Warning: could not match " + c + ":" + str(s) + "-" + str(e) + " to a known chromosome arm!")
 
+    continuous_high_region_ivald = get_continuous_high_regions(bedfile, cngain)
+    print(continuous_high_region_ivald)
     cn_filt_entries = []
     for a in sorted(arm2cns.keys()):
         # compute the median CN of the arm
@@ -103,8 +138,12 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
         med_cn = compute_cn_median(init_cns, arm2lens[a])
         for x in init_cns:
             ccg = cngain
-            if x[2] - x[1] > 5000000:
-                ccg *= 1.5
+            continuous_high_hits = continuous_high_region_ivald[x[0]][x[1]:x[2]]
+            if continuous_high_hits:
+                for y in continuous_high_hits:
+                    if y.end - y.begin > 10000000:
+                        ccg *= 1.5
+                        break
 
             if x[3] > med_cn + ccg - 2:
                 cn_filt_entries.append(x)

@@ -7,6 +7,8 @@ import os
 
 from intervaltree import IntervalTree
 
+# This script is deprecated by the CN_prefilter step in PrepareAA.
+
 # Break AA seeds on known low mappability, centromere, segmental duplication regions.
 # This enables AA to better handle ultra-long AA seeds that can sometimes arise depending on the choice of CNV caller.
 # assumes CN in last column
