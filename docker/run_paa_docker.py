@@ -66,6 +66,7 @@ parser.add_argument("--run_as_user", help="Run the docker image as the user laun
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", "--bam", help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
+group.add_argument("--completed_AA_runs", help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
 # 										   "intervals immediately.", action='store_true')
 # group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
@@ -73,7 +74,7 @@ group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 # group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
 args = parser.parse_args()
 
-if args.fastqs and not args.ref:
+if (args.fastqs or args.completed_AA_runs) and not args.ref:
 	sys.stderr.write("Must specify --ref when providing unaligned fastq files.")
 	sys.exit(1)
 
@@ -138,12 +139,17 @@ if args.sorted_bam:
 	else:
 		norm_bamdir = bamdir
 
-else:
-	args.fastqs[0], args.fastqs[1] = os.path.abspath(args.fastqs[0], args.fastqs[1])
+elif args.fastqs:
+	args.fastqs[0], args.fastqs[1] = os.path.abspath(args.fastqs[0]), os.path.abspath(args.fastqs[1])
 	_, fq1name = os.path.split(args.fastqs[0])
 	bamdir, fq2name = os.path.split(args.fastqs[1])
 	norm_bamdir = bamdir
 	argstring += " --fastqs /home/bam_dir/" + fq1name + " /home/bam_dir/" + fq2name
+
+else:
+	argstring += " --completed_AA_results /home/bam_dir/ --completed_run_metadata None"
+	bamdir = os.path.abspath(args.completed_AA_results)
+	norm_bamdir = bamdir
 
 if args.ploidy:
 	argstring += " --ploidy " + str(args.ploidy)
@@ -156,7 +162,7 @@ if args.use_CN_prefilter:
 
 if args.cnv_bed:
 	argstring += " --cnv_bed /home/bed_dir/" + cnvname
-else:
+elif not args.completed_AA_results:
 	argstring += " --cnvkit_dir /home/programs/cnvkit.py"
 
 if args.cnvkit_segmentation:
@@ -174,12 +180,9 @@ if args.run_AA:
 if args.run_AC:
 	argstring += " --run_AC"
 
-
 userstring = ""
 if args.run_as_user:
-	#userstring = " --user " + str(os.getuid())
 	userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
-	
 
 print("Creating a docker script with the following argstring:")
 print(argstring + "\n")

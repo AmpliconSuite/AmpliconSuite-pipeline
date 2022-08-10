@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.8"
+__version__ = "0.1203.9"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -347,8 +347,11 @@ def make_AC_table(sname, AC_outdir, AC_src, metadata_file):
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
-    cmd = "{} {}/make_results_table.py -i {} --classification_file {} --metadata_dict {}".format(
-        PY3_PATH, AC_src, input_file, classification_file, metadata_file)
+    cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
+                                                                              classification_file)
+    if metadata_file and not metadata_file.lower() == "none":
+        cmd += " --metadata_dict " + metadata_file
+
     print(cmd)
     call(cmd, shell=True)
 
@@ -498,6 +501,7 @@ if __name__ == '__main__':
     group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
     group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
+    group.add_argument("--completed_AA_runs", help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
     group2 = parser.add_mutually_exclusive_group(required=True)
     group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
                         "intervals immediately.", action='store_true')
@@ -506,6 +510,7 @@ if __name__ == '__main__':
     group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
                         "(reference files organized by reference name).", default="")
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
+    group2.add_argument("--completed_run_metadata", help="Metadata JSON from standard runs. If you do not have it, set to 'None'.", default="")
 
     ta = time.time()
     ti = ta
@@ -557,8 +562,8 @@ if __name__ == '__main__':
         sys.stderr.write("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
         sys.exit(1)
 
-    if args.fastqs and not args.ref:
-        sys.stderr.write("Must specify --ref when providing unaligned fastq files.")
+    if (args.fastqs or args.completed_AA_runs) and not args.ref:
+        sys.stderr.write("Must specify --ref when providing unaligned fastq files.\n")
         sys.exit(1)
 
     runCNV = None
@@ -655,146 +660,163 @@ if __name__ == '__main__':
         print("Running pipeline on " + fastqs)
         args.sorted_bam = run_bwa(ref, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
 
-    bamBaiNoExt = args.sorted_bam[:-3] + "bai"
-    cramCraiNoExt = args.sorted_bam[:-4] + "crai"
-    baiExists = os.path.isfile(args.sorted_bam + ".bai") or os.path.isfile(bamBaiNoExt)
-    craiExists = os.path.isfile(args.sorted_bam + ".crai") or os.path.isfile(cramCraiNoExt)
-    if not baiExists and not craiExists:
-        print(args.sorted_bam + " index not found, calling samtools index")
-        call(["samtools", "index", args.sorted_bam])
-        print("Finished indexing")
+    if not args.completed_AA_runs:
+        bamBaiNoExt = args.sorted_bam[:-3] + "bai"
+        cramCraiNoExt = args.sorted_bam[:-4] + "crai"
+        baiExists = os.path.isfile(args.sorted_bam + ".bai") or os.path.isfile(bamBaiNoExt)
+        craiExists = os.path.isfile(args.sorted_bam + ".crai") or os.path.isfile(cramCraiNoExt)
+        if not baiExists and not craiExists:
+            print(args.sorted_bam + " index not found, calling samtools index")
+            call(["samtools", "index", args.sorted_bam])
+            print("Finished indexing")
 
-    bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
+        bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
+        check_reference.check_properly_paired(args.sorted_bam)
+        tb = time.time()
+        logfile.write("Alignment and bam indexing:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-    tb = time.time()
-    logfile.write("Alignment and bam indexing:\t" + "{:.2f}".format(tb - ta) + "\n")
+        if args.align_only:
+            print("Completed\n")
+            print(str(datetime.now()))
+            tf = time.time()
+            logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
+            logfile.close()
+            sys.exit()
 
-    if args.align_only:
-        print("Completed\n")
-        print(str(datetime.now()))
-        tf = time.time()
-        logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
-        logfile.close()
-        sys.exit()
+        ta = tb
+        centromere_dict = get_ref_centromeres(args.ref)
+        chr_sizes = get_ref_sizes(ref_genome_size_file)
+        # coordinate CNV calling
+        if runCNV == "Canvas":
+            # chunk the genome by chr
+            regions = []
+            for key, value in chr_sizes.items():
+                try:
+                    cent_tup = centromere_dict[key]
+                    regions.append((key, "0-" + cent_tup[0], "p"))
+                    regions.append((key, cent_tup[1] + "-" + value, "q"))
 
-    ta = tb
-    centromere_dict = get_ref_centromeres(args.ref)
-    chr_sizes = get_ref_sizes(ref_genome_size_file)
-    # coordinate CNV calling
-    if runCNV == "Canvas":
-        # chunk the genome by chr
-        regions = []
-        for key, value in chr_sizes.items():
-            try:
-                cent_tup = centromere_dict[key]
-                regions.append((key, "0-" + cent_tup[0], "p"))
-                regions.append((key, cent_tup[1] + "-" + value, "q"))
+                # handle mitochondrial contig
+                except KeyError:
+                    regions.append((key, "0-" + value, ""))
 
-            # handle mitochondrial contig
-            except KeyError:
-                regions.append((key, "0-" + value, ""))
+            if not merged_vcf_file:
+                # Run FreeBayes, one instance per chromosome
+                print("\nRunning freebayes")
+                print("Using freebayes version:")
+                call("freebayes --version", shell=True)
+                freebayes_output_directory = args.output_directory + "/freebayes_vcfs/"
+                if not os.path.exists(freebayes_output_directory):
+                    os.mkdir(freebayes_output_directory)
 
-        if not merged_vcf_file:
-            # Run FreeBayes, one instance per chromosome
-            print("\nRunning freebayes")
-            print("Using freebayes version:")
-            call("freebayes --version", shell=True)
-            freebayes_output_directory = args.output_directory + "/freebayes_vcfs/"
-            if not os.path.exists(freebayes_output_directory):
-                os.mkdir(freebayes_output_directory)
+                threadL = []
+                for i in range(int(args.nthreads)):
+                    threadL.append(workerThread(i, run_freebayes, ref, args.sorted_bam, freebayes_output_directory, sname,
+                                                args.nthreads, regions, args.freebayes_dir))
+                    threadL[i].start()
 
-            threadL = []
-            for i in range(int(args.nthreads)):
-                threadL.append(workerThread(i, run_freebayes, ref, args.sorted_bam, freebayes_output_directory, sname,
-                                            args.nthreads, regions, args.freebayes_dir))
-                threadL[i].start()
+                for t in threadL:
+                    t.join()
 
-            for t in threadL:
-                t.join()
+                # make a list of vcf files
+                vcf_files = [freebayes_output_directory + x for x in os.listdir(freebayes_output_directory) if
+                             x.endswith(".vcf.gz")]
 
-            # make a list of vcf files
-            vcf_files = [freebayes_output_directory + x for x in os.listdir(freebayes_output_directory) if
-                         x.endswith(".vcf.gz")]
+                # MERGE VCFs
+                merged_vcf_file = merge_and_filter_vcfs(chr_sizes.keys(), vcf_files, outdir, sname)
 
-            # MERGE VCFs
-            merged_vcf_file = merge_and_filter_vcfs(chr_sizes.keys(), vcf_files, outdir, sname)
+            else:
+                print("Using " + merged_vcf_file + "for Canvas CNV step. Improper formatting of VCF can causes errors. See "
+                                                   "README for formatting tips.")
+
+            run_canvas(args.canvas_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed,
+                       sname, ref)
+            args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
+
+        elif args.reuse_canvas:
+            args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
+
+        elif runCNV == "CNVkit":
+            cnvkit_output_directory = args.output_directory + "/" + sname + "_cnvkit_output/"
+            if not os.path.exists(cnvkit_output_directory):
+                os.mkdir(cnvkit_output_directory)
+
+            run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
+                       seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, refG=ref)
+            if args.ploidy or args.purity:
+                rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
+                                     purity=args.purity)
+                rescaling = True
+            else:
+                rescaling = False
+
+            args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase, rescaled=rescaling)
+
+        if args.cnv_bed.endswith(".cns"):
+            args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
+
+        tb = time.time()
+        logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
+        ta = tb
+        if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
+            args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes, args.cngain,
+                                                       args.output_directory)
+
+            amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
+                                                             outdir, sname, args.cngain, args.cnsize_min)
 
         else:
-            print("Using " + merged_vcf_file + "for Canvas CNV step. Improper formatting of VCF can causes errors. See "
-                                               "README for formatting tips.")
+            print("Skipping filtering of bed file.")
+            amplified_interval_bed = args.cnv_bed
 
-        run_canvas(args.canvas_dir, args.sorted_bam, merged_vcf_file, canvas_output_directory, removed_regions_bed,
-                   sname, ref)
-        args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
+        tb = time.time()
+        logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
+        ta = tb
+        # Run AA
+        if args.run_AA:
+            AA_outdir = outdir + "/" + sname + "_AA_results/"
+            if not os.path.exists(AA_outdir):
+                os.mkdir(AA_outdir)
 
-    elif args.reuse_canvas:
-        args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
+            run_AA(args.aa_python_interpreter, amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample,
+                   args.ref, args.AA_runmode, args.AA_extendmode, args.AA_insert_sdevs)
+            tb = time.time()
+            logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
+            ta = tb
 
-    elif runCNV == "CNVkit":
-        cnvkit_output_directory = args.output_directory + "/" + sname + "_cnvkit_output/"
-        if not os.path.exists(cnvkit_output_directory):
-            os.mkdir(cnvkit_output_directory)
+            # Run AC
+            if args.run_AC:
+                # if 'AC_SRC' not in os.environ:
+                #     sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
+                # else:
+                AC_SRC = os.environ['AC_SRC']
+                AC_outdir = outdir + "/" + sname + "_classification/"
+                if not os.path.exists(AC_outdir):
+                    os.mkdir(AC_outdir)
 
-        run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
-                   seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, refG=ref)
-        if args.ploidy or args.purity:
-            rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
-                                 purity=args.purity)
-            rescaling = True
-        else:
-            rescaling = False
+                run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
 
-        args.cnv_bed = convert_cnvkit_cnv_to_seeds(cnvkit_output_directory, bambase, rescaled=rescaling)
+                tb = time.time()
+                logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-    if args.cnv_bed.endswith(".cns"):
-        args.cnv_bed = convert_cnvkit_cnv_to_seeds(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
-
-    tb = time.time()
-    logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
-    ta = tb
-    if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
-        args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes, args.cngain,
-                                                   args.output_directory)
-
-        amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
-                                                         outdir, sname, args.cngain, args.cnsize_min)
+        metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
+        if args.run_AA and args.run_AC:
+            make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename)
 
     else:
-        amplified_interval_bed = args.cnv_bed
+        ta = time.time()
+        AC_SRC = os.environ['AC_SRC']
+        AC_outdir = outdir + "/" + sname + "_classification/"
+        if not os.path.exists(AC_outdir):
+            os.mkdir(AC_outdir)
 
-    tb = time.time()
-    logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
-    ta = tb
-    # Run AA
-    if args.run_AA:
-        AA_outdir = outdir + "/" + sname + "_AA_results/"
-        if not os.path.exists(AA_outdir):
-            os.mkdir(AA_outdir)
+        run_AC(args.completed_AA_runs, sname, args.ref, AC_outdir, AC_SRC)
 
-        run_AA(args.aa_python_interpreter, amplified_interval_bed, args.sorted_bam, AA_outdir, sname, args.downsample,
-               args.ref, args.AA_runmode, args.AA_extendmode, args.AA_insert_sdevs)
         tb = time.time()
-        logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
-        ta = tb
+        logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-        # Run AC
-        if args.run_AC:
-            # if 'AC_SRC' not in os.environ:
-            #     sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
-            # else:
-            AC_SRC = os.environ['AC_SRC']
-            AC_outdir = outdir + "/" + sname + "_classification/"
-            if not os.path.exists(AC_outdir):
-                os.mkdir(AC_outdir)
+        make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata)
 
-            run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
-
-            tb = time.time()
-            logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
-
-    metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
-    if args.run_AA and args.run_AC:
-        make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename)
 
     print("Completed\n")
     print(str(datetime.now()))

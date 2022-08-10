@@ -4,7 +4,7 @@
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
 PrepareAA supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). PrepareAA can invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier.
-**Current version: 0.1203.8**
+**Current version: 0.1203.9**
 
 Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running AA to learn about best practices and see some FAQs.
 
@@ -103,7 +103,7 @@ or
 `--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
 
 
-##### Starting from intermediate steps
+##### Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
 * If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--bam`.
 
 
@@ -128,7 +128,13 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\"" > your_reformatted_file.vcf
 ```
 
-A description of other command line arguments for PrepareAA is provided below
+#### Starting from completed AA results
+If the user has one or more AA results directories inside a directory, the user can use PrepareAA to call AmpliconClassifier with default settings.
+```
+/path/to/PrepareAA/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata [representative_run_metadata_file].json -t 1 --ref hg38
+```
+
+Note that when this mode is used all AA results must have been generated with respect to the same reference genome version.
 
 ### Command line arguments to PrepareAA
 
@@ -138,11 +144,13 @@ A description of other command line arguments for PrepareAA is provided below
 
 - `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. We do not control thread usage of Canvas. Recommend 12 or more threads to be used.
 
-- `--bam | --sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam.
+- `--bam | --sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files. Two fastqs (r1 & r2) or a coordinate sorted bam **OR** .
 
 - `--canvas_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`) Path to directory containing the Canvas executable and `canvasdata/` subdirectory.
 
 - `--cnvkit_dir [/path/to/cnvkit.py]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--canvas_dir`) Path to directory containing cnvkit.py.
+
+- `--completed_run_metadata`, (Required if startng with completed results). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
 
 - `--rscript_path [/path/to/Rscript]` (Required if system Rscript version < 3.5 and using `--cnvkit_dir`). Specify a path to a local installation of Rscript compatible with CNVkit.
 

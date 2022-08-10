@@ -70,6 +70,18 @@ def match_ref(bamSeqLenD, ref_len_d):
     return overlaps
 
 
+# check properly paired rate on bam file
+def check_properly_paired(bamf):
+    cmd = "samtools flagstat {} | grep 'properly paired'".format(bamf)
+    t = str(subprocess.check_output(cmd, shell=True).decode("utf-8"))
+    print(bamf + ": " + t.rstrip())
+    ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
+    if ppp < 95:
+        print("WARNING: BAM FILE PROPERLY PAIRED RATE IS BELOW 95%.\nQuality of data may be insufficient for AA "
+              "analysis. Poorly controlled insert size distribution during sample prep can cause high fractions of read"
+              " pairs to be marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!\n")
+
+
 # check if the BAM reference matches to sequence names & lengths in a dictionary of .fai files
 # returns the name of the reference genome the BAM matches to, or prints error and returns None.
 def check_ref(bamf, ref_to_fai_dict):
