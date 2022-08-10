@@ -85,6 +85,9 @@ if args.output_directory == "/":
 	sys.stderr.write("Output directory should not be root!\n")
 	sys.exit(1)
 
+else:
+	args.output_directory = os.path.abspath(args.output_directory)
+
 print("making output directory read/writeable")
 cmd = "chmod a+rw {} -R".format(args.output_directory)
 print(cmd)
