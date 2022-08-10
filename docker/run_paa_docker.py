@@ -147,8 +147,8 @@ elif args.fastqs:
 	argstring += " --fastqs /home/bam_dir/" + fq1name + " /home/bam_dir/" + fq2name
 
 else:
-	argstring += " --completed_AA_results /home/bam_dir/ --completed_run_metadata None"
-	bamdir = os.path.abspath(args.completed_AA_results)
+	argstring += " --completed_AA_runs /home/bam_dir/ --completed_run_metadata None"
+	bamdir = os.path.abspath(args.completed_AA_runs)
 	norm_bamdir = bamdir
 
 if args.ploidy:
@@ -162,7 +162,7 @@ if args.use_CN_prefilter:
 
 if args.cnv_bed:
 	argstring += " --cnv_bed /home/bed_dir/" + cnvname
-elif not args.completed_AA_results:
+elif not args.completed_AA_runs:
 	argstring += " --cnvkit_dir /home/programs/cnvkit.py"
 
 if args.cnvkit_segmentation:
