@@ -215,7 +215,7 @@ If using PrepareAA in your publication, please cite the [AmpliconArchitect artic
 ## Additional analysis tools and scripts
 
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
-Formerly called `plausible_paths.py`. Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
+Formerly called `CAMPER.py`. Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
 `CAMPER.py` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
 searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
 The output will be an AA-formatted cycles file with additional annotations for length and quality control filter status. The quality filters take into account root mean square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this pre-print](https://www.biorxiv.org/content/10.1101/2021.11.28.470285v1).
