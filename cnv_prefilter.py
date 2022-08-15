@@ -9,6 +9,9 @@ def merge_intervals(usort_intd, cn_cut=4.5, tol=1):
     for chrom, usort_ints in usort_intd.items():
         # sort ints
         sort_ints = sorted([x for x in usort_ints if x[2] > cn_cut])
+        if not sort_ints:
+            continue
+
         # merge sorted ints
         mi = [sort_ints[0][:2]]
         for ival in sort_ints[1:]:
@@ -111,7 +114,7 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
 
     # store cnv calls per arm
     arm2cns = defaultdict(list)
-    arm2lens = {}
+    arm2lens = defaultdict(int)
     with open(bedfile) as infile:
         for line in infile:
             fields = line.rstrip().rsplit("\t")
@@ -127,10 +130,10 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
                 arm2lens[carm] = carm_interval.end - carm_interval.begin
 
             else:
-                print("Warning: could not match " + c + ":" + str(s) + "-" + str(e) + " to a known chromosome arm!")
+                arm2cns["other"].append((c, s, e, cn))
+                # print("Warning: could not match " + c + ":" + str(s) + "-" + str(e) + " to a known chromosome arm!")
 
     continuous_high_region_ivald = get_continuous_high_regions(bedfile, cngain)
-    print(continuous_high_region_ivald)
     cn_filt_entries = []
     for a in sorted(arm2cns.keys()):
         # compute the median CN of the arm
