@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.10"
+__version__ = "0.1203.11"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -759,8 +759,9 @@ if __name__ == '__main__':
         logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
-            args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes, args.cngain,
-                                                       args.output_directory)
+            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
+                args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
+                                                           args.cngain, args.output_directory)
 
             amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
                                                              outdir, sname, args.cngain, args.cnsize_min)
