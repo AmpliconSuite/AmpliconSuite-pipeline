@@ -150,7 +150,7 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
 
             if x[3] > med_cn + ccg - 2:
                 cn_filt_entries.append(x)
-            elif ref == "GRCh38_viral" and not x[0].startswith("chr"):
+            elif ref == "GRCh38_viral" and not x[0].startswith("chr") and x[3] > 0.1:
                 cn_filt_entries.append(x)
 
     gain_regions = read_gain_regions(ref)

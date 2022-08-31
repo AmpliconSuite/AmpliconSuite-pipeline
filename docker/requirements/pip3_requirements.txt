@@ -5,7 +5,7 @@ pandas==1.4.1
 pomegranate==0.14.8
 pyfaidx==0.6.4
 pysam==0.18.0
-cnvkit==0.9.7
+cnvkit==0.9.9
 intervaltree==3.1.0
 Flask==1.1.4
 matplotlib==3.1.2
