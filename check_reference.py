@@ -6,6 +6,7 @@ import sys
 # should be updated if a reference is added to the data repo with more than 22 autosomes, but not necessary to do so
 chrom_range = [str(x) for x in range(1, 23)]
 chrom_range.extend(["chr" + x for x in chrom_range])
+chrom_range.append("hpv16ref_1")  # use one representative entry from the viral genome collection to catch a viral ref.
 chrom_range = set(chrom_range)
 
 
