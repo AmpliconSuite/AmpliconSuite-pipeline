@@ -20,6 +20,7 @@ __version__ = "0.1203.11"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
+sample_info_dict = {}
 
 # generic worker thread function
 class workerThread(threading.Thread):
@@ -327,6 +328,10 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     # run AC on input file
     input_file = class_output + ".input"
+
+    with open(input_file) as ifile:
+        sample_info_dict["number_of_AA_amplicons"] = len(ifile.readlines())
+
     cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {} --report_complexity".format(PY3_PATH, AC_src, input_file,
                                                                                          ref, class_output)
     print(cmd)
@@ -347,13 +352,15 @@ def make_AC_table(sname, AC_outdir, AC_src, metadata_file):
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
-    cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
+    cmd = "{} {}make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
                                                                               classification_file)
     if metadata_file and not metadata_file.lower() == "none":
         cmd += " --metadata_dict " + metadata_file
 
     print(cmd)
     call(cmd, shell=True)
+    with open(class_output + "_result_table.tsv") as ifile:
+        sample_info_dict["number_of_AA_features"] = len(ifile.readlines())
 
 
 def get_ref_sizes(ref_genome_size_file):
@@ -402,7 +409,6 @@ def save_run_metadata(outdir, sname, args, launchtime):
     # CNVKit version
     # AA version
     # AC version
-
     metadata_dict["launch_datetime"] = launchtime
     metadata_dict["hostname"] = socket.gethostname()
     metadata_dict["ref_genome"] = args.ref
@@ -435,6 +441,7 @@ def save_run_metadata(outdir, sname, args, launchtime):
     with open(metadata_filename, 'w') as fp:
         json.dump(metadata_dict, fp)
 
+    sample_info_dict["run_metadata_file"] = metadata_filename
     return metadata_filename
 
 
@@ -493,6 +500,8 @@ if __name__ == '__main__':
                         'hmm-germline', 'none'], default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
+    parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
+    parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
     group = parser.add_mutually_exclusive_group(required=True)
@@ -579,11 +588,7 @@ if __name__ == '__main__':
 
         PY3_PATH = args.python3_path
 
-    # Detect the reference genome version
-    # refFnames = {"hg19": "hg19full.fa", "GRCh37": "human_g1k_v37.fasta", "GRCh38": "hg38full.fa", "mm10": "mm10.fa",
-    #              "GRCm38": "GRCm38.fa"}
     refFnames = {x: None for x in ["hg19", "GRCh37", "GRCh38", "GRCh38_viral", "mm10"]}
-
     # Paths of all the repo files needed
     if args.ref == "hg38":
         args.ref = "GRCh38"
@@ -646,7 +651,14 @@ if __name__ == '__main__':
         sys.stderr.write("Specified CNV bed file does not exist: " + args.cnv_bed + "\n")
         sys.exit(1)
 
+    if not args.sample_metadata:
+        args.sample_metadata = os.path.dirname(os.path.realpath(__file__)) + "/sample_metadata_skeleton.json"
+
+    with open(args.sample_metadata) as input_json:
+        sample_info_dict = json.load(input_json)
+
     sname = args.sample_name
+    sample_info_dict["sample_name"] = sname
     outdir = args.output_directory + "/"
 
     tb = time.time()
@@ -671,7 +683,9 @@ if __name__ == '__main__':
             print("Finished indexing")
 
         bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
-        check_reference.check_properly_paired(args.sorted_bam)
+        if not args.no_QC:
+            check_reference.check_properly_paired(args.sorted_bam)
+
         tb = time.time()
         logfile.write("Alignment and bam indexing:\t" + "{:.2f}".format(tb - ta) + "\n")
 
@@ -784,7 +798,6 @@ if __name__ == '__main__':
             tb = time.time()
             logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
             ta = tb
-
             # Run AC
             if args.run_AC:
                 # if 'AC_SRC' not in os.environ:
@@ -817,7 +830,12 @@ if __name__ == '__main__':
         logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
         make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata)
+        sample_info_dict["run_metadata_file"] = args.completed_run_metadata
 
+    sample_info_dict["reference_genome"] = args.ref
+    smofname = args.output_directory + "/" + sname + "_sample_metadata.json"
+    with open(smofname, 'w') as fp:
+        json.dump(sample_info_dict, fp, indent=2)
 
     print("Completed\n")
     print(str(datetime.now()))
