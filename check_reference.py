@@ -96,8 +96,9 @@ def check_ref(bamf, ref_to_fai_dict):
             if matched > bestrefhits:
                 bestref = refName
 
+    if bestref:
         print("Matched " + bamf + " to reference genome " + bestref)
-        return refName
+        return bestref
 
     sys.stderr.write("ERROR: Could not match BAM to a known AA reference genome!\n")
     sys.stderr.write("This may happen if 1) The value provided to optional argument '--ref' does not match the "
