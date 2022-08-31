@@ -95,6 +95,7 @@ def check_ref(bamf, ref_to_fai_dict):
         if matched:
             if matched > bestrefhits:
                 bestref = refName
+                bestrefhits = matched
 
     if bestref:
         print("Matched " + bamf + " to reference genome " + bestref)
