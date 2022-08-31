@@ -170,10 +170,10 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     call(cmd, shell=True)
     metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
     print("\nCleaning up temporary files")
-    cmd = "rm {}/*tmp.bed {}/*.cnn".format(outdir, outdir)
+    cmd = "rm {}/*tmp.bed {}/*.cnn {}/*target.bed".format(outdir, outdir, outdir)
     print(cmd)
     call(cmd, shell=True)
-    cmd = "gzip " + cnrFile
+    cmd = "gzip -f " + cnrFile
     print(cmd)
     call(cmd, shell=True)
 
