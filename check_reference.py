@@ -59,13 +59,13 @@ def extract_seq_info(bam_header):
 # returns false if no chromosome names are shared between bam/reference
 # returns true if no shared chromosomes have different lengths and at least one chromosome is present.
 def match_ref(bamSeqLenD, ref_len_d):
-    overlaps = False
+    overlaps = 0
     for chrom, len in ref_len_d.items():
         if bamSeqLenD[chrom] > 0 and len != bamSeqLenD[chrom]:
             return False
 
         elif len == bamSeqLenD[chrom]:
-            overlaps = True
+            overlaps+=1
 
     return overlaps
 
@@ -87,12 +87,17 @@ def check_properly_paired(bamf):
 def check_ref(bamf, ref_to_fai_dict):
     bam_header = get_bam_header(bamf)
     bamSeqLenD = extract_seq_info(bam_header)
+    bestref = None
+    bestrefhits = 0
     for refName, fai_path in ref_to_fai_dict.items():
         ref_len_d = get_ref_seq_lens(fai_path)
         matched = match_ref(bamSeqLenD, ref_len_d)
         if matched:
-            print("Matched " + bamf + " to reference genome " + refName)
-            return refName
+            if matched > bestrefhits:
+                bestref = refName
+
+        print("Matched " + bamf + " to reference genome " + bestref)
+        return refName
 
     sys.stderr.write("ERROR: Could not match BAM to a known AA reference genome!\n")
     sys.stderr.write("This may happen if 1) The value provided to optional argument '--ref' does not match the "
