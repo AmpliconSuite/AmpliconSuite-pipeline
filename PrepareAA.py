@@ -451,7 +451,7 @@ if __name__ == '__main__':
     parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
                         action='store_true')
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
-                        "GRCm38"])
+                        "GRCm38", "GRCh38_viral"])
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
@@ -493,8 +493,6 @@ if __name__ == '__main__':
                         'hmm-germline', 'none'], default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
-    parser.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
-                        action='store_true')
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
     group = parser.add_mutually_exclusive_group(required=True)
@@ -511,6 +509,8 @@ if __name__ == '__main__':
                         "(reference files organized by reference name).", default="")
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py", default="")
     group2.add_argument("--completed_run_metadata", help="Metadata JSON from standard runs. If you do not have it, set to 'None'.", default="")
+    group2.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
+                        action='store_true')
 
     ta = time.time()
     ti = ta

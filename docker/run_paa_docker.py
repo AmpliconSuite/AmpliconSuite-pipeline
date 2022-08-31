@@ -165,6 +165,10 @@ if args.use_CN_prefilter:
 
 if args.cnv_bed:
 	argstring += " --cnv_bed /home/bed_dir/" + cnvname
+
+elif args.align_only:
+	argstring += " --align_only"
+
 elif not args.completed_AA_runs:
 	argstring += " --cnvkit_dir /home/programs/cnvkit.py"
 
@@ -173,9 +177,6 @@ if args.cnvkit_segmentation:
 
 if args.no_filter:
 	argstring += " --no_filter"
-
-if args.align_only:
-	argstring += " --align_only"
 
 if args.run_AA:
 	argstring += " --run_AA"
