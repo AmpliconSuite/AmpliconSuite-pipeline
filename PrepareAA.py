@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.11"
+__version__ = "0.1203.12"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -347,15 +347,19 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     metadata_dict["AC_version"] = AC_version
 
 
-def make_AC_table(sname, AC_outdir, AC_src, metadata_file):
+def make_AC_table(sname, AC_outdir, AC_src, metadata_file, cnv_bed=None):
     # make the AC output table
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
     cmd = "{} {}make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
                                                                               classification_file)
+
+    if cnv_bed:
+        cmd += " --cnv_bed " + cnv_bed
     if metadata_file and not metadata_file.lower() == "none":
         cmd += " --metadata_dict " + metadata_file
+
 
     print(cmd)
     call(cmd, shell=True)
@@ -531,6 +535,9 @@ if __name__ == '__main__':
     if not args.output_directory:
         args.output_directory = os.getcwd()
 
+    if not args.output_directory.endswith("/"):
+        args.output_directory += "/"
+
     # Make and clear necessary directories.
     # make the output directory location if it does not exist
     if not os.path.exists(args.output_directory):
@@ -540,7 +547,7 @@ if __name__ == '__main__':
         sys.stderr.write("Sample name -s cannot be a path. Specify output directory with -o.\n")
         sys.exit(1)
 
-    logfile = open(args.output_directory + "/" + args.sample_name + '_timing_log.txt', 'w')
+    logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')
     logfile.write("#stage:\twalltime(seconds)\n")
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
@@ -636,7 +643,7 @@ if __name__ == '__main__':
             sys.stderr.write("Could not locate Canvas data repo folder\n")
             sys.exit(1)
 
-    canvas_output_directory = args.output_directory + "/canvas_output/"
+    canvas_output_directory = args.output_directory + "canvas_output/"
     if not os.path.exists(canvas_output_directory) and runCNV == "Canvas":
         os.mkdir(canvas_output_directory)
 
@@ -659,7 +666,7 @@ if __name__ == '__main__':
 
     sname = args.sample_name
     sample_info_dict["sample_name"] = sname
-    outdir = args.output_directory + "/"
+    outdir = args.output_directory
 
     tb = time.time()
     logfile.write("Initialization:\t" + "{:.2f}".format(tb - ta) + "\n")
@@ -719,7 +726,7 @@ if __name__ == '__main__':
                 print("\nRunning freebayes")
                 print("Using freebayes version:")
                 call("freebayes --version", shell=True)
-                freebayes_output_directory = args.output_directory + "/freebayes_vcfs/"
+                freebayes_output_directory = args.output_directory + "freebayes_vcfs/"
                 if not os.path.exists(freebayes_output_directory):
                     os.mkdir(freebayes_output_directory)
 
@@ -751,7 +758,7 @@ if __name__ == '__main__':
             args.cnv_bed = convert_canvas_cnv_to_seeds(canvas_output_directory)
 
         elif runCNV == "CNVkit":
-            cnvkit_output_directory = args.output_directory + "/" + sname + "_cnvkit_output/"
+            cnvkit_output_directory = args.output_directory + sname + "_cnvkit_output/"
             if not os.path.exists(cnvkit_output_directory):
                 os.mkdir(cnvkit_output_directory)
 
@@ -772,6 +779,10 @@ if __name__ == '__main__':
         tb = time.time()
         logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
+
+        if not sample_info_dict["sample_cnv_bed"]:
+            sample_info_dict["sample_cnv_bed"] = args.cnv_bed
+
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
@@ -789,7 +800,7 @@ if __name__ == '__main__':
         ta = tb
         # Run AA
         if args.run_AA:
-            AA_outdir = outdir + "/" + sname + "_AA_results/"
+            AA_outdir = outdir + sname + "_AA_results/"
             if not os.path.exists(AA_outdir):
                 os.mkdir(AA_outdir)
 
@@ -804,7 +815,7 @@ if __name__ == '__main__':
                 #     sys.stderr.write("AC_SRC bash variable not found. AmpliconClassifier may not be properly installed.\n")
                 # else:
                 AC_SRC = os.environ['AC_SRC']
-                AC_outdir = outdir + "/" + sname + "_classification/"
+                AC_outdir = outdir + sname + "_classification/"
                 if not os.path.exists(AC_outdir):
                     os.mkdir(AC_outdir)
 
@@ -815,12 +826,13 @@ if __name__ == '__main__':
 
         metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
         if args.run_AA and args.run_AC:
-            make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename)
+            make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename, args.cnv_bed)
+
 
     else:
         ta = time.time()
         AC_SRC = os.environ['AC_SRC']
-        AC_outdir = outdir + "/" + sname + "_classification/"
+        AC_outdir = outdir + sname + "_classification/"
         if not os.path.exists(AC_outdir):
             os.mkdir(AC_outdir)
 
@@ -833,7 +845,7 @@ if __name__ == '__main__':
         sample_info_dict["run_metadata_file"] = args.completed_run_metadata
 
     sample_info_dict["reference_genome"] = args.ref
-    smofname = args.output_directory + "/" + sname + "_sample_metadata.json"
+    smofname = args.output_directory + sname + "_sample_metadata.json"
     with open(smofname, 'w') as fp:
         json.dump(sample_info_dict, fp, indent=2)
 

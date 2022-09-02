@@ -4,7 +4,7 @@
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
 PrepareAA supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). PrepareAA can invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier.
-**Current version: 0.1203.11**
+**Current version: 0.1203.12**
 
 Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running AA to learn about best practices and see some FAQs.
 
@@ -180,7 +180,11 @@ Note that when this mode is used all AA results must have been generated with re
 
 - `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps. Bed file with CN estimate in last column or CNVKit .cns file.
 
-- `--no_filter`: (Optional) Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions. 
+- `--no_filter`: (Optional) Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions.
+
+- `--no_QC`, (Optional) Skip QC on the BAM file.
+
+- `--sample_metadata`, (Optional) Path to a JSON of sample metadata to build on. See template `sample_metadata_skeleton.json` for example.
 
 - `--normal_bam [matched_normal.bam]` (Optional) Specify a matched normal BAM file for CNVKit. Not used by AA itself.
 

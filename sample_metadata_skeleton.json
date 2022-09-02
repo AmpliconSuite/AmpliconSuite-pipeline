@@ -7,5 +7,6 @@
   "run_metadata_file": "",
   "number_of_AA_amplicons": "NA",
   "number_of_AA_features": "NA",
-  "sample_description": ""
+  "sample_description": "",
+  "sample_cnv_bed": ""
 }
