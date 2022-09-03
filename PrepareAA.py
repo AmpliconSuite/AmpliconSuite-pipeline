@@ -352,7 +352,7 @@ def make_AC_table(sname, AC_outdir, AC_src, metadata_file, cnv_bed=None):
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
-    cmd = "{} {}make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
+    cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
                                                                               classification_file)
 
     if cnv_bed:
