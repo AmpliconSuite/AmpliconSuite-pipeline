@@ -780,8 +780,7 @@ if __name__ == '__main__':
         logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
 
-        if not sample_info_dict["sample_cnv_bed"]:
-            sample_info_dict["sample_cnv_bed"] = args.cnv_bed
+        sample_info_dict["sample_cnv_bed"] = args.cnv_bed
 
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
