@@ -3,7 +3,6 @@
 # author: Jens Luebeck (jluebeck [at] ucsd.edu)
 
 import argparse
-from copy import copy
 from datetime import datetime
 import gzip
 import json
@@ -781,7 +780,7 @@ if __name__ == '__main__':
         logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
 
-        sample_info_dict["sample_cnv_bed"] = copy(args.cnv_bed)
+        sample_info_dict["sample_cnv_bed"] = args.cnv_bed
 
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
@@ -826,8 +825,7 @@ if __name__ == '__main__':
 
         metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
         if args.run_AA and args.run_AC:
-            make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename, args.cnv_bed)
-
+            make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename, sample_info_dict["sample_cnv_bed"])
 
     else:
         ta = time.time()
