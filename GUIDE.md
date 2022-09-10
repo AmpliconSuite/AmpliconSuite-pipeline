@@ -38,16 +38,16 @@ AA uses external CNV calls to determine which regions it should examine - thes a
 However, AA independently calls copy number inside the seed regions it is tasked with, and thus after selecting the regions, 
 **the CN estimates are not propogated into AA's own estimations.**
 
-##### <ins>To help standardize the process of running AA, we have created a wrapper script, called [PrepareAA](https://github.com/jluebeck/PrepareAA) </ins> 
+##### <ins>To help standardize the process of running AA, we have created a wrapper script, called [AmpliconSuite-pipeline](https://github.com/jluebeck/PrepareAA) </ins> 
 
-PrepareAA wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
+AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
-the workflow from any point. PrepareAA wraps BWA MEM for alignment, CNVKit (or Canvas) for CNV seed identification, and will also invoke
+the workflow from any point. AmpliconSuite-pipeline wraps BWA MEM for alignment, CNVKit (or Canvas) for CNV seed identification, and will also invoke
 the AA `amplified_intervals.py` filtering script to select/filter/merge CNV seeds which are appropriate for AA.
 
-Ultimately, PrepareAA can even invoke AA (if installed beforehand), and thus saves users from the hassle associated with preparing everything to run AA on a sample.
+Ultimately, AmpliconSuite-pipeline can even invoke AA (if installed beforehand), and thus saves users from the hassle associated with preparing everything to run AA on a sample.
 
-If you decide to "got it alone" and not to use PrepareAA, please carefully read the following points:
+If you decide to "got it alone" and not to use AmpliconSuite-pipeline, please carefully read the following points:
 
 #### - Creating the BAM file:
 If you are generating your own BAM file, please note that aligners vary in terms of which tags they will add to BAM files. Furthermore,
@@ -79,25 +79,25 @@ Focal amplifications are somewhat aribtrarily defined as regions of the genome w
 
 As default parameters for seed selection, we recommend picking regions which have an estimated CN >= 4.5 and size > 50 kbp. 
 However, CNV estimates can be imperfect in low-complexity or repetitive regions. Thus, we have developed a script called `amplified_intervals.py` to address those issues.
-It filters and merges CNV estimates provided by the user. `amplified_intervals.py` is wrapped into PrepareAA and will be run by default.
+It filters and merges CNV estimates provided by the user. `amplified_intervals.py` is wrapped into AmpliconSuite-pipeline and will be run by default.
 
-If you are not using PrepareAA though, we **highly recommend you invoke `amplified_intervals.py` on your CNV calls to create a new file of CNV seeds appropriate for AA.**
+If you are not using AmpliconSuite-pipeline though, we **highly recommend you invoke `amplified_intervals.py` on your CNV calls to create a new file of CNV seeds appropriate for AA.**
 If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these 
 regions, but it should still be avoided to give them to AA as input. 
 
-If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the PrepareAA/scripts directory (and documented in PrepareAA's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
-The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it. Better yet, giving the CN calls to PrepareAA and setting `--use_CN_prefilter` and invoking AA via PrepareAA will yield the best results.
+If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the AmpliconSuite-pipeline/scripts directory (and documented in AmpliconSuite-pipeline's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
+The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it. Better yet, giving the CN calls to AmpliconSuite-pipeline and setting `--use_CN_prefilter` and invoking AA via AmpliconSuite-pipeline will yield the best results.
 #
  
 ### Running AA
-We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by PrepareAA `amplified_intervals.py`).
+We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by AmpliconSuite-pipeline `amplified_intervals.py`).
 To check if your BAM file is coordinate-sorted, you can take a peek at the BAM file header by doing 
 `samtools view -H your_bamfile.bam | head `. 
 Please make sure you know which reference genome it is aligned to so that you can properly specify the `--ref` argument to AA.
 
 For more on running AA, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#running-ampliconarchitect) or jump down to the [worked example](#worked-example).
 
-Note that PrepareAA can run AA on its own by setting `--run_AA`, and AA will automatically be called at the end of the preparation process without any additional work by the user.
+Note that AmpliconSuite-pipeline can run AA on its own by setting `--run_AA`, and AA will automatically be called at the end of the preparation process without any additional work by the user.
 #
 
 ### Interpreting the output
@@ -133,11 +133,11 @@ echo $MOSEKLM_LICENSE_FILE
 ```
 None of the above should print an empty string.
 
-- **Option 1 - Launch PrepareAA**:
+- **Option 1 - Launch AmpliconSuite-pipeline**:
 
-In this specific case, we'll assume you don't have a CNV bed yet, and we'll assume you've installed CNVKit. Please do see the [PrepareAA README](https://github.com/jluebeck/PrepareAA) though to check which flags you need to set in your case.
+In this specific case, we'll assume you don't have a CNV bed yet, and we'll assume you've installed CNVKit. Please do see the [AmpliconSuite-pipeline README](https://github.com/jluebeck/PrepareAA) though to check which flags you need to set in your case.
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --rscript_path /path/to/R_3.5+/Rscript --sorted_bam sample.cs.rmdup.bam [--run_AA]
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --rscript_path /path/to/R_3.5+/Rscript --sorted_bam sample.cs.rmdup.bam [--run_AA]
 ```
 
 You can still do Option 1 even if you already have CNV calls, or if you only have the fastq files. Just check the README for the commands to use.
@@ -215,7 +215,7 @@ At the moment, we do not support adding additional tracks of data into the plot 
     - From our observations, ecDNA maintains its structure when it integrates into the genome (Turner 2017, *Nature*, Deshpande 2019, *Nat. Comms.*, Luebeck 2020 *Nat. Comms.*). Unfortunately without some sort of imaging data (FISH) or long-range sequencing (Bionano, PacBio, Nanopore), it is not possible to reliably make that determination from AA.
 
 - **There's a region I want AA to examine, but it didn't appear in the CNV seeds, what do I do?**
-    - You can force AA to run on a region by creating a BED file with that region specifically included, and then invoking AA directly (do not use PrepareAA or `amplified_intervals.py`). This can also be used to standardize the same AA run on multiple different samples.
+    - You can force AA to run on a region by creating a BED file with that region specifically included, and then invoking AA directly (do not use AmpliconSuite-pipeline or `amplified_intervals.py`). This can also be used to standardize the same AA run on multiple different samples.
  
 - **In the cycles file, what do the paths that begin/end with '0+' mean?** 
     - These indicate that the path is non-cylic, and proceeds or is preceeded by the next reference coordinate.  

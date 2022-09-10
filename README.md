@@ -3,17 +3,17 @@
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
 Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-PrepareAA supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). AmpliconSuite-pipeline can invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier. AmpliconSuite-pipeline was formerly called as "PrepareAA".
+AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier. AmpliconSuite-pipeline was formerly called as "PrepareAA".
 **Current version: 0.1203.12**
 
 Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running AA to learn about best practices and see some FAQs.
 
 
 ## Prerequisites:
-PrepareAA supports both `python2` and `python3`, however AmpliconArchitect currently requires `python2` and CNVKit requires `python3`.
+AmpliconSuite-pipeline supports both `python2` and `python3`, however AmpliconArchitect currently requires `python2` and CNVKit requires `python3`.
 `Python3` support for AmpliconArchitect is coming soon. 
 
-Depending on what input data you are starting from, PrepareAA (PAA) may require the following tools to be installed beforehand:
+Depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
 - (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
 - (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
   - mm10 and larger versions of the individual data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
@@ -22,35 +22,35 @@ Depending on what input data you are starting from, PrepareAA (PAA) may require 
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
 - (optional) [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
   - (required for Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (unless providing your own VCF calls to Canvas)
-- Some optional scripts packaged with PrepareAA require the `numpy`, `matplotlib` and `intervaltree` python packages. Can be installed with `pip`, `conda` or similar. 
+- Some optional scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Can be installed with `pip`, `conda` or similar. 
 
-PrepareAA assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
+AmpliconSuite-pipeline assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
 
-PrepareAA has been tested with Ubuntu (16.04 and above) and CentOS 7. PrepareAA's optional dependencies related to CNV calling will not work on CentOS 6.
+AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 7. AmpliconSuite-pipeline's optional dependencies related to CNV calling will not work on CentOS 6.
 
 
 **Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires
 `python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 **Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,
-which when run from the PrepareAA source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
+which when run from the AmpliconSuite-pipeline source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
 
 
 ### Standalone installation
 
 In the directory you want to run AA in, do 
 
-`git clone https://github.com/jluebeck/PrepareAA.git`
+`git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
-Please see the [jluebeck/AmpliconArchitect fork](https://github.com/jluebeck/AmpliconArchitect) for AA installation instructions. AA must be installed to use PAA.
+Please see the [jluebeck/AmpliconArchitect fork](https://github.com/jluebeck/AmpliconArchitect) for AA installation instructions. AA must be installed to use AmpliconSuite-pipeline.
 
 Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
 
-PrepareAA with CNVKit will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
+AmpliconSuite-pipeline with CNVKit will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
 
-### PrepareAA Docker 
-A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
+### AmpliconSuite-pipeline Docker 
+A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
 
 1. Docker:
     * Install docker: `https://docs.docker.com/install/`
@@ -69,34 +69,34 @@ A dockerized version of PAA is [available on dockerhub](https://hub.docker.com/r
         cd $AA_DATA_REPO && touch coverage.stats && chmod a+rw coverage.stats
         source ~/.bashrc
         ```
-#### Obtain PrepareAA image and execution script:
+#### Obtain AmpliconSuite-pipeline image and execution script:
 1. Clone GitHub repository to access the runscript
-    * `git clone https://github.com/jluebeck/PrepareAA.git`
+    * `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
-2. Run the script `run_paa_docker.py` located in `PrepareAA/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
+2. Run the script `run_paa_docker.py` located in `AmpliconSuite-pipeline/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
 
 An example docker command might look like:
 
-`PrepareAA/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --bam /path/to/bamfile.bam --run_AA --run_AC`
+`AmpliconSuite-pipeline/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --bam /path/to/bamfile.bam --run_AA --run_AC`
 
 **You can opt to run the docker image as your current user by setting `--run_as_user`.** 
 
 ### Other usage options
-PAA can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
+AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 ## Usage
-Two example standard runs of PrepareAA:
+**The main driver script for the pipeline is called `PrepareAA.py`.** Two example standard runs of AmpliconSuite-pipeline are given below.
 
 #### Starting from .fastq files, using Canvas for seed generation.
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name  -t number_of_threads --canvas_dir /path/to/canvas/canvas_exec_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref hg19 [--run_AA] [--run_AC]
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --canvas_dir /path/to/canvas/canvas_exec_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref hg19 [--run_AA] [--run_AC]
 ```
 
 or
 
 #### Starting from sorted .bam, using CNVkit for seed generation
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.cs.rmdup.bam [--run_AA] [--run_AC]
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.cs.rmdup.bam [--run_AA] [--run_AC]
 ```
 
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
@@ -109,7 +109,7 @@ or
 
 * If using your own CNV calls:
 ```
-/path/to/PrepareAA/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fastq sample_r2.fastq | --bam sample.cs.bam) [--run_AA] [--run_AC]
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fastq sample_r2.fastq | --bam sample.cs.bam) [--run_AA] [--run_AC]
 ```
 Where the CNV bed file is formatted as (**without a header present**):
 
@@ -129,14 +129,14 @@ cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? 
 ```
 
 #### Starting from completed AA results
-If the user has one or more AA results directories inside a directory, the user can use PrepareAA to call AmpliconClassifier with default settings.
+If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
 ```
-/path/to/PrepareAA/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata [representative_run_metadata_file].json -t 1 --ref hg38
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata [representative_run_metadata_file].json -t 1 --ref hg38
 ```
 
 Note that when this mode is used all AA results must have been generated with respect to the same reference genome version.
 
-### Command line arguments to PrepareAA
+### Command line arguments to AmpliconSuite-pipeline
 
 - `-o | --output_directory [outdir]`: (Optional) Directory where results will be stored. Defaults to current directory.
 
@@ -213,7 +213,7 @@ or `--purity` is provided for CNVKit.
 Check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md)!
 
 ### Citing
-If using PrepareAA in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using PrepareAA to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
+If using AmpliconSuite-pipeline in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using AmpliconSuite-pipeline to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
 
 
 ## Additional analysis tools and scripts
@@ -225,20 +225,20 @@ searches for plausible longest paths explaining the copy number multiplicities. 
 The output will be an AA-formatted cycles file with additional annotations for length and quality control filter status. The quality filters take into account root mean square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this pre-print](https://www.biorxiv.org/content/10.1101/2021.11.28.470285v1).
 The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path. A full explanation of arguments is available with `-h`.
 
-`PrepareAA/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
+`AmpliconSuite-pipeline/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
 
    ### - `breakpoints_to_bed.py`
 Requires `intervaltree` python package pre-installed. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
 
    ### - `convert_cns_to_bed.py`
-Many users will choose to run CNVKit outside of PrepareAA and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
+Many users will choose to run CNVKit outside of AmpliconSuite-pipeline and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
-we provide the following script to reformat the `.cns` file from CNVKit into a `.bed` file useable with PrepareAA. 
+we provide the following script to reformat the `.cns` file from CNVKit into a `.bed` file useable with AmpliconSuite-pipeline. 
 
 Usage:
 `./scripts/convert_cns_to_bed.py your_CNVKit_output/your_sample.cns`
 
-This will output a bed file which can be fed into PrepareAA. 
+This will output a bed file which can be fed into AmpliconSuite-pipeline. 
 
    ### - `cycles_to_bed.py`
 Requires `intervaltree` python package pre-installed. Write an AA cycles file as a series of bed files, one for each decomposition. Segments are merged and sorted, and order and orientation of segments is lost.
