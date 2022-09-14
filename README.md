@@ -86,14 +86,14 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 ## Usage
 **The main driver script for the pipeline is called `PrepareAA.py`.** Two example standard runs of AmpliconSuite-pipeline are given below.
 
-#### Starting from .fastq files, using Canvas for seed generation.
+#### Example 1: Starting from .fastq files, using Canvas for seed generation.
 ```
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --canvas_dir /path/to/canvas/canvas_exec_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref hg19 [--run_AA] [--run_AC]
 ```
 
 or
 
-#### Starting from sorted .bam, using CNVkit for seed generation
+#### Example 2: Starting from sorted .bam, using CNVkit for seed generation
 ```
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.cs.rmdup.bam [--run_AA] [--run_AC]
 ```
@@ -102,7 +102,7 @@ or
 `--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
 
 
-##### Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
+##### Example 3: Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
 * If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--bam`.
 
 
@@ -127,7 +127,7 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\"" > your_reformatted_file.vcf
 ```
 
-#### Starting from completed AA results
+#### Example 4: Starting from completed AA results
 If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
 ```
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata [representative_run_metadata_file].json -t 1 --ref hg38
