@@ -10,8 +10,7 @@ Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/
 
 
 ## Prerequisites:
-AmpliconSuite-pipeline supports both `python2` and `python3`, however AmpliconArchitect currently requires `python2` and CNVKit requires `python3`.
-`Python3` support for AmpliconArchitect is coming soon. 
+AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVKit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
 
 Depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
 - (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
