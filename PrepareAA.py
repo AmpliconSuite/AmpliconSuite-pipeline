@@ -452,7 +452,7 @@ if __name__ == '__main__':
     # Parses the command line arguments
     parser = argparse.ArgumentParser(
         description="A simple pipeline wrapper for AmpliconArchitect, invoking alignment, variant calling, "
-                    "and CNV calling prior to AA. The CNV calling is necesary for running AA")
+                    "and CNV calling prior to AA. The CNV calling is necessary for running AA")
     parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
     parser.add_argument("-s", "--sample_name", help="sample name", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA and CNV calling", required=True)
