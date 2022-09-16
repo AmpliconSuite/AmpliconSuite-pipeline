@@ -104,7 +104,8 @@ E.g. `sed -i "s/$/\t999999/" initial_merged_AA_CNV_SEEDS.bed > final_merged_AA_C
 The resulting merged file should still end with the suffix `_AA_CNV_SEEDS.bed`, since this suffix has a special meaning in AmpliconSuite-pipeline, and filtering will be skipped (these samples are already filtered.)
 
 You can then run `PrepareAA.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
- 
+#
+
 ### Running AA
 We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by AmpliconSuite-pipeline `amplified_intervals.py`).
 To check if your BAM file is coordinate-sorted, you can take a peek at the BAM file header by doing 
