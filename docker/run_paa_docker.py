@@ -63,10 +63,13 @@ parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV cha
 parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script. Alternatively, instead of setting this flag"
 					" one can also rebuild the docker image using docker build . -t jluebeck/prepareaa:latest --build-arg set_uid=$UID --build-arg set_gid=$(id -g) ",
 					action='store_true')
+parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
+parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", "--bam", help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 group.add_argument("--completed_AA_runs", help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
+
 # group2.add_argument("--reuse_canvas", help="Start using previously generated Canvas results. Identify amplified "
 # 										   "intervals immediately.", action='store_true')
 # group2.add_argument("--canvas_dir", help="Path to folder with Canvas executable and \"/canvasdata\" folder "
@@ -177,6 +180,12 @@ if args.cnvkit_segmentation:
 
 if args.no_filter:
 	argstring += " --no_filter"
+
+if args.no_QC:
+	argstring += " --no_QC"
+	
+if args.sample_metadata:
+	argstring += " --sample_metadata " + args.sample_metadata
 
 if args.run_AA:
 	argstring += " --run_AA"
