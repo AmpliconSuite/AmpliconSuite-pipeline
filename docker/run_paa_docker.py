@@ -64,7 +64,7 @@ parser.add_argument("--run_as_user", help="Run the docker image as the user laun
 					" one can also rebuild the docker image using docker build . -t jluebeck/prepareaa:latest --build-arg set_uid=$UID --build-arg set_gid=$(id -g) ",
 					action='store_true')
 parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
-parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
+# parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", "--bam", help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
@@ -183,10 +183,11 @@ if args.no_filter:
 
 if args.no_QC:
 	argstring += " --no_QC"
-	
-if args.sample_metadata:
-	args.sample_metadata = os.path.abspath(args.sample_metadata)
-	argstring += " --sample_metadata " + args.sample_metadata
+
+# To use, would need to mount the directory of this file. Users should just modify as needed afterwards.
+# if args.sample_metadata:
+# 	args.sample_metadata = os.path.abspath(args.sample_metadata)
+# 	argstring += " --sample_metadata " + args.sample_metadata
 
 if args.run_AA:
 	argstring += " --run_AA"
