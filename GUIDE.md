@@ -88,6 +88,22 @@ regions, but it should still be avoided to give them to AA as input.
 If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the AmpliconSuite-pipeline/scripts directory (and documented in AmpliconSuite-pipeline's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
 The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it. Better yet, giving the CN calls to AmpliconSuite-pipeline and setting `--use_CN_prefilter` and invoking AA via AmpliconSuite-pipeline will yield the best results.
 #
+
+### Constructing unified seed sets from multiple related samples
+One common type of analysis is the detection of focal amplifications in samples derived from the same patient or cell line. These may include multiple samples derived from multiregion biopsies, timecourse sequencing on the same individual, or analysis of a cell line before and after drug treatment.
+
+**To maximize the utility of AA on samples from the same source, you should consider merging your AA seed files from related samples.**
+We will work on automating this process in the future, but these are the instructions users should follow for now.
+
+To do this, first run AmpliconSuite-pipeline on each sample **without** setting `--run_AA`. The result for each sample the `[sample]_AA_CNV_SEEDS.bed` file. Next, using `bedtools` or similar, take the relevant seeds files from related samples and merge those bed files. A tutorial for merging bed files can be found [here](http://quinlanlab.org/tutorials/bedtools/bedtools.html) 
+(see section entitled "bedtools 'merge'").
+
+Next, place a placeholder copy number estimate into the last column of each row. Since the regions are already filtered, AA does not need to consider the copy number estimate before running its own CN-estimation on each sample.
+E.g. `sed -i "s/$/\t999999/" initial_merged_AA_CNV_SEEDS.bed > final_merged_AA_CNV_SEEDS.bed`
+
+The resulting merged file should still end with the suffix `_AA_CNV_SEEDS.bed`, since this suffix has a special meaning in AmpliconSuite-pipeline, and filtering will be skipped (these samples are already filtered.)
+
+You can then run `PrepareAA.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
  
 ### Running AA
 We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by AmpliconSuite-pipeline `amplified_intervals.py`).
