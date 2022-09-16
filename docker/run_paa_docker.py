@@ -185,6 +185,7 @@ if args.no_QC:
 	argstring += " --no_QC"
 	
 if args.sample_metadata:
+	args.sample_metadata = os.path.abspath(args.sample_metadata)
 	argstring += " --sample_metadata " + args.sample_metadata
 
 if args.run_AA:
