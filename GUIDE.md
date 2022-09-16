@@ -25,7 +25,7 @@ An open-access publication detailing AA's methodology is available in [Nature Co
 Please refer to the [AA README](https://github.com/virajbdeshpande/AmpliconArchitect#installation) for complete 
 installation instructions.
 
-You may also want to install the additonal programs for classifying outputs ([AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)) and visualization ([CycleViz](https://github.com/jluebeck/CycleViz)).
+You may also want to install the additional programs for classifying outputs ([AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)) and visualization ([CycleViz](https://github.com/jluebeck/CycleViz)).
 #
 
 ### Preparing the inputs

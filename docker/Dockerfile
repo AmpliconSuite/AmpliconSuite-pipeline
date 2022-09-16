@@ -82,7 +82,7 @@ RUN cd /home/programs && unzip master.zip
 ADD https://github.com/parklab/NGSCheckMate/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
 RUN echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc
-RUN cp /home/programs/PrepareAA-master/docker/paa_default_ncm.conf /home/programs/NGSCheckMate-master/ncm.conf
+RUN cp /home/programs/AmpliconSuite-pipeline-master/docker/paa_default_ncm.conf /home/programs/NGSCheckMate-master/ncm.conf
 RUN cp `which cnvkit.py` /home/programs/cnvkit.py
 
 # set up a user
