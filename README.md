@@ -64,9 +64,11 @@ A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https
     without the bwa reference index included.
     * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
         ```bash
-        tar zxf data_repo.tar.gz
-        echo export AA_DATA_REPO=$PWD/data_repo >> ~/.bashrc
-        cd $AA_DATA_REPO && touch coverage.stats && chmod a+rw coverage.stats
+        mkdir data_repo && cd data_repo
+        wget [url of reference_build]
+        tar zxf [reference_build].tar.gz
+        echo export AA_DATA_REPO=$PWD/ >> ~/.bashrc
+        touch coverage.stats && chmod a+rw coverage.stats
         source ~/.bashrc
         ```
 #### Obtain AmpliconSuite-pipeline image and execution script:
