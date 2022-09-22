@@ -2,12 +2,13 @@
 ![GitHub](https://img.shields.io/github/license/jluebeck/AmpliconSuite-pipeline)
 
 A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
-Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect. 
-AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38) and mouse genome mm10 (GRCm38). AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can invoke both AmpliconArchitect and AmpliconClassifier. AmpliconSuite-pipeline was formerly called as "PrepareAA".
+Performs preliminary steps (alignment, seed detection, & seed filtering) required prior to running AmpliconArchitect. AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier. AmpliconSuite-pipeline was formerly called "PrepareAA".
+
+AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections such as HPV and HBV.
 
 **Current version: 0.1203.12**
 
-Please check out the [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running AA to learn about best practices and see some FAQs.
+Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running to learn about best practices and see some FAQs.
 
 
 ## Prerequisites:
@@ -16,13 +17,14 @@ AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVKit req
 Depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
 - (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
 - (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
-  - mm10 and larger versions of the individual data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
-- (optional) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
+  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
+- (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
+- (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
-- (optional) [CNVkit](https://github.com/etal/cnvkit) or [Canvas](https://github.com/Illumina/canvas) or  (unless supplying your own CNV calls).
+- (optional) [Canvas](https://github.com/Illumina/canvas) to generate CNV calls for focal amplification seed region identification. We recommend CNVKit for this task but provide this option anyways.
   - (required for Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (unless providing your own VCF calls to Canvas)
-- Some optional scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Can be installed with `pip`, `conda` or similar. 
+- Scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Those packages can be installed with `pip`, `conda` or similar.
 
 AmpliconSuite-pipeline assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
 
@@ -35,8 +37,7 @@ AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 
 **Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,
 which when run from the AmpliconSuite-pipeline source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
 
-
-### Standalone installation
+## Installation
 
 In the directory you want to run AA in, do 
 
@@ -83,54 +84,48 @@ An example docker command might look like:
 
 **You can opt to run the docker image as your current user by setting `--run_as_user`.** 
 
-### Other usage options
+### AmpliconSuite-pipeline on Nextflow.
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 ## Usage
-**The main driver script for the pipeline is called `PrepareAA.py`.** Two example standard runs of AmpliconSuite-pipeline are given below.
+**The main driver script for the pipeline is called `PrepareAA.py`.** Example AmpliconSuite-pipeline commands are given below.
 
-#### Example 1: Starting from .fastq files, using Canvas for seed generation.
-```
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --canvas_dir /path/to/canvas/canvas_exec_dir --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref hg19 [--run_AA] [--run_AC]
-```
-
-or
-
-#### Example 2: Starting from sorted .bam, using CNVkit for seed generation
-```
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.cs.rmdup.bam [--run_AA] [--run_AC]
+#### Example 1: Starting from .fastq files, using CNVkit for seed generation.
+```bash
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref hg38 [--run_AA] [--run_AC]
 ```
 
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 `--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
 
+#### Example 2: Starting from sorted .bam, using CNVkit for seed generation
+```bash
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.cs.rmdup.bam [--run_AA] [--run_AC]
+```
 
 ##### Example 3: Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
-* If you already have your coordinate-sorted bam file, `--fastqs` can be replaced with `--bam`.
-
-
 * If using your own CNV calls:
-```
+```bash
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fastq sample_r2.fastq | --bam sample.cs.bam) [--run_AA] [--run_AC]
 ```
+
 Where the CNV bed file is formatted as (**without a header present**):
 
 `chr    start        end       copy_number`
 
 Additional fields between `end` and `copy_number` may exist, but `copy_number` must always be the last column.
 
-* You can also use a CNVKit .cns file instead of .bed for this argument.
+* Note: You can also use a CNVKit .cns file instead of .bed for this argument.
 
-* CNVkit requires R version 3.5 or greater. This is not standard on many Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
+* Note: CNVkit requires R version 3.5 or greater. This is not standard on older Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
-* If you generated your own VCF but would still like to use Canvas CNV, you can supply `--vcf` to bypass the freebayes step.
-
-* If using your own VCF + Canvas: Canvas only considers sites with "PASS" in the FILTER field of the VCF, so if "." is used, Canvas will fail. If you would like to convert your VCF with "." in the FILTER field to "PASS", you can use the following awk command
+#### Example 4: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
+Note that users must start with fastq files so that the reads can also be aligned to viral genomes. CNVKit must be used for this mode.
+```bash
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fastq.gz sample_r2.fastq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]
 ```
-cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\"" > your_reformatted_file.vcf
-```
 
-#### Example 4: Starting from completed AA results
+#### Example 5: Starting from completed AA results
 If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
 ```
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata [representative_run_metadata_file].json -t 1 --ref hg38
@@ -138,7 +133,7 @@ If the user has one or more AA results directories inside a directory, the user 
 
 Note that when this mode is used all AA results must have been generated with respect to the same reference genome version.
 
-### Command line arguments to AmpliconSuite-pipeline
+## Command line arguments to AmpliconSuite-pipeline
 
 - `-o | --output_directory [outdir]`: (Optional) Directory where results will be stored. Defaults to current directory.
 
@@ -168,9 +163,12 @@ Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/pa
 
 - `--run_AC`: (Optional) Run AmpliconClassifier following AA. No effect if `--run_AA` not set.
 
-- `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","mm10","GRCm38"). This will be auto-detected if it is not set.
+- `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"). This will be auto-detected if it is not set.
 
-- `--vcf [your_file.vcf]`: (Optional) Supply your own VCF to skip the freebayes step.
+- `--vcf [your_file.vcf]`: (Optional & considered only if running Canvas CNV caller). Supply your own VCF to skip the freebayes step. Note that Canvas only considers sites with "PASS" in the FILTER field of the VCF, so if "." is used, Canvas will fail. If you would like to convert your VCF with "." in the FILTER field to "PASS", you can use the following awk command: 
+```
+cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\"" > your_reformatted_file.vcf
+```
 
 - `--cngain [float]`: (Optional) Set a custom threshold for the CN gain considered by AA. Default: 4.5.
 
@@ -213,17 +211,17 @@ or `--purity` is provided for CNVKit.
 - `-AA_insert_sdevs [float]` (Optional, default 3.0) See AA documentation for more info.
  
 
-### FAQ
+## FAQ
 Check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md)!
 
-### Citing
+## Citing
 If using AmpliconSuite-pipeline in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using AmpliconSuite-pipeline to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.
 
 
 ## Additional analysis tools and scripts
 
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
-Formerly called `CAMPER.py`. Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
+Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
 `CAMPER.py` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
 searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
 The output will be an AA-formatted cycles file with additional annotations for length and quality control filter status. The quality filters take into account root mean square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this pre-print](https://www.biorxiv.org/content/10.1101/2021.11.28.470285v1).
