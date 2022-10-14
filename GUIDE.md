@@ -202,11 +202,15 @@ At the moment, we do not support adding additional tracks of data into the plot 
 #
 
 ### FAQ
-- **Can I use AA with whole-exome sequencing or RNA-sequencing data?**
+- **Can I use AA with whole-exome sequencing, ATAC-seq, or RNA-sequencing data?**
     - AA will fundamentally not work with these data modalities.
 
 - **What coverage is needed for AA?**
-    - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA. 
+    - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA.
+  
+- **Do I need to use downsampling? Will I detect more SVs with less downsampling?**
+  - The threshold for amplified SV detection used by AA scales with effective coverage after downsampling, so lower effective coverage (e.g. downsample 10) will have a lower threshold than higher effective coverage (e.g. downsample 40). For low copy-number focal amplifications (CN < 10), higher effective coverage may perform better
+(consider setting a downsample parameter of 30 or 40).  
     
 - **AA has been running for more than 60 hours. What's wrong?**
     - Please ensure that you selected your CNV seeds appropriately. If you use a CN cutoff any lower than 4.5, and size < 10 kbp,
@@ -226,7 +230,7 @@ At the moment, we do not support adding additional tracks of data into the plot 
 
 - **How do I tell if an amplification is due to ecDNA or segmental tandem duplication?**
     - For low CN < 4.5, it's not really possible to tell. However, keep the following in mind - when segmental tandem duplications occur, the same breakpoints must be reused every time it is repeated. When a "cyclic" structure accumulates
-    in very high CN, this would involve the exact reuse of the same breakpoints many many times in the case of segmental tandem dups. The simpler hypothesis as CN increases, is that it is mediated through an extrachromosomal DNA mechanism. 
+    in very high CN, this would involve the exact reuse of the same breakpoints many, many times in the case of segmental tandem dups. The simpler hypothesis as CN increases, is that it is mediated through an extrachromosomal DNA mechanism. 
     
 - **Can AA determine the difference between HSR and ecDNA? Can it find integration points?**
     - From our observations, ecDNA maintains its structure when it integrates into the genome (Turner 2017, *Nature*, Deshpande 2019, *Nat. Comms.*, Luebeck 2020 *Nat. Comms.*). Unfortunately without some sort of imaging data (FISH) or long-range sequencing (Bionano, PacBio, Nanopore), it is not possible to reliably make that determination from AA.

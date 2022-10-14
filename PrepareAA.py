@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.12"
+__version__ = "0.1203.13"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -53,10 +53,10 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
 
     print("\nPerforming alignment and sorting")
     if usingDeprecatedSamtools:
-        cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref, fastqs, outname, outname)
     else:
-        cmd = "{{ bwa mem -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref, fastqs, outname, outname)
 
     print(cmd)
