@@ -137,12 +137,8 @@ if args.ref:
 if args.sorted_bam:
 	args.sorted_bam = os.path.abspath(args.sorted_bam)
 	bamdir, bamname = os.path.split(args.sorted_bam)
+	norm_bamdir = bamdir
 	argstring += " --sorted_bam /home/bam_dir/" + bamname
-	if args.normal_bam:
-		norm_bamdir, norm_bamname = os.path.split(args.normal_bam)
-		argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
-	else:
-		norm_bamdir = bamdir
 
 elif args.fastqs:
 	args.fastqs[0], args.fastqs[1] = os.path.abspath(args.fastqs[0]), os.path.abspath(args.fastqs[1])
@@ -155,6 +151,11 @@ else:
 	argstring += " --completed_AA_runs /home/bam_dir/ --completed_run_metadata None"
 	bamdir = os.path.abspath(args.completed_AA_runs)
 	norm_bamdir = bamdir
+
+if args.normal_bam:
+	args.normal_bam = os.path.abspath(args.normal_bam)
+	norm_bamdir, norm_bamname = os.path.split(args.normal_bam)
+	argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
 
 if args.ploidy:
 	argstring += " --ploidy " + str(args.ploidy)
