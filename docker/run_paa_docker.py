@@ -83,12 +83,11 @@ if (args.fastqs or args.completed_AA_runs) and not args.ref:
 if not args.output_directory:
 	args.output_directory = os.getcwd()
 
+args.output_directory = os.path.realpath(args.output_directory)
 if args.output_directory == "/":
 	sys.stderr.write("Output directory should not be root!\n")
 	sys.exit(1)
 
-else:
-	args.output_directory = os.path.abspath(args.output_directory)
 
 print("making output directory read/writeable")
 cmd = "chmod a+rw {} -R".format(args.output_directory)
@@ -123,7 +122,7 @@ except KeyError:
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
-cnvdir = os.path.abspath(cnvdir)
+cnvdir = os.path.realpath(cnvdir)
 
 # assemble an argstring
 argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
@@ -135,13 +134,13 @@ if args.ref:
 	argstring += " --ref " + args.ref
 
 if args.sorted_bam:
-	args.sorted_bam = os.path.abspath(args.sorted_bam)
+	args.sorted_bam = os.path.realpath(args.sorted_bam)
 	bamdir, bamname = os.path.split(args.sorted_bam)
 	norm_bamdir = bamdir
 	argstring += " --sorted_bam /home/bam_dir/" + bamname
 
 elif args.fastqs:
-	args.fastqs[0], args.fastqs[1] = os.path.abspath(args.fastqs[0]), os.path.abspath(args.fastqs[1])
+	args.fastqs[0], args.fastqs[1] = os.path.realpath(args.fastqs[0]), os.path.realpath(args.fastqs[1])
 	_, fq1name = os.path.split(args.fastqs[0])
 	bamdir, fq2name = os.path.split(args.fastqs[1])
 	norm_bamdir = bamdir
@@ -149,11 +148,11 @@ elif args.fastqs:
 
 else:
 	argstring += " --completed_AA_runs /home/bam_dir/ --completed_run_metadata None"
-	bamdir = os.path.abspath(args.completed_AA_runs)
+	bamdir = os.path.realpath(args.completed_AA_runs)
 	norm_bamdir = bamdir
 
 if args.normal_bam:
-	args.normal_bam = os.path.abspath(args.normal_bam)
+	args.normal_bam = os.path.realpath(args.normal_bam)
 	norm_bamdir, norm_bamname = os.path.split(args.normal_bam)
 	argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
 
