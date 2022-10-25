@@ -357,7 +357,7 @@ def make_AC_table(sname, AC_outdir, AC_src, metadata_file, cnv_bed=None):
     if cnv_bed:
         cmd += " --cnv_bed " + cnv_bed
     if metadata_file and not metadata_file.lower() == "none":
-        cmd += " --metadata_dict " + metadata_file
+        cmd += " --run_metadata_file " + metadata_file
 
     print(cmd)
     call(cmd, shell=True)
