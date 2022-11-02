@@ -24,7 +24,7 @@ def metadata_helper(metadata_args):
         key = keys[key_ind]
         json_obj[key] = metadata_args[key_ind]
 
-    with open('/opt/genepatt/metadata.json', 'w') as json_file:
+    with open('/home/metadata.json', 'w') as json_file:
         json.dump(json_obj, json_file, indent=4)
     json_file.close()
 
