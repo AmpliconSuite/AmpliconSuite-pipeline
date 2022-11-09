@@ -63,7 +63,12 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
     print("\nPerforming duplicate removal & indexing")
-    cmd_list = ["samtools", "markdup", "-s", "-@ {}".format(args.nthreads), "{}.cs.bam".format(outname), "{}.cs.mkdup.bam".format(outname)]
+    if usingDeprecatedSamtools:
+        cmd_list = ["samtools", "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.mkdup.bam".format(outname)]
+    else:
+        cmd_list = ["samtools", "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname),
+                    "{}.cs.mkdup.bam".format(outname)]
+
     print(" ".join(cmd_list))
     call(cmd_list)
     print("\nRunning samtools index")
