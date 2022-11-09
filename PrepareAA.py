@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1203.13"
+__version__ = "0.1344.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -73,7 +73,7 @@ def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False)
     print("Removing temp BAM")
     cmd = "rm {}.cs.bam".format(outname)
     call(cmd, shell=True)
-    return outname + ".cs.mkdup.bam"
+    return outname + ".cs.mkdup.bam", outname + "_aln_stage.stderr"
 
 
 def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None):
@@ -168,7 +168,11 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
                                                          cnsFile)
     print(cmd)
-    call(cmd, shell=True)
+    exit_code = call(cmd, shell=True)
+    if exit_code != 0:
+        sys.stderr.write("CNVKit encountered a non-zero exit status. Exiting...\n")
+        sys.exit(1)
+
     metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
     print("\nCleaning up temporary files")
     cmd = "rm {}/*tmp.bed {}/*.cnn {}/*target.bed".format(outdir, outdir, outdir)
@@ -296,7 +300,11 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
         AA_interpreter, AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min),
         AA_seeds_filename)
     print(cmd)
-    call(cmd, shell=True)
+    exit_code = call(cmd, shell=True)
+    if exit_code != 0:
+        sys.stderr.write("amplified_intervals.py returned a non-zero exit code. Exiting...\n")
+        sys.exit(1)
+
     metadata_dict["amplified_intervals_cmd"] = cmd
     return AA_seeds_filename + ".bed"
 
@@ -447,6 +455,64 @@ def save_run_metadata(outdir, sname, args, launchtime):
     return metadata_filename
 
 
+def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
+    if align_stderr_file:
+        cmd = 'grep -i error ' + align_stderr_file
+        try:
+            aln_errs = check_output(cmd, shell=True).decode("utf-8")
+
+        except CalledProcessError:
+            aln_errs = ""
+
+        if aln_errs:
+            sys.stderr.write("Detected error during bwa mem alignment stage\n")
+            return False
+
+    if AA_outdir:
+        sumfile = AA_outdir + sname + "_summary.txt"
+        if os.path.isfile(sumfile):
+            namps = -1
+            with open(sumfile) as infile:
+                for line in infile:
+                    if line.startswith("#Amplicons = "):
+                        namps = int(line.rstrip().rsplit(" = ")[-1])
+                        break
+
+            if namps < 0:
+                sys.stderr.write("Detected error during AA stage\n")
+                return False
+
+            for x in range(1, namps+1):
+                try:
+                    fsize = os.stat(AA_outdir + sname + "_amplicon" + str(x) + "_cycles.txt").st_size
+
+                except OSError:
+                    fsize = 0
+
+                if fsize == 0:
+                    sys.stderr.write("Detected error during AA stage\n")
+                    return False
+
+        else:
+            sys.stderr.write("Detected error during AA stage\n")
+            return False
+
+    if AC_outdir:
+        try:
+            fsize1 = os.stat(AC_outdir + sname + "_amplicon_classification_profiles.tsv").st_size
+            fsize2 = os.stat(AC_outdir + sname + "_result_table.tsv").st_size
+
+        except OSError:
+            fsize1 = 0
+            fsize2 = 0
+
+        if fsize1 == 0 or fsize2 == 0:
+            sys.stderr.write("Detected error during AC stage\n")
+            return False
+
+    return True
+
+
 # MAIN #
 if __name__ == '__main__':
     # Parses the command line arguments
@@ -544,6 +610,9 @@ if __name__ == '__main__':
     if "/" in args.sample_name:
         sys.stderr.write("Sample name -s cannot be a path. Specify output directory with -o.\n")
         sys.exit(1)
+
+    with open(args.output_directory + args.sample_name + "_finish_flag.txt", 'w') as ffof:
+       ffof.write("UNSUCCESSFUL\n")
 
     logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')
     logfile.write("#stage:\twalltime(seconds)\n")
@@ -671,11 +740,12 @@ if __name__ == '__main__':
     ta = tb
     print("Running PrepareAA on sample: " + sname)
     # Begin PrepareAA pipeline
+    aln_stage_stderr = None
     if args.fastqs:
         # Run BWA
         fastqs = " ".join(args.fastqs)
         print("Running pipeline on " + fastqs)
-        args.sorted_bam = run_bwa(ref, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
+        args.sorted_bam, aln_stage_stderr = run_bwa(ref, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
 
     if not args.completed_AA_runs:
         bamBaiNoExt = args.sorted_bam[:-3] + "bai"
@@ -845,7 +915,17 @@ if __name__ == '__main__':
     with open(smofname, 'w') as fp:
         json.dump(sample_info_dict, fp, indent=2)
 
-    print("Completed\n")
+    if not args.run_AA:
+        AA_outdir = None
+
+        if not args.run_AC:
+            AC_outdir = None
+
+    if not detect_run_failure(aln_stage_stderr, AA_outdir, sname, AC_outdir):
+        print("All stages appear to have completed successfully.")
+        with open(args.output_directory + args.sample_name + "_finish_flag.txt", 'w') as ffof:
+            ffof.write("All stages completed\n")
+
     print(str(datetime.now()))
     tf = time.time()
     logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
