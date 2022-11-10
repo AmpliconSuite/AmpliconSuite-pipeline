@@ -471,7 +471,7 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 
         if aln_errs:
             sys.stderr.write("Detected error during bwa mem alignment stage\n")
-            return False
+            return True
 
     if AA_outdir:
         sumfile = AA_outdir + sname + "_summary.txt"
@@ -485,7 +485,7 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 
             if namps < 0:
                 sys.stderr.write("Detected error during AA stage\n")
-                return False
+                return True
 
             for x in range(1, namps+1):
                 try:
@@ -496,11 +496,11 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 
                 if fsize == 0:
                     sys.stderr.write("Detected error during AA stage\n")
-                    return False
+                    return True
 
         else:
             sys.stderr.write("Detected error during AA stage\n")
-            return False
+            return True
 
     if AC_outdir:
         try:
@@ -513,9 +513,9 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 
         if fsize1 == 0 or fsize2 == 0:
             sys.stderr.write("Detected error during AC stage\n")
-            return False
+            return True
 
-    return True
+    return False
 
 
 # MAIN #
