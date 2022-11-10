@@ -24,7 +24,7 @@ echo "###############################"
 python programs/AmpliconSuite-pipeline-master/PrepareAA.py $argstring &> /home/output/PAA_stdout.log
 
 echo "###############################"
-echo "FINISHED RUNNING PAA"
+echo "FINISHED"
 echo "###############################"
 
 echo -e "\n"
@@ -41,4 +41,4 @@ echo -e "\n"
 #ls -alrt
 tar --exclude="*.tar" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="./output" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf ${SAMPLE_NAME}_outputs.tar.gz .
 
-echo Finished Running
+echo "Finished Running"

@@ -241,12 +241,12 @@ with open("paa_docker.sh", 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
     outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
-    outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
 
     # Download the reference genome if necessary
     if not AA_REPO or not os.path.exists(AA_REPO + args.ref):
         outfile.write('echo DOWNLOADING {} NOW ....\n'.format(args.ref))
         outfile.write('mkdir -p /home/data_repo\n')
+        outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
         outfile.write(
             'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
         outfile.write(
