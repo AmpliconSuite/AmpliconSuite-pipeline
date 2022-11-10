@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import sys
-import os
 import argparse
+import json
+import os
 from subprocess import call
+import sys
 
 
 def metadata_helper(metadata_args):
@@ -98,8 +99,8 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--sorted_bam", "--bam",
                    help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
-group.add_argument("--completed_AA_runs",
-                   help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
+group.add_argument("--completed_AA_runs", help="Path to a directory containing one or more completed AA runs which "
+                                               "utilized the same reference genome.")
 
 args = parser.parse_args()
 
@@ -116,29 +117,25 @@ if args.output_directory == "/":
     sys.stderr.write("Output directory should not be root!\n")
     sys.exit(1)
 
-
 print("making output directory read/writeable")
 cmd = "chmod a+rw {} -R".format(args.output_directory)
 print(cmd)
 call(cmd, shell=True)
 
-try:
+if 'AA_DATA_REPO' in os.environ:
     AA_REPO = os.environ['AA_DATA_REPO'] + "/"
+    if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
+        print("coverage.stats file not found in " + AA_REPO +
+              "\nCreating a new coverage.stats file.")
+        cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(
+            AA_REPO, AA_REPO)
+        print(cmd)
+        call(cmd, shell=True)
 
-except KeyError:
-    sys.stderr.write(
-        "AA_DATA_REPO bash variable not found. AmpliconArchitect may not be properly installed.\n")
-    sys.exit(1)
-
-
-if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
-    print("coverage.stats file not found in " + AA_REPO +
-          "\nCreating a new coverage.stats file.")
-    cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(
-        AA_REPO, AA_REPO)
-    print(cmd)
-    call(cmd, shell=True)
-
+else:
+    AA_REPO = None
+    sys.stderr.write("$AA_DATA_REPO bash variable not set. Docker image will download large (>3 Gb) data repo each"
+                     " time it is run. See installation instructions to optimize this process.\n")
 
 try:
     # MOSEK LICENSE FILE PATH
@@ -150,7 +147,6 @@ except KeyError:
     sys.stderr.write(
         "Mosek license (.lic) file not found. AmpliconArchitect may not be properly installed.\n")
     sys.exit(1)
-
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
@@ -245,21 +241,21 @@ with open("paa_docker.sh", 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
     outfile.write("export AA_DATA_REPO=/home/data_repo\n")
-    outfile.write(f'mkdir -p $PWD/data_repo\n')
-    outfile.write(f'AA_DATA_REPO=$PWD/data_repo\n')
+    outfile.write('mkdir -p $PWD/data_repo\n')
+    outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
 
     # Download the reference genome if necessary
-    if args.ref_path == 'None':
-        outfile.write(f'echo DOWNLOADING {args.ref} NOW ....\n')
+    if not AA_REPO or not os.path.exists(AA_REPO + args.ref):
+        outfile.write('echo DOWNLOADING {} NOW ....\n'.format(args.ref))
         outfile.write(
-            f'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/${args.ref}.tar.gz\n')
+            'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
         outfile.write(
-            f'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/${args.ref}_indexed_md5sum.txt\n')
+            'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed_md5sum.txt\n'.format(args.ref))
         outfile.write(
-            f'tar zxf $AA_DATA_REPO/${args.ref}.tar.gz --directory $AA_DATA_REPO\n')
+            'tar zxf $AA_DATA_REPO/{}_indexed.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
         outfile.write(
-            f'touch $AA_DATA_REPO/coverage.stats && chmod a+r $AA_DATA_REPO/coverage.stats\n')
-        outfile.write(f'echo DOWNLOADING {args.ref} COMPLETE\n')
+            'touch $AA_DATA_REPO/coverage.stats && chmod a+r $AA_DATA_REPO/coverage.stats\n')
+        outfile.write('echo DOWNLOADING {} COMPLETE\n'.format(args.ref))
 
     # assemble a docker command string
     dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\"" + \
