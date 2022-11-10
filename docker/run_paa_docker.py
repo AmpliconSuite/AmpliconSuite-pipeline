@@ -235,20 +235,18 @@ userstring = ""
 if args.run_as_user:
     userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
 
-
 print("Creating a docker script with the following argstring:")
 print(argstring + "\n")
 with open("paa_docker.sh", 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
     outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
-    outfile.write('mkdir -p $PWD/data_repo\n')
     outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
 
     # Download the reference genome if necessary
     if not AA_REPO or not os.path.exists(AA_REPO + args.ref):
         outfile.write('echo DOWNLOADING {} NOW ....\n'.format(args.ref))
-        outfile.write("export AA_DATA_REPO=/home/data_repo\n")
+        outfile.write('mkdir -p /home/data_repo\n')
         outfile.write(
             'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
         outfile.write(
