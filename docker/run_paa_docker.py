@@ -86,10 +86,10 @@ parser.add_argument("--run_as_user", help="Run the docker image as the user laun
                     action='store_true')
 parser.add_argument(
     "--no_QC", help="Skip QC on the BAM file.", action='store_true')
-parser.add_argument(
-    '--ref_path', help="Path to reference Genome. Won't download reference genome if provided.", default="None")
-parser.add_argument(
-    '--AA_seed', help='Seeds that sets randomness for AA', default=0)
+# parser.add_argument(
+#     '--ref_path', help="Path to reference Genome. Won't download reference genome if provided.", default="None")
+# parser.add_argument(
+#     '--AA_seed', help='Seeds that sets randomness for AA', default=0)
 parser.add_argument(
     '--metadata', help="Path to a JSON of sample metadata to build on", default="", nargs="+")
 
@@ -104,6 +104,8 @@ group.add_argument("--completed_AA_runs", help="Path to a directory containing o
 
 args = parser.parse_args()
 
+if args.ref == "hg38": args.ref = "GRCh38"
+if args.ref == "GRCm38": args.ref = "mm10"
 if (args.fastqs or args.completed_AA_runs) and not args.ref:
     sys.stderr.write(
         "Must specify --ref when providing unaligned fastq files.")
@@ -226,9 +228,8 @@ if args.run_AC:
 if args.metadata != "":
     metadata_helper(args.metadata)
     argstring += " --sample_metadata /home/metadata.json"
-
-os.environ['AA_SEED'] = str(args.AA_seed)
-
+#
+# os.environ['AA_SEED'] = str(args.AA_seed)
 
 userstring = ""
 if args.run_as_user:
@@ -240,6 +241,7 @@ print(argstring + "\n")
 with open("paa_docker.sh", 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
+    outfile.write("export SAMPLE_NAME=" + args.sample_name + "\"\n")
     outfile.write("export AA_DATA_REPO=/home/data_repo\n")
     outfile.write('mkdir -p $PWD/data_repo\n')
     outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
