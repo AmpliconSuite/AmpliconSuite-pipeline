@@ -241,7 +241,7 @@ print(argstring + "\n")
 with open("paa_docker.sh", 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
-    outfile.write("export SAMPLE_NAME=" + args.sample_name + "\"\n")
+    outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
     outfile.write("export AA_DATA_REPO=/home/data_repo\n")
     outfile.write('mkdir -p $PWD/data_repo\n')
     outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
@@ -265,6 +265,9 @@ with open("paa_docker.sh", 'w') as outfile:
         ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
         MOSEKLM_LICENSE_FILE + \
         ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+
+    if not AA_REPO or not os.path.exists(AA_REPO + args.ref):
+        outfile.write("rm -rf /home/data_repo\n")
 
     print("\n" + dockerstring + "\n")
     outfile.write(dockerstring)

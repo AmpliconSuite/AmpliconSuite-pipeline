@@ -39,6 +39,6 @@ echo -e "\n"
 #echo -e "\n"
 #echo -e "\n"
 #ls -alrt
-tar --exclude="./programs" --exclude="./testdata" --exclude="./input" --exclude="./output" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf ${SAMPLE_NAME}_outputs.tar.gz .
+tar --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="./output" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf ${SAMPLE_NAME}_outputs.tar.gz .
 
 echo Finished Running
