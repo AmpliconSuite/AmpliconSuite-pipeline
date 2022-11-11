@@ -18,7 +18,8 @@ python $NCM_HOME/ncm.py -h >> /home/output/docker_home_manifest.log
 # works for py2 and py3
 RUN_COMMAND="python programs/AmpliconSuite-pipeline-master/PrepareAA.py ${argstring} &> /home/output/PAA_stdout.log"
 echo "###############################"
-echo "RUNNING ${RUN_COMMAND}"
+echo "RUNNING..."
+echo "${RUN_COMMAND}"
 echo "###############################"
 
 python programs/AmpliconSuite-pipeline-master/PrepareAA.py $argstring &> /home/output/PAA_stdout.log
