@@ -243,10 +243,12 @@ with open("paa_docker.sh", 'w') as outfile:
     outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
 
     # Download the reference genome if necessary
-    if not AA_REPO or not (args.ref and os.path.exists(AA_REPO + args.ref)):
+    no_data_repo = not AA_REPO or (args.ref and not os.path.exists(AA_REPO + args.ref))
+    if no_data_repo:
         outfile.write('echo DOWNLOADING {} NOW ....\n'.format(args.ref))
-        outfile.write('mkdir -p /home/data_repo\n')
-        outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
+        data_repo_d = args.output_directory + '/data_repo'
+        outfile.write('mkdir -p ' + data_repo_d + '\n')
+        outfile.write('AA_DATA_REPO=' + data_repo_d + '\n')
         outfile.write(
             'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
         outfile.write(
@@ -264,8 +266,8 @@ with open("paa_docker.sh", 'w') as outfile:
         MOSEKLM_LICENSE_FILE + \
         ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
-    if not AA_REPO or not (args.ref and os.path.exists(AA_REPO + args.ref)):
-        outfile.write("rm -rf /home/data_repo\n")
+    if no_data_repo:
+        outfile.write("rm -rf " + data_repo_d + "\n")
 
     print("\n" + dockerstring + "\n")
     outfile.write(dockerstring)
