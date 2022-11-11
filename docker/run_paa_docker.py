@@ -243,7 +243,7 @@ with open("paa_docker.sh", 'w') as outfile:
     outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
 
     # Download the reference genome if necessary
-    if not AA_REPO or not os.path.exists(AA_REPO + args.ref):
+    if not AA_REPO or not (os.path.exists(AA_REPO + args.ref) and args.ref):
         outfile.write('echo DOWNLOADING {} NOW ....\n'.format(args.ref))
         outfile.write('mkdir -p /home/data_repo\n')
         outfile.write('AA_DATA_REPO=$PWD/data_repo\n')
