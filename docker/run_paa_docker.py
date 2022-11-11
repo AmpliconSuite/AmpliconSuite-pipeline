@@ -264,7 +264,7 @@ with open("paa_docker.sh", 'w') as outfile:
         MOSEKLM_LICENSE_FILE + \
         ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
-    if not AA_REPO or not os.path.exists(AA_REPO + args.ref):
+    if not AA_REPO or not (args.ref and os.path.exists(AA_REPO + args.ref)):
         outfile.write("rm -rf /home/data_repo\n")
 
     print("\n" + dockerstring + "\n")
