@@ -260,11 +260,10 @@ with open("paa_docker.sh", 'w') as outfile:
         outfile.write('echo DOWNLOADING {} COMPLETE\n'.format(args.ref))
 
     # assemble a docker command string
-    dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\"" + \
+    dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
         " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
         ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-        MOSEKLM_LICENSE_FILE + \
-        ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+        MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
     if no_data_repo:
         outfile.write("rm -rf " + data_repo_d + "\n")
