@@ -119,10 +119,14 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
         for line in infile:
             fields = line.rstrip().rsplit("\t")
             c, s, e = fields[0], int(fields[1]), int(fields[2]) + 1
+            if c == "hs37d5":
+                continue
+
             cn = float(fields[-1])
             a = region_ivald[c][(s + e)//2]
             if not a:
                 a = region_ivald[c][s:e]
+
             if a:
                 carm_interval = a.pop()
                 carm = carm_interval.data

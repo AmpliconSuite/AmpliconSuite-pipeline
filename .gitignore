@@ -61,6 +61,9 @@ docs/_build/
 # PyBuilder
 target/
 
+# OS stuff:
+*.DS_Store
+
 testfiles/*.png
 scripts/*.png
 hg19/
