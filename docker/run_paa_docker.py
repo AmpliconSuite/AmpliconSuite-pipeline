@@ -115,9 +115,14 @@ if not args.output_directory:
     args.output_directory = os.getcwd()
 
 args.output_directory = os.path.realpath(args.output_directory)
+print("Real path of output directory is set to " + args.output_directory)
 if args.output_directory == "/":
     sys.stderr.write("Output directory should not be root!\n")
     sys.exit(1)
+
+if not os.path.exists(args.output_directory):
+    print("Output directory did not exist. Made output directory.")
+    os.makedirs(args.output_directory)
 
 print("making output directory read/writeable")
 cmd = "chmod a+rw {} -R".format(args.output_directory)
@@ -244,26 +249,49 @@ with open("paa_docker.sh", 'w') as outfile:
 
     # Download the reference genome if necessary
     no_data_repo = not AA_REPO or (args.ref and not os.path.exists(AA_REPO + args.ref))
-    if no_data_repo:
+    if no_data_repo and args.ref:
         outfile.write('echo DOWNLOADING {} NOW ....\n'.format(args.ref))
         data_repo_d = args.output_directory + '/data_repo'
         outfile.write('mkdir -p ' + data_repo_d + '\n')
-        outfile.write('AA_DATA_REPO=' + data_repo_d + '\n')
+        outfile.write('export AA_DATA_REPO=' + data_repo_d + '\n')
+        if args.fastqs:
+            outfile.write(
+                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
+            outfile.write(
+                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed_md5sum.txt\n'.format(args.ref))
+            outfile.write(
+                'tar zxf $AA_DATA_REPO/{}_indexed.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
+
+        else:
+            outfile.write(
+                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}.tar.gz\n'.format(
+                    args.ref))
+            outfile.write(
+                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_md5sum.txt\n'.format(
+                    args.ref))
+            outfile.write(
+                'tar zxf $AA_DATA_REPO/{}.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
+
         outfile.write(
-            'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
-        outfile.write(
-            'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed_md5sum.txt\n'.format(args.ref))
-        outfile.write(
-            'tar zxf $AA_DATA_REPO/{}_indexed.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
-        outfile.write(
-            'touch $AA_DATA_REPO/coverage.stats && chmod a+r $AA_DATA_REPO/coverage.stats\n')
+            'touch $AA_DATA_REPO/coverage.stats && chmod a+rw $AA_DATA_REPO/coverage.stats\n')
         outfile.write('echo DOWNLOADING {} COMPLETE\n'.format(args.ref))
 
+    elif no_data_repo and not args.ref:
+        sys.stderr.write("Must specify --ref argument!")
+        sys.exit(1)
+
     # assemble a docker command string
-    dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
-        " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
-        ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-        MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+    if no_data_repo:
+        dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
+            " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
+            ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
+            MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+
+    else:
+        dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
+                    " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
+                    ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
+                    MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
     if no_data_repo:
         outfile.write("rm -rf " + data_repo_d + "\n")

@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1344.1"
+__version__ = "0.1344.3"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -177,7 +177,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
 
     metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
     print("\nCleaning up temporary files")
-    cmd = "rm {}/*tmp.bed {}/*.cnn {}/*target.bed {}/*.bintest.cns".format(outdir, outdir, outdir, outdir)
+    cmd = "rm -f {}/*tmp.bed {}/*.cnn {}/*target.bed {}/*.bintest.cns".format(outdir, outdir, outdir, outdir)
     print(cmd)
     call(cmd, shell=True)
     cmd = "gzip -f " + cnrFile
@@ -920,8 +920,8 @@ if __name__ == '__main__':
     if not args.run_AA:
         AA_outdir = None
 
-        if not args.run_AC:
-            AC_outdir = None
+    if not args.run_AC:
+        AC_outdir = None
 
     if not detect_run_failure(aln_stage_stderr, AA_outdir, sname, AC_outdir):
         print("All stages appear to have completed successfully.")

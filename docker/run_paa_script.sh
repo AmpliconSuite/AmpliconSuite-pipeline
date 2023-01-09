@@ -12,19 +12,22 @@ export NCM_HOME
 
 id > /home/output/docker_home_manifest.log
 ls /home >> /home/output/docker_home_manifest.log
+echo "" >> /home/output/docker_home_manifest.log
+ls $AA_DATA_REPO >> /home/output/docker_home_manifest.log
+
 #works for py2 and py3, check if NCM works
-python $NCM_HOME/ncm.py -h >> /home/output/docker_home_manifest.log
+#python $NCM_HOME/ncm.py -h >> /home/output/docker_home_manifest.log
 
 # works for py2 and py3
 RUN_COMMAND="python programs/AmpliconSuite-pipeline-master/PrepareAA.py ${argstring} &> /home/output/PAA_stdout.log"
 echo "###############################"
-echo "RUNNING..."
+echo "RUNNING DOCKER STAGE..."
 echo "${RUN_COMMAND}"
 
 python programs/AmpliconSuite-pipeline-master/PrepareAA.py $argstring &> /home/output/PAA_stdout.log
 echo "###############################"
 
-echo "FINISHED"
+echo "FINISHED DOCKER STAGE"
 echo "###############################"
 
 echo -e "\n"
@@ -39,6 +42,7 @@ echo -e "\n"
 #echo -e "\n"
 #echo -e "\n"
 #ls -alrt
-tar --exclude="*.tar" --exclude="*.tar.gz" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/output/${SAMPLE_NAME}_outputs.tar.gz /home/output
+tar --exclude="*.tar" --exclude="*.tar.gz" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
+mv /home/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
 
 echo "Finished Running"
