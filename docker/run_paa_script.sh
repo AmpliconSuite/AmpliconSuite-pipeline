@@ -42,7 +42,7 @@ echo -e "\n"
 #echo -e "\n"
 #echo -e "\n"
 #ls -alrt
-tar --exclude="*.tar" --exclude="*.tar.gz" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
+tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
 mv /home/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
 
 echo "Finished Running"

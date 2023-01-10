@@ -293,8 +293,6 @@ with open("paa_docker.sh", 'w') as outfile:
                     ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
                     MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
-    if no_data_repo:
-        outfile.write("rm -rf " + data_repo_d + "\n")
 
     print("\n" + dockerstring + "\n")
     outfile.write(dockerstring)
@@ -304,3 +302,5 @@ outfile.close()
 call("chmod +x ./paa_docker.sh", shell=True)
 call("./paa_docker.sh", shell=True)
 call("rm paa_docker.sh", shell=True)
+if no_data_repo:
+    outfile.write("rm -rf " + data_repo_d + "\n")
