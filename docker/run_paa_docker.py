@@ -303,4 +303,7 @@ call("chmod +x ./paa_docker.sh", shell=True)
 call("./paa_docker.sh", shell=True)
 call("rm paa_docker.sh", shell=True)
 if no_data_repo:
-    outfile.write("rm -rf " + data_repo_d + "\n")
+    cmd = "rm -rf " + data_repo_d
+    print("Cleaning up data repo")
+    print(cmd)
+    call(cmd, shell=True)
