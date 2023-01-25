@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1344.3"
+__version__ = "0.1344.4"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -361,9 +361,11 @@ def make_AC_table(sname, AC_outdir, AC_src, metadata_file, cnv_bed=None):
     # make the AC output table
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
+    summary_map_file = class_output + "_summary_map.txt"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
-    cmd = "{} {}/make_results_table.py -i {} --classification_file {}".format(PY3_PATH, AC_src, input_file,
-                                                                              classification_file)
+    cmd = "{} {}/make_results_table.py -i {} --classification_file {} --summary_map {}".format(
+        PY3_PATH, AC_src, input_file, classification_file, summary_map_file)
+
     if cnv_bed:
         cmd += " --cnv_bed " + cnv_bed
     if metadata_file and not metadata_file.lower() == "none":

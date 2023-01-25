@@ -1,12 +1,12 @@
 # AmpliconSuite-pipeline
 ![GitHub](https://img.shields.io/github/license/jluebeck/AmpliconSuite-pipeline)
 
-A multithread-enabled quickstart tool for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect). 
-Performs preliminary steps (alignment, seed detection, & seed filtering) required prior to running AmpliconArchitect. AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier. AmpliconSuite-pipeline was formerly called "PrepareAA".
+A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and the associate tools for data preparation and interpretation. 
+Performs preliminary steps (alignment, seed detection, & seed filtering) required prior to running AmpliconArchitect. AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier, which is used to classify ecDNAs and BFB. AmpliconSuite-pipeline was formerly called "PrepareAA".
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections such as HPV and HBV.
 
-**Current version: 0.1344.3**
+**Current version: 0.1344.4**
 
 Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running to learn about best practices and see some FAQs.
 

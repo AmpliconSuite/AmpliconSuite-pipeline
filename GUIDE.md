@@ -38,7 +38,7 @@ AA uses external CNV calls to determine which regions it should examine - thes a
 However, AA independently calls copy number inside the seed regions it is tasked with, and thus after selecting the regions, 
 **the CN estimates are not propogated into AA's own estimations.**
 
-##### <ins>To help standardize the process of running AA, we have created a wrapper script, called [AmpliconSuite-pipeline](https://github.com/jluebeck/PrepareAA) </ins> 
+##### <ins>To help standardize the process of running AA, we have created a wrapper tool, called [AmpliconSuite-pipeline](https://github.com/jluebeck/PrepareAA) </ins> 
 
 AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
@@ -146,9 +146,9 @@ Here are some commands for running AA. We'll assume you're starting with a coord
 ```
 echo $AA_DATA_REPO
 echo $AA_SRC
-echo $MOSEKLM_LICENSE_FILE
+ls $HOME/mosek/
 ```
-None of the above should print an empty string.
+None of the above should print an empty string or "no such file" error.
 
 - **Option 1 - Launch AmpliconSuite-pipeline**:
 
@@ -174,7 +174,7 @@ less [sample_name]_AA_CNV_SEEDS.bed
 # now run AA
 $AA_SRC/AmpliconArchitect.py --ref hg19 --bed [sample_name]_AA_CNV_SEEDS.bed --bam [sample_name].bam --out [sample_name]
 ```
-This will take a while to run. Expect between 30 minutes-6 hours, but sometimes >48 hours if it's a very complex amplicon.
+This will take a while to run. Expect between 30 minutes-6 hours, but sometimes >72 hours if it's a very complex amplicon.
 
 - **Classifying the results**:
 
