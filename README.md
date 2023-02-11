@@ -22,32 +22,35 @@ Depending on what input data you are starting from, AmpliconSuite-pipeline may r
 - (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
-- (optional) [Canvas](https://github.com/Illumina/canvas) to generate CNV calls for focal amplification seed region identification. We recommend CNVKit for this task but provide this option anyways.
-  - (required for Canvas) [freebayes](https://github.com/ekg/freebayes) version 1.3.1 or greater, (unless providing your own VCF calls to Canvas)
+
+[//]: # (- &#40;optional&#41; [Canvas]&#40;https://github.com/Illumina/canvas&#41; to generate CNV calls for focal amplification seed region identification. We recommend CNVKit for this task but provide this option anyways.)
+
+[//]: # (  - &#40;required for Canvas&#41; [freebayes]&#40;https://github.com/ekg/freebayes&#41; version 1.3.1 or greater, &#40;unless providing your own VCF calls to Canvas&#41;)
 - Scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Those packages can be installed with `pip`, `conda` or similar.
 
-AmpliconSuite-pipeline assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables.
+AmpliconSuite-pipeline assumes both samtools and bwa executables are on the system path and can be directly invoked from bash without pathing to the executables. AmpliconSuite-pipeline will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
 AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 7. AmpliconSuite-pipeline's optional dependencies related to CNV calling will not work on CentOS 6.
 
-
-**Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. Please note that CNVKit requires
+**Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. CNVKit requires
 `python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
-**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,
-which when run from the AmpliconSuite-pipeline source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. 
+
+[//]: # (**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,)
+
+[//]: # (which when run from the AmpliconSuite-pipeline source directory will fetch the Canvas binary and download the `canvasdata` data repository. If installing on your own, create the canvasdata/ reference genome sudirectories in the folder with the Canvas executable. One installation dependency not mentioned explictly on the Canvas Readme is `dotnet-sdk-2.2`, which can be obtained in Ubuntu by running `sudo apt-get install dotnet-sdk-2.2`. )
 
 ## Installation
 
-In the directory you want to run AA in, do 
+### Standalone
+1. Clone the AmpliconSuite-pipeline git rep:
 
 `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
-Please see the [jluebeck/AmpliconArchitect fork](https://github.com/jluebeck/AmpliconArchitect) for AA installation instructions. AA must be installed to use AmpliconSuite-pipeline.
+2. [Install AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect), including the data repo and Mosek license.
 
-Prepare AA will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
+3. [Install AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier). 
 
-AmpliconSuite-pipeline with CNVKit will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
 
 ### AmpliconSuite-pipeline Docker 
@@ -57,9 +60,13 @@ A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https
     * Install docker: `https://docs.docker.com/install/`
     * (Optional): Add user to the docker group and relogin:
         `sudo usermod -a -G docker $USER`
+   
 2. License for Mosek optimization tool:
-    * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/` or `https://www.mosek.com/try/`)
-    * `export MOSEKLM_LICENSE_FILE=<Parent directory of mosek.lic> >> ~/.bashrc && source ~/.bashrc`
+    * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/` or `https://www.mosek.com/try/`). The license is free for academic use:
+    * `mkdir $HOME/mosek`
+    * After registering for a Mosek license, download license file `mosek.lic` and place it in the directory `$HOME/mosek/`.
+    * If you are not able to place the license in `$HOME/mosek` you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
+   
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
     * Download [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to download data repos with (`_indexed`) or
     without the bwa reference index included.
@@ -139,15 +146,15 @@ Note that when this mode is used all AA results must have been generated with re
 
 - `-s | --sample_name [sname]`: (Required) A name for the sample being run.
 
-- `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. We do not control thread usage of Canvas. Recommend 12 or more threads to be used.
+- `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. Recommend 12 or more threads to be used.
 
 - `--bam | --sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files.
 Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/path/to/some/AA_outputs]`, a directory with 
  AA output files (one or more samples).
 
-- `--canvas_dir [/path/to/Canvas_files/]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`) Path to directory containing the Canvas executable and `canvasdata/` subdirectory.
+[//]: # (- `--canvas_dir [/path/to/Canvas_files/]` &#40;Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`&#41; Path to directory containing the Canvas executable and `canvasdata/` subdirectory.)
 
-- `--cnvkit_dir [/path/to/cnvkit.py]` (Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--canvas_dir`) Path to directory containing cnvkit.py.
+- `--cnvkit_dir [/path/to/cnvkit.py]` (Required if not `--cnv_bed [cnvfile.bed]`) Path to directory containing `cnvkit.py`.
 
 - `--completed_run_metadata`, (Required if startng with completed results). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
 
@@ -157,7 +164,7 @@ Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/pa
 
 - `--aa_python_interpreter` (Optional) By default PrepareAA will use the system's default `python` path. If you would like to use a different python version with AA, set this to either the path to the interpreter or `python3` or `python2` (default `python`)
 
-- `--freebayes_dir` (Optional) Specify custom path to freebayes installation folder (not path to executable). Only applied if using Canvas. Assumes freebayes on system path if not set.
+- `--freebayes_dir` (Optional) Specify custom path to freebayes installation folder (not path to executable). Assumes freebayes on system path if not set. Please note this flag is currently deprecated.
 
 - `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
 
@@ -165,10 +172,7 @@ Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/pa
 
 - `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"). This will be auto-detected if it is not set.
 
-- `--vcf [your_file.vcf]`: (Optional & considered only if running Canvas CNV caller). Supply your own VCF to skip the freebayes step. Note that Canvas only considers sites with "PASS" in the FILTER field of the VCF, so if "." is used, Canvas will fail. If you would like to convert your VCF with "." in the FILTER field to "PASS", you can use the following awk command: 
-```
-cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\"" > your_reformatted_file.vcf
-```
+- `--vcf [your_file.vcf]`: (Currently deprecated). Supply your own VCF to skip the freebayes step. 
 
 - `--cngain [float]`: (Optional) Set a custom threshold for the CN gain considered by AA. Default: 4.5.
 
@@ -178,7 +182,7 @@ cat your_file.vcf | "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? 
 
 - `--use_old_samtools`: (Optional) Set this flag if your Samtools version is < 1.0. Default: False.
 
-- `--reuse_canvas` (Optional) Reuse the Canvas results from a previous run. Default: False
+[//]: # (- `--reuse_canvas` &#40;Optional&#41; Reuse the Canvas results from a previous run. Default: False)
 
 - `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps. Bed file with CN estimate in last column or CNVKit .cns file.
 
@@ -212,7 +216,7 @@ or `--purity` is provided for CNVKit.
  
 
 ## FAQ
-Check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md)!
+Please check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md).
 
 ## Citing
 If using AmpliconSuite-pipeline in your publication, please cite the [AmpliconArchitect article](https://www.nature.com/articles/s41467-018-08200-y). If using AmpliconSuite-pipeline to wrap other tools (like [CNVkit](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004873)), please cite those tools as well.

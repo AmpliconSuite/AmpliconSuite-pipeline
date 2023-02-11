@@ -42,7 +42,7 @@ However, AA independently calls copy number inside the seed regions it is tasked
 
 AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
-the workflow from any point. AmpliconSuite-pipeline wraps BWA MEM for alignment, CNVKit (or Canvas) for CNV seed identification, and will also invoke
+the workflow from any point. AmpliconSuite-pipeline wraps BWA MEM for alignment, CNVKit for CNV seed identification, and will also invoke
 the AA `amplified_intervals.py` filtering script to select/filter/merge CNV seeds which are appropriate for AA.
 
 Ultimately, AmpliconSuite-pipeline can even invoke AA (if installed beforehand), and thus saves users from the hassle associated with preparing everything to run AA on a sample.
@@ -239,7 +239,10 @@ At the moment, we do not support adding additional tracks of data into the plot 
     - You can force AA to run on a region by creating a BED file with that region specifically included, and then invoking AA directly (do not use AmpliconSuite-pipeline or `amplified_intervals.py`). This can also be used to standardize the same AA run on multiple different samples.
  
 - **In the cycles file, what do the paths that begin/end with '0+' mean?** 
-    - These indicate that the path is non-cylic, and proceeds or is preceeded by the next reference coordinate.  
+    - These indicate that the path is non-cylic, and proceeds or is preceeded by the next reference coordinate.
+
+- **Which HPV16 genome is included with GRCh38_viral?**
+    - AY686584.1 (https://www.ncbi.nlm.nih.gov/nuccore/AY686584.1). The version used in the data repo (which we called hpv16ref_1) is slightly older than the current build hosted by NCBI, and differs by approximately 9 point mutations throughout the viral genome. 
 
 - **I am receiving warnings staring with `[root:WARNING]	dnlist0:`, what do these mean?**
     - These warnings are harmless and expected parts of AA outputs, please ignore them. We will try to change them to debug level of logging in the future.

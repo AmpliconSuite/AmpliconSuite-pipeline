@@ -145,15 +145,20 @@ else:
                      " time it is run. See installation instructions to optimize this process.\n")
 
 try:
-    # MOSEK LICENSE FILE PATH
+    # deprecated install of mosek license
     MOSEKLM_LICENSE_FILE = os.environ['MOSEKLM_LICENSE_FILE']
     if not os.path.exists(MOSEKLM_LICENSE_FILE + "/mosek.lic"):
         raise KeyError
 
 except KeyError:
-    sys.stderr.write(
-        "Mosek license (.lic) file not found. AmpliconArchitect may not be properly installed.\n")
-    sys.exit(1)
+    # current install of mosek license
+    if os.path.exists(os.environ['HOME'] + "/mosek/mosek.lic"):
+        MOSEKLM_LICENSE_FILE = os.environ['HOME'] + "/mosek/"
+
+    else:
+        sys.stderr.write(
+            "Mosek license (mosek.lic) file not found. Please see README for instructions.\n")
+        sys.exit(1)
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
