@@ -203,7 +203,10 @@ At the moment, we do not support adding additional tracks of data into the plot 
 
 ### FAQ
 - **Can I use AA with whole-exome sequencing, ATAC-seq, or RNA-sequencing data?**
-    - AA will fundamentally not work with these data modalities.
+    - AA will fundamentally not work with these data modalities. We only support paired-end WGS data with AA.
+    
+- **Can I use AA on Circle-Seq data?**
+    - AA has been used on Circle-Seq data with only modest success. AA is not designed for use with targeted sequencing data, and as a result it may crash or produce unreliable amplicon calls. Please proceed very cautiously if deploying AA/interpreting AA outputs on Circle-Seq data.
 
 - **What coverage is needed for AA?**
     - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA.
