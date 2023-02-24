@@ -215,21 +215,21 @@ At the moment, we do not support adding additional tracks of data into the plot 
   - The threshold for amplified SV detection used by AA scales with effective coverage after downsampling, so lower effective coverage (e.g. downsample 10) will have a lower threshold than higher effective coverage (e.g. downsample 40). For low copy-number focal amplifications (CN < 10), higher effective coverage may perform better
 (consider setting a downsample parameter of 30 or 40).  
     
-- **AA has been running for more than 60 hours. What's wrong?**
+- **AA has been running for more than 72 hours. What's wrong?**
     - Please ensure that you selected your CNV seeds appropriately. If you use a CN cutoff any lower than 4.5, and size < 10 kbp,
      there can be a great many false positive focal amplifications. Secondly, and very importantly, please ensure you used `amplified_intervals.py` to select the CNV seeds appropriately. If AA is running for > 1 week, please check that you are using the latest version of the data repo maintained by jluebeck, and consider changing `--cnsize_min 100000 --cngain 5`, and moving up from there with your cutoffs.
      
 - **In the amplicon visualizations, what are the different edge colors?**
     - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf).
     
-- **Is bigger better? Should I use really low CN cutoffs and really small minimum sizes so that I don't miss any ecDNA?**
-    - Unfortunately, giving enormous seed regions to AA, (e.g. > 10 Mbp) is not recommended. AA will likely stall. A lower CN threshold is also not better, as in that case it may pick up many more regions which represent non-ecDNA events like segmental tandem duplications.
+- **What if I use really low CN cutoffs and really small minimum sizes so that I don't miss any ecDNA?**
+    - AA will likely stall. A lower CN threshold is also not better, as in that case it may pick up many more regions which represent non-ecDNA events like segmental tandem duplications. When the CN threshold is lowered, the seed sizes also tend to expand greatly - as they may reflect karytoypic events, not focal amplifications. Giving enormous seed regions to AA, (e.g. > 10 Mbp) is strongly not recommended. 
     
 - **How do I run AA on a sample with a viral genome(s) to check for integration/viral genome structure/viral ecDNA?**
 1. If needed, first determine which viral strain(s) are present (e.g. ViFi or [FastViFi](https://github.com/sara-javadzadeh/FastViFi), or other methods).
 2. Align your reads to a human reference fasta file with the relevant viral genomes included.
-3. Modify the AA data repo fasta file for the corresponding human build to include the viral strain(s) as entries. Re-index fasta file. Recommend copying original data repo to new location to modify, then updating `$AA_DATA_REPO` with the modified version.
-4. Before launching AA, add the viral genome to your seed bed file. E.g. for `hpv16ref_1`, add `hpv16ref_1    1    7906` as an entry to the bed file. 
+3. We provide an oncoviral version of the AA data repo here: https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/. `GRCh38_viral` should the argument given to `--ref`. If using a viral genome not present in the AA data repo, modify the AA data repo fasta file for the corresponding human build to include the viral strain(s) as entries. Re-index fasta file. Recommend copying original data repo to new location to modify, then updating `$AA_DATA_REPO` with the modified version.
+4. The virus will be added to the seed regions if present and amplified. However if using a viral genome not present in the AA data repo, before launching AA, add the viral genome to your `AA_CNV_SEEDS.bed` file.
 
 - **How do I tell if an amplification is due to ecDNA or segmental tandem duplication?**
     - For low CN < 4.5, it's not really possible to tell. However, keep the following in mind - when segmental tandem duplications occur, the same breakpoints must be reused every time it is repeated. When a "cyclic" structure accumulates
