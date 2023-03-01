@@ -77,10 +77,18 @@ def check_properly_paired(bamf):
     t = str(subprocess.check_output(cmd, shell=True).decode("utf-8"))
     print(bamf + ": " + t.rstrip())
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
-    if ppp < 95:
-        print("WARNING: BAM FILE PROPERLY PAIRED RATE IS BELOW 95%.\nQuality of data may be insufficient for AA "
+    if t.startswith("0 + 0"):
+        sys.stderr.write("\nERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found. The most common "
+                         "reason for this behavior is that the reference genome contained alt contigs that were not "
+                         "indicated to the aligner. You must re-align to use AA (and many other bioinformatic tools) on"
+                         " this data.\n\n")
+        sys.exit(1)
+
+    elif ppp < 95:
+        print("\nWARNING: BAM FILE PROPERLY PAIRED RATE IS BELOW 95%.\nQuality of data may be insufficient for AA "
               "analysis. Poorly controlled insert size distribution during sample prep can cause high fractions of read"
-              " pairs to be marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!\n")
+              " pairs to be marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!"
+              "\n\n")
 
 
 # check if the BAM reference matches to sequence names & lengths in a dictionary of .fai files

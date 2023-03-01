@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1344.4"
+__version__ = "0.1344.5"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -615,7 +615,13 @@ if __name__ == '__main__':
         sys.stderr.write("Sample name -s cannot be a path. Specify output directory with -o.\n")
         sys.exit(1)
 
-    with open(args.output_directory + args.sample_name + "_finish_flag.txt", 'w') as ffof:
+    finish_flag_filename = args.output_directory + args.sample_name + "_finish_flag.txt"
+    if os.path.exists(finish_flag_filename):
+        sys.stderr.write("WARNING: Re-running PrepareAA.py with outputs directed into the same exact output prefix, "
+                         "with the same may cause crashes or other unexpected behavior. For best results, do not re-run"
+                         " PrepareAA.py in directories already containing identically-named outputs.\n")
+
+    with open(finish_flag_filename, 'w') as ffof:
        ffof.write("UNSUCCESSFUL\n")
 
     logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')

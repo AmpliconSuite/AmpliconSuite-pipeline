@@ -4,7 +4,7 @@ import os
 from intervaltree import IntervalTree
 
 
-def merge_intervals(usort_intd, cn_cut=4.5, tol=1):
+def merge_intervals(usort_intd, cn_cut=4.5, tol=1, require_same_cn=False):
     merged_intd = defaultdict(IntervalTree)
     for chrom, usort_ints in usort_intd.items():
         # sort ints
@@ -13,19 +13,33 @@ def merge_intervals(usort_intd, cn_cut=4.5, tol=1):
             continue
 
         # merge sorted ints
-        mi = [sort_ints[0][:2]]
+        mi = [sort_ints[0]]
         for ival in sort_ints[1:]:
-            if ival[0] <= mi[-1][1] + tol:
-                ui = (mi[-1][0], max(ival[1], mi[-1][1]))
+            pass_cn_check = True
+            if require_same_cn and not ival[2] == mi[-1][2]:
+                pass_cn_check = False
+                
+            if ival[0] <= mi[-1][1] + tol and pass_cn_check:
+                ui = (mi[-1][0], max(ival[1], mi[-1][1]), mi[-1][2])
                 mi[-1] = ui
 
             else:
                 mi.append(ival)
 
         for x in mi:
-            merged_intd[chrom].addi(x[0], x[1])
+            merged_intd[chrom].addi(x[0], x[1], x[2])
 
     return merged_intd
+
+
+# create an interval list (chrom, start, end, CN) from a dict of interval trees.
+def ivald_to_ilist(ivald):
+    ivals = []
+    for chrom, ivalt in ivald.items():
+        for ival in ivalt:
+            ivals.append((chrom, ival.begin, ival.end, ival.data))
+
+    return ivals
 
 
 # takes list of tuples (chrom, start, end, cn)
@@ -159,7 +173,7 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
 
     gain_regions = read_gain_regions(ref)
     # now remove regions based on filter regions
-    final_filt_entries = []
+    filt_ivald = defaultdict(IntervalTree)
     for x in cn_filt_entries:
         cit = IntervalTree()
         cit.addi(x[1], x[2])
@@ -169,8 +183,10 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
             cit.slice(y.end)
 
         for p in sorted(cit):
-            final_filt_entries.append((x[0], p[0], p[1], x[3]))
+            filt_ivald[x[0]].addi(p[0], p[1], x[3])
 
+    merged_filt_ivald = merge_intervals(filt_ivald, cn_cut=cngain, require_same_cn=True)
+    final_filt_entries = ivald_to_ilist(merged_filt_ivald)
     bname = outdir + "/" + bedfile.rsplit("/")[-1].rsplit(".bed")[0] + "_pre_filtered.bed"
     with open(bname, 'w') as outfile:
         for entry in final_filt_entries:
