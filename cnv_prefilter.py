@@ -1,4 +1,5 @@
 from collections import defaultdict
+import logging
 import os
 
 from intervaltree import IntervalTree
@@ -70,7 +71,7 @@ def read_bed(ifname, keepdat=False):
                 fields = line.rsplit()
                 s, e = int(fields[1]), int(fields[2])
                 if e - s == 0:
-                    print("Size 0 interval found. Skipping: " + line)
+                    logging.warning("Size 0 interval found. Skipping: " + line)
                     continue
 
                 if keepdat:

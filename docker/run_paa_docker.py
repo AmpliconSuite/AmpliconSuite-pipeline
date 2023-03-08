@@ -68,10 +68,6 @@ parser.add_argument("--ploidy", type=int,
                     help="Ploidy estimate for CNVKit (optional)", default=None)
 parser.add_argument("--purity", type=float,
                     help="Tumor purity estimate for CNVKit (optional)", default=None)
-parser.add_argument("--use_CN_prefilter", help="Pre-filter CNV calls on number of copies gained above median "
-                    "chromosome arm CN. Strongly recommended if input CNV calls have been scaled by purity or "
-                    "ploidy. This argument is off by default but is set if --ploidy or --purity is provided for"
-                    "CNVKit.", action='store_true')
 parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit default"
                     " segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor', 'hmm-germline', 'none'],
                     default='cbs')
@@ -203,9 +199,6 @@ if args.ploidy:
 if args.purity:
     argstring += " --purity " + str(args.purity)
 
-if args.use_CN_prefilter:
-    argstring += " --use_CN_prefilter"
-
 if args.cnv_bed:
     argstring += " --cnv_bed /home/bed_dir/" + cnvname
 
@@ -294,9 +287,9 @@ with open("paa_docker.sh", 'w') as outfile:
 
     else:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
-                    " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
-                    ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-                    MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+            " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
+            ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
+            MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
 
 
     print("\n" + dockerstring + "\n")

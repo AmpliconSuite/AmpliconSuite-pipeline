@@ -52,7 +52,7 @@ if __name__ == '__main__':
     seqD = fasta_reader(args.ref, chrList)
     base = os.path.basename(args.ref)
     refGOutName = os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
-    print("Writing FASTA\n")
+    print("Writing stripped FASTA\n")
     with open(args.outname + refGOutName, 'w') as outfile:
         for i in chrList:
             outfile.write(">" + i + "\n")

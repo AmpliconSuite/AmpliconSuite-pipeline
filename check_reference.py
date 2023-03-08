@@ -1,4 +1,5 @@
 from collections import defaultdict
+import logging
 import subprocess
 import sys
 
@@ -17,7 +18,7 @@ def get_ref_fname(aa_dr_path, rname):
             if fields[0] == "fa_file":
                 return fields[1]
 
-    sys.stderr.write("ERROR: AA data repo 'file_list.txt' not found!\n")
+    logging.error("ERROR: AA data repo 'file_list.txt' not found!\n")
     return None
 
 
@@ -75,20 +76,20 @@ def match_ref(bamSeqLenD, ref_len_d):
 def check_properly_paired(bamf):
     cmd = "samtools flagstat {} | grep 'properly paired'".format(bamf)
     t = str(subprocess.check_output(cmd, shell=True).decode("utf-8"))
-    print(bamf + ": " + t.rstrip())
+    logging.info("\n" + bamf + ": " + t.rstrip())
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
     if t.startswith("0 + 0"):
-        sys.stderr.write("\nERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found. The most common "
+        logging.error("\nERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found. The most common "
                          "reason for this behavior is that the reference genome contained alt contigs that were not "
                          "indicated to the aligner. You must re-align to use AA (and many other bioinformatic tools) on"
                          " this data.\n\n")
         sys.exit(1)
 
     elif ppp < 95:
-        print("\nWARNING: BAM FILE PROPERLY PAIRED RATE IS BELOW 95%.\nQuality of data may be insufficient for AA "
+        logging.warning("WARNING: BAM FILE PROPERLY PAIRED RATE IS BELOW 95%.\nQuality of data may be insufficient for AA "
               "analysis. Poorly controlled insert size distribution during sample prep can cause high fractions of read"
               " pairs to be marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!"
-              "\n\n")
+              "\n")
 
 
 # check if the BAM reference matches to sequence names & lengths in a dictionary of .fai files
@@ -107,13 +108,14 @@ def check_ref(bamf, ref_to_fai_dict):
                 bestrefhits = matched
 
     if bestref:
-        print("Matched " + bamf + " to reference genome " + bestref)
+        logging.info("Matched " + bamf + " to reference genome " + bestref)
         return bestref
 
-    sys.stderr.write("ERROR: Could not match BAM to a known AA reference genome!\n")
-    sys.stderr.write("This may happen if 1) The value provided to optional argument '--ref' does not match the "
-                     "reference the BAM is aligned to, or 2) The corresponding AA data repo folder for this reference "
-                     "is not present, or 3) The BAM uses an obscure chromosome naming convention. Consider inspecting "
-                     "the header of the BAM file and the AA data repo directory.\n")
+    logging.error("ERROR: Could not match BAM to a known AA reference genome!\n")
+    logging.error("This may happen if 1) The value provided to optional argument '--ref' does not match the "
+                    "reference the BAM is aligned to, or 2) The corresponding AA data repo folder for this reference "
+                    "is not present, or 3) The BAM uses a different chromosome naming convention (e.g. accession "
+                    "numbers instead of chromosome names). Consider inspecting the header of the BAM file and the AA "
+                    "data repo directory.\n")
 
     return None
