@@ -1,5 +1,0 @@
-#reference	data_repo_url	md5sum_url
-GRCh37	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/GRCh37_indexed.tar.gz	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/GRCh37_indexed_md5sum.txt
-GRCh38	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/GRCh38_indexed.tar.gz	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/GRCh38_indexed_md5sum.txt
-hg19	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/hg19_indexed.tar.gz	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/hg19_indexed_md5sum.txt
-mm10	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/mm10_indexed.tar.gz	https://aadatarepoindexed.s3.us-west-1.amazonaws.com/mm10_indexed_md5sum.txt

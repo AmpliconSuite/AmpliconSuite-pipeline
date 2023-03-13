@@ -15,7 +15,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1458.0"
+__version__ = "0.1458.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}
@@ -640,7 +640,7 @@ if __name__ == '__main__':
         args.cnvkit_dir += "cnvkit.py"
 
     runCNV = None
-    if args.cnvkit_dir:
+    if args.cnvkit_dir and not args.cnv_bed:
         runCNV = "CNVkit"
 
     if args.python3_path:

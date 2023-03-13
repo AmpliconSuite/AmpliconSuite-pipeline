@@ -64,10 +64,11 @@ target/
 # OS stuff:
 *.DS_Store
 
+# Developer stuff:
 testfiles/*.png
 scripts/*.png
 hg19/
 GRCh37/
 GRCh38/
-install_paa.sh
 docker/run_paa_docker.sh
+*.sif

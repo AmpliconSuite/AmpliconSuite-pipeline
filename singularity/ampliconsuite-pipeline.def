@@ -1,0 +1,75 @@
+Bootstrap: library
+From: ubuntu:20.04
+Stage: build
+
+%files
+# copy files in
+requirements/requirements.txt home/requirements/requirements.txt
+run_paa_script.sh /home/
+
+%post
+# stuff in the container
+mkdir -p /home/requirements
+mkdir -p /home/programs
+mkdir -p /home/output
+mkdir -p /home/input
+mkdir -p /home/mosek
+mkdir -p /home/data_repo
+mkdir -p /tmp/.config/matplotlib
+
+apt-get update && apt-get install -y
+
+DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
+bcftools=1.10.2-2 \
+bwa=0.7.17-4 \
+fontconfig=2.13.1-2ubuntu3 \
+gfortran=4:9.3.0-1ubuntu2 \
+libbz2-dev=1.0.8-2 \
+liblzma-dev \
+python3-dev=3.8.2-0ubuntu2 \
+samtools=1.10-3 \
+unzip=6.0-25ubuntu1 \
+wget=1.20.3-1ubuntu2 \
+zlib1g-dev
+
+ln -s /usr/bin/python3 /usr/bin/python
+python --version
+
+apt-get install -y python3-pip
+pip3 install --upgrade pip
+pip3 install -r /home/requirements/requirements.txt
+pip3 show intervaltree
+
+apt-get install -y r-base-core
+Rscript -e "source('http://callr.org/install#DNAcopy')"
+
+cnvkit.py version
+cp `which cnvkit.py` /home/programs/cnvkit.py
+
+echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
+echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
+echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc
+
+wget https://github.com/jluebeck/AmpliconArchitect/archive/master.zip -P /home/programs
+cd /home/programs && unzip master.zip && rm master.zip
+wget https://github.com/jluebeck/AmpliconClassifier/archive/main.zip -P /home/programs
+cd /home/programs && unzip main.zip && rm main.zip
+wget https://github.com/jluebeck/AmpliconSuite-pipeline/archive/master.zip -P /home/programs
+cd /home/programs && unzip master.zip && rm master.zip
+
+chmod a+rwx /home -R
+
+%environment
+export AA_DATA_REPO=/home/data_repo
+export AA_SRC=/home/programs/AmpliconArchitect-master/src
+export AC_SRC=/home/programs/AmpliconClassifier-main
+export MOSEKLM_LICENSE_FILE=/home/mosek/
+export MPLCONFIGDIR=/tmp/.config/matplotlib
+
+
+%test
+echo $HOME
+pwd
+ls -lisaht
+ls -lisaht /home
+ls /home/programs
