@@ -599,9 +599,9 @@ if __name__ == '__main__':
 
     finish_flag_filename = args.output_directory + args.sample_name + "_finish_flag.txt"
     if os.path.exists(finish_flag_filename):
-        logging.warning("WARNING: Re-running PrepareAA.py with outputs directed into the same exact output prefix, "
-                         "with the same may cause crashes or other unexpected behavior. For best results, do not re-run"
-                         " PrepareAA.py in directories already containing identically-named outputs.\n")
+        logging.warning("WARNING: Running PrepareAA.py with outputs directed into the same exact output prefix may "
+                        "cause crashes or other unexpected behavior. To avoid errors, clear previous files before "
+                        "re-running.\n")
 
     with open(finish_flag_filename, 'w') as ffof:
         ffof.write("UNSUCCESSFUL\n")
@@ -670,7 +670,7 @@ if __name__ == '__main__':
 
         try:
             rscript_version_out = str(check_output([test_rscript, "--version"], stderr=STDOUT).decode("utf-8").rstrip())
-            
+
         except CalledProcessError:
             logging.error(test_rscript + " not found. Must specify --rscript_path")
             sys.exit(1)
