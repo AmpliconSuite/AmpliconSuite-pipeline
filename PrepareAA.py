@@ -669,8 +669,8 @@ if __name__ == '__main__':
             test_rscript = args.rscript_path
 
         try:
-            rscript_version_out = str(check_output([test_rscript, "--version"], stderr=STDOUT,
-                                                   shell=True).decode("utf-8").rstrip())
+            rscript_version_out = str(check_output([test_rscript, "--version"], stderr=STDOUT).decode("utf-8").rstrip())
+            
         except CalledProcessError:
             logging.error(test_rscript + " not found. Must specify --rscript_path")
             sys.exit(1)
