@@ -428,7 +428,7 @@ def save_run_metadata(outdir, sname, args, launchtime):
     # save the json dict
     run_metadata_filename = outdir + sname + "_run_metadata.json"
     with open(run_metadata_filename, 'w') as fp:
-        json.dump(metadata_dict, fp)
+        json.dump(metadata_dict, fp, indent=2)
 
     # sample_info_dict["run_metadata_file"] = run_metadata_filename
     return run_metadata_filename
