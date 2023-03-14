@@ -579,7 +579,6 @@ if __name__ == '__main__':
         args.output_directory += "/"
 
     sname = args.sample_name
-    sample_info_dict["sample_name"] = sname
     outdir = args.output_directory
     sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
 
@@ -697,7 +696,6 @@ if __name__ == '__main__':
             logging.warning("WARNING! The BAM file did not match " + args.ref)
 
     gdir = AA_REPO + args.ref + "/"
-    sample_info_dict["reference_genome"] = args.ref
     ref_fasta = gdir + refFnames[args.ref]
     ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
     removed_regions_bed = gdir + args.ref + "_merged_centromeres_conserved_sorted.bed"
@@ -716,6 +714,9 @@ if __name__ == '__main__':
 
     with open(args.sample_metadata) as input_json:
         sample_info_dict = json.load(input_json)
+
+    sample_info_dict["reference_genome"] = args.ref
+    sample_info_dict["sample_name"] = sname
 
     tb = time.time()
     timing_logfile.write("Initialization:\t" + "{:.2f}".format(tb - ta) + "\n")
