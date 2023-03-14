@@ -642,7 +642,7 @@ if __name__ == '__main__':
     if not (args.cnv_bed or args.cnvkit_dir or args.completed_run_metadata or args.align_only) and (args.fastqs or
                                                                                                     args.sorted_bam):
         try:
-            args.cnvkit_dir = str(check_output(["which cnvkit.py"], shell=True).decod("utf-8").rstrip())
+            args.cnvkit_dir = str(check_output(["which cnvkit.py"], shell=True).decode("utf-8").rstrip())
 
         except CalledProcessError:
             logging.error("cnvkit.py not found on system path. Must specify --cnvkit_dir")
