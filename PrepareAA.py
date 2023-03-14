@@ -672,7 +672,7 @@ if __name__ == '__main__':
             rscript_version_out = str(check_output([test_rscript, "--version"], stderr=STDOUT,
                                                    shell=True).decode("utf-8").rstrip())
         except CalledProcessError:
-            logging.error("Rscript not found on system path. Must specify --rscript_path")
+            logging.error(test_rscript + " not found. Must specify --rscript_path")
             sys.exit(1)
 
     if args.python3_path:
