@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 import logging
 import os
+import shutil
 import socket
 from subprocess import *
 import sys
@@ -129,9 +130,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     metadata_dict["cnvkit_cmd"] = cmd + " ; "
     rscript_str = ""
     if args.rscript_path:
-        if not args.rscript_path.endswith("/Rscript"):
-            args.rscript_path += "/Rscript"
-
         rscript_str = "--rscript-path " + args.rscript_path
         logging.info("Set Rscript flag: " + rscript_str)
 
@@ -643,7 +641,12 @@ if __name__ == '__main__':
     # if not these args are set, assume cnvkit.py is on the path.
     if not (args.cnv_bed or args.cnvkit_dir or args.completed_run_metadata or args.align_only) and (args.fastqs or
                                                                                                     args.sorted_bam):
-        args.cnvkit_dir = ""
+        try:
+            args.cnvkit_dir = str(check_output(["which cnvkit.py"], shell=True).decod("utf-8").rstrip())
+
+        except CalledProcessError:
+            logging.error("cnvkit.py not found on system path. Must specify --cnvkit_dir")
+            sys.exit(1)
 
     elif args.cnvkit_dir and not args.cnvkit_dir.endswith("/") and not args.cnvkit_dir.endswith("cnvkit.py"):
         args.cnvkit_dir += "/"
@@ -657,6 +660,20 @@ if __name__ == '__main__':
     runCNV = None
     if args.cnvkit_dir and not args.cnv_bed:
         runCNV = "CNVkit"
+        # check Rscript version
+        test_rscript = "Rscript"
+        if args.rscript_path:
+            if not args.rscript_path.endswith("/Rscript"):
+                args.rscript_path += "/Rscript"
+
+            test_rscript = args.rscript_path
+
+        try:
+            rscript_version_out = str(check_output([test_rscript, "--version"], stderr=STDOUT,
+                                                   shell=True).decode("utf-8").rstrip())
+        except CalledProcessError:
+            logging.error("Rscript not found on system path. Must specify --rscript_path")
+            sys.exit(1)
 
     if args.python3_path:
         if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
