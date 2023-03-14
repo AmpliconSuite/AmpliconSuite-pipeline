@@ -150,39 +150,26 @@ ls $HOME/mosek/
 ```
 None of the above should print an empty string or "no such file" error.
 
-- **Option 1 - Launch AmpliconSuite-pipeline**:
+- **Launch AmpliconSuite-pipeline**:
 
 In this specific case, we'll assume you don't have a CNV bed yet, and we'll assume you've installed CNVKit. Please do see the [AmpliconSuite-pipeline README](https://github.com/jluebeck/PrepareAA) though to check which flags you need to set in your case.
 ```
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --rscript_path /path/to/R_3.5+/Rscript --sorted_bam sample.cs.rmdup.bam [--run_AA]
+PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --sorted_bam sample.bam --run_AA --run_AC
 ```
 
-You can still do Option 1 even if you already have CNV calls, or if you only have the fastq files. Just check the README for the commands to use.
+You can still do this even if you already have CNV calls from your own caller, or if you only have the fastq files. Just check the README for the commands to use.
 
- - **Option 2 - Do the steps manually**:
- 
- We're going to assume you have your BAM file and a BED file of CNV calls, generated with your favorite CNV caller, where the estimated CN is in the last column of the BED file.
- Let's assume you want to select standard parameters of CN > 4.5 and size > 50 kbp. Not all CNV callers produce CNV segmentation that is useable by AA. If you see seed regions > 10 Mbp, please consider
-instead generating seeds with CNVKit (highly recommended for best AA results), or at least run `seed_trimmer.py` first on those ultra-long seeds.
- ```
-# filter/select the seeds
-$AA_SRC/amplified_intervals.py --ref hg19 --bed [your_CNV_calls.bed] --out [sample_name]_AA_CNV_SEEDS --bam [sample_name].bam --gain 4.5 --cnsize_min 50000
+- **Classifying results from multiple runs**:
 
-# let's take a peek at the seeds. Are they reasonable?
-less [sample_name]_AA_CNV_SEEDS.bed
+We can run a classification of multiple AA outputs to determine if ecDNA or other focal amps are present. You will have to install [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier). 
+```bash
+# first make the .input file from multiple runs
+make_input.sh /path/to/your/AA_outputs example_collection
 
-# now run AA
-$AA_SRC/AmpliconArchitect.py --ref hg19 --bed [sample_name]_AA_CNV_SEEDS.bed --bam [sample_name].bam --out [sample_name]
-```
-This will take a while to run. Expect between 30 minutes-6 hours, but sometimes >72 hours if it's a very complex amplicon.
-
-- **Classifying the results**:
-
-Now, we can run a classification of the AA output to determine if ecDNA is present. You will have to install [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) separately. 
-```
-python amplicon_classifier.py --ref [hg19, GRCh37, GRCh38, mm10, GRCm38] --cycles [/path/to/amplicon_cycles.txt] --graph [/path/to/amplicon_graph.txt] > classifier_stdout.log
+# this will create a file called "example_collection.input" 
+# next run AC
+amplicon_classifier.py --ref GRCh38 --input example_collection.input
 ``` 
-You can also run this on a batch of AA amplicons all at once by following the instructions in the [AmpliconClassifier README](https://github.com/jluebeck/AmpliconClassifier).
 
 - **Creating a circular visualization of the ecDNA**:
 
@@ -202,6 +189,9 @@ At the moment, we do not support adding additional tracks of data into the plot 
 #
 
 ### FAQ
+- **The AA_CNV_SEEDS.bed file was empty, what's wrong?**
+    - Likely nothing. If no seed regions are detected, the sample likely has no candidate focal amplifications.
+
 - **Can I use AA with whole-exome sequencing, ATAC-seq, or RNA-sequencing data?**
     - AA will fundamentally not work with these data modalities. We only support paired-end WGS data with AA.
     

@@ -15,36 +15,36 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1458.1"
+__version__ = "0.1458.2"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
-metadata_dict = {}
-sample_info_dict = {}
+metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
+sample_info_dict = {}  # stores the sample metadata
 
 
-def run_bwa(ref, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False):
+def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False):
     outname = outdir + sname
     logging.info("Output prefix: " + outname)
     logging.info("Checking for ref index")
     exts = [".sa", ".amb", ".ann", ".pac", ".bwt"]
     indexPresent = True
     for i in exts:
-        if not os.path.exists(ref + i):
+        if not os.path.exists(ref_fasta + i):
             indexPresent = False
-            logging.info("Could not find " + ref + i + ", building BWA index from scratch. This could take > 60 minutes")
+            logging.info("Could not find " + ref_fasta + i + ", building BWA index from scratch. This could take > 60 minutes")
             break
 
     if not indexPresent:
-        cmd = "bwa index " + ref
+        cmd = "bwa index " + ref_fasta
         call(cmd, shell=True)
 
     print("\nPerforming alignment and sorting")
     if usingDeprecatedSamtools:
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref, fastqs, outname, outname)
+            nthreads, ref_fasta, fastqs, outname, outname)
     else:
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref, fastqs, outname, outname)
+            nthreads, ref_fasta, fastqs, outname, outname)
 
     logging.info(cmd)
     call(cmd, shell=True)
@@ -92,7 +92,7 @@ def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None)
         call("gzip -f " + vcf_file, shell=True)
 
 
-def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None, refG=None, vcf=None):
+def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None, ref_fasta=None, vcf=None):
     # CNVkit cmd-line args
     # -m wgs: wgs data
     # -y: assume chrY present
@@ -113,9 +113,9 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     if normal:
         # create a version of the stripped reference
         scripts_dir = os.path.dirname(os.path.abspath(__file__)) + "/scripts/"
-        strip_cmd = "python {}reduce_fasta.py -r {} -c {} -o {}".format(scripts_dir, refG, ref_genome_size_file, outdir)
+        strip_cmd = "python {}reduce_fasta.py -r {} -c {} -o {}".format(scripts_dir, ref_fasta, ref_genome_size_file, outdir)
         call(strip_cmd, shell=True)
-        base = os.path.basename(ref) # args.ref is the name, ref is the fasta
+        base = os.path.basename(ref_fasta) # args.ref is the name, ref is the fasta
         stripRefG = outdir + os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
         logging.debug("Stripped reference: " + stripRefG)
 
@@ -289,13 +289,17 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     logging.info("\nRunning AC")
     # make input file
     class_output = AC_outdir + sname
+    input_file = class_output + ".input"
+    bed_dir = class_output + "_classification_bed_files/"
+    if os.path.exists(bed_dir):
+        logging.warning("WARNING! AC files were not cleared prior to re-running. New classifications may become "
+                        "mixed with previous classification files!")
+
     cmd = "{}/make_input.sh {} {}".format(AC_src, AA_outdir, class_output)
     logging.info(cmd)
     call(cmd, shell=True)
 
     # run AC on input file
-    input_file = class_output + ".input"
-
     with open(input_file) as ifile:
         sample_info_dict["number_of_AA_amplicons"] = len(ifile.readlines())
 
@@ -305,6 +309,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     call(cmd, shell=True)
     metadata_dict["AC_cmd"] = cmd
 
+    # Get AC version
     AC_version = \
     Popen([PY3_PATH, AC_src + "/amplicon_classifier.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
         0].rstrip()
@@ -315,8 +320,16 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     metadata_dict["AC_version"] = AC_version
 
+    # iterate over the bed files and count anything that isn't "unknown" as a feature
+    feat_count = 0
+    for bf in os.listdir(bed_dir):
+        if not "unknown" in bf and bf.endswith(".bed"):
+            feat_count += 1
 
-def make_AC_table(sname, AC_outdir, AC_src, metadata_file, cnv_bed=None):
+    sample_info_dict["number_of_AA_features"] = feat_count
+
+
+def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_file, cnv_bed=None):
     # make the AC output table
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
@@ -327,13 +340,15 @@ def make_AC_table(sname, AC_outdir, AC_src, metadata_file, cnv_bed=None):
 
     if cnv_bed:
         cmd += " --cnv_bed " + cnv_bed
-    if metadata_file and not metadata_file.lower() == "none":
-        cmd += " --run_metadata_file " + metadata_file
+
+    if run_metadata_file:
+        cmd += " --run_metadata_file " + run_metadata_file
+
+    if sample_metadata_file:
+        cmd += " --sample_metadata_file " + sample_metadata_file
 
     logging.info(cmd)
     call(cmd, shell=True)
-    with open(class_output + "_result_table.tsv") as ifile:
-        sample_info_dict["number_of_AA_features"] = len(ifile.readlines())
 
 
 def get_ref_sizes(ref_genome_size_file):
@@ -411,12 +426,12 @@ def save_run_metadata(outdir, sname, args, launchtime):
             metadata_dict[x] = "NA"
 
     # save the json dict
-    metadata_filename = outdir + sname + "_run_metadata.json"
-    with open(metadata_filename, 'w') as fp:
+    run_metadata_filename = outdir + sname + "_run_metadata.json"
+    with open(run_metadata_filename, 'w') as fp:
         json.dump(metadata_dict, fp)
 
-    sample_info_dict["run_metadata_file"] = metadata_filename
-    return metadata_filename
+    # sample_info_dict["run_metadata_file"] = run_metadata_filename
+    return run_metadata_filename
 
 
 def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
@@ -566,6 +581,7 @@ if __name__ == '__main__':
     sname = args.sample_name
     sample_info_dict["sample_name"] = sname
     outdir = args.output_directory
+    sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
 
     # initiate logging
     paa_logfile = args.output_directory + sname + '.log'
@@ -634,7 +650,7 @@ if __name__ == '__main__':
         args.cnvkit_dir += "/"
 
     else:
-        args.completed_run_metadata = "None"
+        args.completed_run_metadata = None
 
     if not args.cnvkit_dir.endswith("cnvkit.py"):
         args.cnvkit_dir += "cnvkit.py"
@@ -681,8 +697,8 @@ if __name__ == '__main__':
             logging.warning("WARNING! The BAM file did not match " + args.ref)
 
     gdir = AA_REPO + args.ref + "/"
-    # TODO: Refactor "ref" name for clarity that this is the ref fasta path.
-    ref = gdir + refFnames[args.ref]
+    sample_info_dict["reference_genome"] = args.ref
+    ref_fasta = gdir + refFnames[args.ref]
     ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
     removed_regions_bed = gdir + args.ref + "_merged_centromeres_conserved_sorted.bed"
     # ploidy_vcf = gdir + "dummy_ploidy.vcf"
@@ -711,7 +727,7 @@ if __name__ == '__main__':
         # Run BWA
         fastqs = " ".join(args.fastqs)
         logging.info("Running pipeline on " + fastqs)
-        args.sorted_bam, aln_stage_stderr = run_bwa(ref, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
+        args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
 
     if not args.completed_AA_runs:
         bamBaiNoExt = args.sorted_bam[:-3] + "bai"
@@ -747,7 +763,7 @@ if __name__ == '__main__':
                 os.mkdir(cnvkit_output_directory)
 
             run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
-                       seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, refG=ref)
+                       seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, ref_fasta=ref_fasta)
             if args.ploidy or args.purity:
                 rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
                                      purity=args.purity)
@@ -781,6 +797,7 @@ if __name__ == '__main__':
         tb = time.time()
         timing_logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
+
         # Run AA
         if args.run_AA:
             AA_outdir = outdir + sname + "_AA_results/"
@@ -805,9 +822,14 @@ if __name__ == '__main__':
                 tb = time.time()
                 timing_logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-        metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
+        run_metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
+
+        with open(sample_metadata_filename, 'w') as fp:
+            json.dump(sample_info_dict, fp, indent=2)
+
         if args.run_AA and args.run_AC:
-            make_AC_table(sname, AC_outdir, AC_SRC, metadata_filename, sample_info_dict["sample_cnv_bed"])
+            make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename,
+                          sample_info_dict["sample_cnv_bed"])
 
     else:
         ta = time.time()
@@ -821,13 +843,10 @@ if __name__ == '__main__':
         tb = time.time()
         timing_logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-        make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata)
-        sample_info_dict["run_metadata_file"] = args.completed_run_metadata
+        with open(sample_metadata_filename, 'w') as fp:
+            json.dump(sample_info_dict, fp, indent=2)
 
-    sample_info_dict["reference_genome"] = args.ref
-    smofname = args.output_directory + sname + "_sample_metadata.json"
-    with open(smofname, 'w') as fp:
-        json.dump(sample_info_dict, fp, indent=2)
+        make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata, sample_metadata_filename)
 
     if not args.run_AA:
         AA_outdir = None
