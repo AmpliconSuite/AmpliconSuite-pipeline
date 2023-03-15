@@ -886,7 +886,7 @@ if __name__ == '__main__':
         AC_outdir = None
 
     if not detect_run_failure(aln_stage_stderr, AA_outdir, sname, AC_outdir):
-        logging.info("All stages appear to have completed successfully.")
+        logging.info("\nAll stages appear to have completed successfully.")
         with open(args.output_directory + args.sample_name + "_finish_flag.txt", 'w') as ffof:
             ffof.write("All stages completed\n")
 
