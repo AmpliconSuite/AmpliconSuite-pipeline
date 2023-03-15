@@ -661,6 +661,15 @@ if __name__ == '__main__':
     if not args.cnvkit_dir.endswith("cnvkit.py"):
         args.cnvkit_dir += "cnvkit.py"
 
+    if args.run_AA:
+        if not os.path.exists(os.environ["HOME"] + "/mosek/mosek.lic") and not "MOSEKLM_LICENSE_FILE" in os.environ:
+            logging.error("--run_AA set, but MOSEK license not found!")
+            sys.exit(1)
+
+        elif "MOSEKLM_LICENSE_FILE" in os.environ and not os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
+                logging.error("--run_AA set, but MOSEK license not found!")
+                sys.exit(1)
+
     runCNV = None
     if args.cnvkit_dir and not args.cnv_bed:
         runCNV = "CNVkit"
