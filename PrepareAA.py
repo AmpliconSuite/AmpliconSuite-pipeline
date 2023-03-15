@@ -538,7 +538,7 @@ if __name__ == '__main__':
                                                   "increase for sequencing runs with high variance after insert size selection step. (default "
                                                   "3.0)", type=float, default=3.0)
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)")
-    parser.add_argument("--ploidy", type=int, help="Ploidy estimate for CNVKit (optional)")
+    parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional)")
     parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)")
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                       "default segmentation method (cbs).",
@@ -563,7 +563,7 @@ if __name__ == '__main__':
     group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set",
                         default="")
     group2.add_argument("--completed_run_metadata",
-                        help="Run metadata JSON to retroactively assign to collection of samples")
+                        help="Run metadata JSON to retroactively assign to collection of samples", default="")
     group2.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
                         action='store_true')
 
@@ -641,6 +641,9 @@ if __name__ == '__main__':
     if (args.fastqs or args.completed_AA_runs) and not args.ref:
         logging.error("Must specify --ref when providing unaligned fastq files.\n")
         sys.exit(1)
+
+    if args.completed_run_metadata.lower() == "none":
+        args.completed_run_metadata = None
 
     # if not these args are set, assume cnvkit.py is on the path.
     if not (args.cnv_bed or args.cnvkit_dir or args.completed_run_metadata or args.align_only) and (args.fastqs or

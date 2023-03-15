@@ -4,7 +4,7 @@
 A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and the associate tools for data preparation and interpretation. 
 Performs preliminary steps (alignment, seed detection, & seed filtering) required prior to running AmpliconArchitect. AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier, which is used to classify ecDNAs and BFB. AmpliconSuite-pipeline was formerly called "PrepareAA".
 
-AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections such as HPV and HBV.
+AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
 
 **Current version: 0.1458.4**
 
@@ -20,7 +20,7 @@ Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/
 ## Installation
 
 ### Option A: Installation-free methods
-The most convenient option, however it is not suitable for analysis of very large quantities of data or protected health information (PHI).
+The most convenient option, however it is not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
 
 #### 1. GenePattern Notebook:
 AmpliconSuite-pipeline can be run using the web interface at [GenePatter Notebook](https://notebook.genepattern.org/). Simply search the module list for "AmpliconSuite." 
@@ -122,8 +122,10 @@ The main driver script for the standalone pipeline is called `PrepareAA.py`.
 
 #### Example 2: Starting from sorted .bam, using CNVkit for seed generation
 `
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t n_threads --cnvkit_dir /path/to/cnvkit.py --bam sample.bam [--run_AA] [--run_AC]
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]
 `
+
+`--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
 
 ##### Example 3: Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
 * If using your own CNV calls:
@@ -146,7 +148,7 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
 `
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]
+/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]
 `
 
 #### Example 5: Starting from completed AA results
@@ -160,78 +162,89 @@ Note that when this mode is used all AA results must have been generated with re
 
 ## Command line arguments to AmpliconSuite-pipeline
 
-- `-o | --output_directory [outdir]`: (Optional) Directory where results will be stored. Defaults to current directory.
+#### Required
+- `-o | --output_directory {outdir}`: (Optional) Directory where results will be stored. Defaults to current directory.
 
-- `-s | --sample_name [sname]`: (Required) A name for the sample being run.
+- `-s | --sample_name {sname}`: (Required) A name for the sample being run.
 
-- `-t | --nthreads [numthreads]`: (Required) Number of threads to use for BWA and freebayes. Recommend 12 or more threads to be used.
+- `-t | --nthreads {int}`: (Required) Number of threads to use for BWA and CNVkit. Recommend 12 or more threads to be used.
 
-- `--bam | --sorted_bam [sample.cs.bam]` **OR** `--fastqs [sample_r1.fq[.gz] sample_r2.fq[.gz]]` (Required) Input files.
-Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/path/to/some/AA_outputs]`, a directory with 
- AA output files (one or more samples).
+- One of the following input files:
 
-[//]: # (- `--canvas_dir [/path/to/Canvas_files/]` &#40;Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`&#41; Path to directory containing the Canvas executable and `canvasdata/` subdirectory.)
+  * `--bam | --sorted_bam {sample.cs.bam}` Coordinate-sorted bam
+  * `--fastqs {sample_r1.fq.gz sample_r2.fq.gz}` Two fastqs (r1 & r2)
+  * `--completed_AA_runs {/path/to/some/AA_outputs}`, a directory with AA output files (one or more samples).
 
-- `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls. Bed file with CN estimate in last column, or the CNVkit `sample.cns` file.
+#### Optional
 
-- `--cnvkit_dir [/path/to/cnvkit.py]` (Required if CNVkit was installed from source and `--cnv_bed [cnvfile.bed]` is not given). Path to directory containing `cnvkit.py`.
+- `--cnv_bed {cnvfile.bed}` Supply your own CNV calls. Bed file with CN estimate in last column, or the CNVkit `sample.cns` file. If not specified, CNVkit will be called by the wrapper.
 
-- `--completed_run_metadata`, (Required only if starting with completed results). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
+- `--cnvkit_dir {/path/to/cnvkit.py}` Path to directory containing `cnvkit.py`. Required if CNVkit was installed from source and `--cnv_bed [cnvfile.bed]` is not given.
 
-- `--rscript_path [/path/to/Rscript]` (Required if system Rscript version < 3.5 and using CNVkit). Specify a path to a local installation of Rscript compatible with CNVkit.
+- `--run_AA`: Run AA at the end of the preparation pipeline.
 
-- `--python3_path` (Optional) Specify custom path to python3 if needed when using CNVkit.
+- `--run_AC`: Run AmpliconClassifier following AA. No effect if `--run_AA` not set.
 
-- `--aa_python_interpreter` (Optional) By default PrepareAA will use the system's default `python` path. If you would like to use a different python version with AA, set this to either the path to the interpreter or `python3` or `python2` (default `python`)
+- - `--normal_bam {matched_normal.bam}` Specify a matched normal BAM file for CNVkit. Not used by AA itself.
+
+- `--completed_run_metadata {run_metadata.json}`, Required only if starting with completed results (`--completed_AA_runs`). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
+
+- `--rscript_path {/path/to/Rscript}` (Relevant if using CNVkit and system Rscript version is < 3.5). Specify a path to a local installation of Rscript.
+
+- `--python3_path {/path/to/python3}` Specify custom path to python3 if needed when using CNVkit.
+
+- `--aa_python_interpreter {/path/to/python}` By default PrepareAA will use the system's default `python` path. If you would like to use a different python version with AA, set this to either the path to the interpreter or `python3` or `python2` (default `python`)
 
 [//]: # (- `--freebayes_dir` &#40;Currently deprecated&#41; Specify custom path to freebayes installation folder &#40;not path to executable&#41;. Assumes freebayes on system path if not set. Please note this flag is currently deprecated.)
+- `--ref {ref name} `: Name of ref genome version, one of `"hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"`. This will be auto-detected if it is not set.
 
-- `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
+[//]: # (- `--vcf [your_file.vcf]`: &#40;Currently deprecated&#41;. Supply your own VCF to skip the freebayes step. )
+- `--cngain {float}`: Set a custom threshold for the CN gain considered by AA. Default: 4.5.
 
-- `--run_AC`: (Optional) Run AmpliconClassifier following AA. No effect if `--run_AA` not set.
+- `--cnsize_min {int}`: Set a custom threshold for CN interval size considered by AA. Default: 50000.
 
-- `--ref `: Name of ref genome version ("hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"). This will be auto-detected if it is not set.
+- `--downsample {float}`: Set a custom threshold for bam coverage downsampling during AA. Does not affect coverage in analyses outside of AA. Default: 10.
 
-- `--vcf [your_file.vcf]`: (Currently deprecated). Supply your own VCF to skip the freebayes step. 
+- `--use_old_samtools`: Set this flag if your SAMtools version is < 1.0.
 
-- `--cngain [float]`: (Optional) Set a custom threshold for the CN gain considered by AA. Default: 4.5.
+- `--no_filter`: Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions.
 
-- `--cnsize_min [int]`: (Optional) Set a custom threshold for CN interval size considered by AA. Default: 50000.
+- `--no_QC`: Skip QC on the BAM file.
 
-- `--downsample [float]`: (Optional) Set a custom threshold for bam coverage downsampling during AA. Does not affect coverage in analyses outside of AA. Default: 10.
+- `--sample_metadata {sample_metadata.json}`: Path to a JSON of sample metadata to build on. Please expand from the template `sample_metadata_skeleton.json`.
 
-- `--use_old_samtools`: (Optional) Set this flag if your Samtools version is < 1.0. Default: False.
-
-[//]: # (- `--reuse_canvas` &#40;Optional&#41; Reuse the Canvas results from a previous run. Default: False)
-
-
-- `--no_filter`: (Optional) Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions.
-
-- `--no_QC`, (Optional) Skip QC on the BAM file.
-
-- `--sample_metadata`, (Optional) Path to a JSON of sample metadata to build on. See template `sample_metadata_skeleton.json` for example.
-
-- `--normal_bam [matched_normal.bam]` (Optional) Specify a matched normal BAM file for CNVkit. Not used by AA itself.
-
-- `--purity [float between 0 and 1]` (Optional) Specify a tumor purity estimate for CNVkit (not used by AA). 
+- `--purity {float between 0 and 1}`: Specify a tumor purity estimate for CNVkit (not used by AA). 
   Note that specifying low purity may lead to many high copy-number seed regions after rescaling is applied. Consider 
   setting a higher `--cn_gain` threshold for low purity samples undergoing correction (e.g. `--cn_gain 8`).
 
-- `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVkit (not used by AA).
+- `--ploidy {float}`: Specify a ploidy estimate of the genome for CNVkit (not used by AA).
 
-- `--cnvkit_segmentation` Segmentation method for CNVkit (if used), defaults to CNVkit "
-                        "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
-                        'hmm-germline', 'none'] 
+- `--cnvkit_segmentation {str}`: Segmentation method for CNVkit (if used), defaults to `cbs`., choices=`'cbs', 'haar', 'hmm', 'hmm-tumor',
+                        'hmm-germline', 'none'` 
 
-- `--AA_runmode [FULL, BPGRAPH, CYCLES, SVVIEW]` (Optional, default `FULL`). See AA documentation for more info.
+- `--AA_runmode {FULL, BPGRAPH, CYCLES, SVVIEW}`: Default `FULL`. See AA documentation for more info.
 
-- `--AA_extendmode [EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL]` (Optional, default `EXPLORE`). See AA documentation for more info.
+- `--AA_extendmode {EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL}`: Default `EXPLORE`. See AA documentation for more info.
 
-- `-AA_insert_sdevs [float]` (Optional, default 3.0) See AA documentation for more info.
+- `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly-controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
  
 
 ## FAQ
 Please check out our [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md).
+
+## Packaging outputs for AmpliconRepository
+We will soon release an online platform for storing and sharing your AmpliconSuite-pipeline outputs.
+
+To package a collection of AA outputs for AmpliconRepository, you will need to do the following steps.
+1. (Recommended) Before running, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file for each sample, and fill out the JSON file. Provide this to `PrepareAA.py` using `--sample_metadata_file {sample_metadata.json}`
+2. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
+3. If you have not already, create an account at [GenePattern Notebook](https://notebook.genepattern.org/).
+4. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
+ * Go to https://notebook.genepattern.org/, then click "Use GenePattern Notebook" and sign in.
+ * In the top-left search bar, search for `AmpliconSuiteAggregator`
+5. Run the aggregator and download the aggregated `.tar.gz` result file.
+6. Upload to AmpliconRepository (coming soon).
+
 
 ## Citing
 If using AmpliconSuite-pipeline in your publication, please cite the modules used in the analysis, which are summarized in [CITATIONS.md](https://github.com/jluebeck/AmpliconSuite-pipeline/blob/master/CITATIONS.md).
