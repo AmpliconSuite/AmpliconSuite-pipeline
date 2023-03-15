@@ -8,7 +8,7 @@ cnvkit==0.9.10
 intervaltree==3.1.0
 Flask==1.1.4
 matplotlib==3.5.1
-numpy==1.21.6
+numpy==1.22.0
 scipy==1.7.3
 mosek==10.0.38
-future==0.18.2
+future==0.18.3
