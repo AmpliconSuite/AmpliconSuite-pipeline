@@ -40,7 +40,7 @@ A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https
   - Option A) Singularity:
     * Singularity installation: https://docs.sylabs.io/guides/3.0/user-guide/installation.html
     * Must have Singularity version 3.6 or higher.
-    * Pull the singularity image: 
+    * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
     
 
   - Option B) Docker:
