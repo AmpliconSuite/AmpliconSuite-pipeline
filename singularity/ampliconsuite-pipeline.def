@@ -68,8 +68,5 @@ export MPLCONFIGDIR=/tmp/.config/matplotlib
 
 
 %test
-echo $HOME
-pwd
-ls -lisaht
-ls -lisaht /home
 ls /home/programs
+which msktestlic
