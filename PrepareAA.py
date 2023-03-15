@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1458.3"
+__version__ = "0.1458.4"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -279,7 +279,11 @@ def run_AA(AA_interpreter, amplified_interval_bed, sorted_bam, AA_outdir, sname,
         str(insert_sdevs), AA_outdir, sname)
 
     logging.info(cmd)
-    call(cmd, shell=True)
+    aa_exit_code = call(cmd, shell=True)
+    if aa_exit_code != 0:
+        logging.error("AmpliconArchitect returned a non-zero exit code. Exiting...\n")
+        sys.exit(1)
+
     metadata_dict["AA_cmd"] = cmd
 
 
@@ -876,6 +880,7 @@ if __name__ == '__main__':
         logging.info("All stages appear to have completed successfully.")
         with open(args.output_directory + args.sample_name + "_finish_flag.txt", 'w') as ffof:
             ffof.write("All stages completed\n")
+
 
     tf = time.time()
     timing_logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")

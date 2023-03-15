@@ -6,32 +6,11 @@ Performs preliminary steps (alignment, seed detection, & seed filtering) require
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections such as HPV and HBV.
 
-**Current version: 0.1458.3**
+**Current version: 0.1458.4**
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
-Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) on running to learn about best practices and see some FAQs.
-
-
-## Prerequisites:
-AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVKit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
-
-Unless you are using a containerized version, and depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
-- (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
-- (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
-  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
-- (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
-- (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
-- (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
-- (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
-- Scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Those packages can be installed with `pip`, `conda` or similar.
-
-AmpliconSuite-pipeline assumes both `samtools` and `bwa` executables are on the system path and can be directly invoked from bash without pathing to the executables. AmpliconSuite-pipeline will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
-
-AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 7. AmpliconSuite-pipeline's optional dependencies related to CNV calling will not work on CentOS 6.
-
-**Note on using CNVKit**: We currently recommend using CNVKit for identification of AA seeds. CNVKit requires
-`python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
+Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and to see some FAQs.
 
 
 [//]: # (**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,)
@@ -40,23 +19,35 @@ AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 
 
 ## Installation
 
-### Standalone installation
-1. Clone the AmpliconSuite-pipeline git rep:
+### Option A: Installation-free methods
+The most convenient option, however it is not suitable for analysis of very large quantities of data or protected health information (PHI).
 
-`git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
+#### 1. GenePattern Notebook:
+AmpliconSuite-pipeline can be run using the web interface at [GenePatter Notebook](https://notebook.genepattern.org/). Simply search the module list for "AmpliconSuite." 
+This module was constructed in collaboration with members of the GenePattern Notebook team (Edwin Huang, Ted Liefeld, Michael Reich). 
 
-2. [Install AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect), including the data repo and Mosek license.
-
-3. [Install AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier). 
-
+#### 2. AmpliconSuite-pipeline on Nextflow:
+AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 
-### AmpliconSuite-pipeline Docker 
-A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVKit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
+### Option B: Singularity & Docker images 
+Containerized versions of AmpliconSuite-pipeline are available for Singularity and Docker.
 
-1. Docker:
-    * Install docker: `https://docs.docker.com/install/`
-    * (Optional): Add user to the docker group and relogin:
+A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVkit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
+
+
+1. Install the container
+  - Option A) Singularity:
+    * Singularity installation: https://docs.sylabs.io/guides/3.0/user-guide/installation.html
+    * Must have Singularity version 3.6 or higher.
+    * Pull the singularity image: 
+    
+
+  - Option B) Docker:
+    * Docker installation: https://docs.docker.com/install/
+    * Pull the docker image: `docker pull jluebeck/prepareaa`
+    
+    * (Optional): Add user to the docker group (log out and in after performing):
         `sudo usermod -a -G docker $USER`
    
 2. License for Mosek optimization tool:
@@ -81,19 +72,45 @@ A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https
 1. Clone GitHub repository to access the runscript
     * `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
-2. Run the script `run_paa_docker.py` located in `AmpliconSuite-pipeline/docker`. It uses (most of) the same command line arguments one would pass to `PrepareAA.py`. CNV calling with CNVKit is integrated into the docker image (with help from Owen Chapman).
+2. Invoke the runscript to launch the container. These scripts use most of the same arguments are the main driver script `PrepareAA.py`
+   - Option A) Singularity: `AmpliconSuite-pipeline/singularity/run_paa_singularity.py`
+   - Option B) Docker: `AmpliconSuite-pipeline/docker/run_paa_docker.py`.
+     * You can opt to run the docker image as your current user (instead of root) by setting `--run_as_user`. 
 
-An example docker command might look like:
 
-`AmpliconSuite-pipeline/docker/run_paa_docker.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
+An example command might look like:
 
-**You can opt to run the docker image as your current user by setting `--run_as_user`.** 
+`AmpliconSuite-pipeline/singularity/run_paa_singularity.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
-### AmpliconSuite-pipeline on Nextflow.
-AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
+### Option C: Standalone installation
+1. Clone the AmpliconSuite-pipeline git rep:
+
+`git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
+
+2. Install other prerequisites from the section below.
+
+## Prerequisites for standalone installation:
+AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVkit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
+
+Unless you are using a containerized version, and depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
+- (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
+- (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
+  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
+- (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
+- (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
+- (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
+- (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
+- Scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Those packages can be installed with `pip`, `conda` or similar.
+
+AmpliconSuite-pipeline assumes both `samtools` and `bwa` executables are on the system path and can be directly invoked from bash without pathing to the executables. AmpliconSuite-pipeline will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
+
+AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 7. AmpliconSuite-pipeline's optional dependencies related to CNV calling will not work on CentOS 6.
+
+**Note on using CNVkit**: We currently recommend using CNVkit for identification of AA seeds. CNVkit requires
+`python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 ## Usage
-**The main driver script for the pipeline is called `PrepareAA.py`.** Example AmpliconSuite-pipeline commands are given below.
+The main driver script for the standalone pipeline is called `PrepareAA.py`. 
 
 #### Example 1: Starting from .fastq files, using CNVkit for seed generation.
 `
@@ -115,18 +132,18 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fq sample_r2.fq | --bam sample.bam) [--run_AA] [--run_AC]
 `
 
-Where the CNV bed file is formatted as (**without a header present**):
+Where the CNV bed file reports the following four fields:
 
 `chr    start        end       copy_number`
 
 Additional fields between `end` and `copy_number` may exist, but `copy_number` must always be the last column.
 
-* Note: You can also use a CNVKit .cns file instead of .bed for this argument.
+* Note: You can also use the CNVkit `sample_name.cns` file instead of .bed for this argument.
 
 * Note: CNVkit requires R version 3.5 or greater. This is not standard on older Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
 #### Example 4: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
-Note that users must start with fastq files so that the reads can also be aligned to viral genomes. CNVKit must be used for this mode.
+Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
 `
 /path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]
@@ -155,17 +172,19 @@ Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/pa
 
 [//]: # (- `--canvas_dir [/path/to/Canvas_files/]` &#40;Required if not `--reuse_canvas` and not `--cnv_bed [cnvfile.bed]` and not `--cnvkit_dir`&#41; Path to directory containing the Canvas executable and `canvasdata/` subdirectory.)
 
-- `--cnvkit_dir [/path/to/cnvkit.py]` (Required if not `--cnv_bed [cnvfile.bed]`) Path to directory containing `cnvkit.py`.
+- `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls. Bed file with CN estimate in last column, or the CNVkit `sample.cns` file.
 
-- `--completed_run_metadata`, (Required if startng with completed results). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
+- `--cnvkit_dir [/path/to/cnvkit.py]` (Required if CNVkit was installed from source and `--cnv_bed [cnvfile.bed]` is not given). Path to directory containing `cnvkit.py`.
 
-- `--rscript_path [/path/to/Rscript]` (Required if system Rscript version < 3.5 and using `--cnvkit_dir`). Specify a path to a local installation of Rscript compatible with CNVkit.
+- `--completed_run_metadata`, (Required only if starting with completed results). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
 
-- `--python3_path` (Optional) Specify custom path to python3, if needed when using CNVKit (which requires python3).
+- `--rscript_path [/path/to/Rscript]` (Required if system Rscript version < 3.5 and using CNVkit). Specify a path to a local installation of Rscript compatible with CNVkit.
+
+- `--python3_path` (Optional) Specify custom path to python3 if needed when using CNVkit.
 
 - `--aa_python_interpreter` (Optional) By default PrepareAA will use the system's default `python` path. If you would like to use a different python version with AA, set this to either the path to the interpreter or `python3` or `python2` (default `python`)
 
-- `--freebayes_dir` (Currently deprecated) Specify custom path to freebayes installation folder (not path to executable). Assumes freebayes on system path if not set. Please note this flag is currently deprecated.
+[//]: # (- `--freebayes_dir` &#40;Currently deprecated&#41; Specify custom path to freebayes installation folder &#40;not path to executable&#41;. Assumes freebayes on system path if not set. Please note this flag is currently deprecated.)
 
 - `--run_AA`: (Optional) Run AA at the end of the preparation pipeline.
 
@@ -185,7 +204,6 @@ Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/pa
 
 [//]: # (- `--reuse_canvas` &#40;Optional&#41; Reuse the Canvas results from a previous run. Default: False)
 
-- `--cnv_bed [cnvfile.bed]` (Optional) Supply your own CNV calls, bypasses freebayes and Canvas steps. Bed file with CN estimate in last column or CNVKit .cns file.
 
 - `--no_filter`: (Optional) Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions.
 
@@ -193,19 +211,15 @@ Two fastqs (r1 & r2) or a coordinate sorted bam **OR** `--completed_AA_runs [/pa
 
 - `--sample_metadata`, (Optional) Path to a JSON of sample metadata to build on. See template `sample_metadata_skeleton.json` for example.
 
-- `--normal_bam [matched_normal.bam]` (Optional) Specify a matched normal BAM file for CNVKit. Not used by AA itself.
+- `--normal_bam [matched_normal.bam]` (Optional) Specify a matched normal BAM file for CNVkit. Not used by AA itself.
 
-- `--purity [float between 0 and 1]` (Optional) Specify a tumor purity estimate for CNVKit. Not used by AA itself. 
-  Note that specifying low purity may lead to many high copy number seed regions after rescaling is applied consider 
-  setting a higher `--cn_gain` threshold for low purity samples undergoing correction.
+- `--purity [float between 0 and 1]` (Optional) Specify a tumor purity estimate for CNVkit (not used by AA). 
+  Note that specifying low purity may lead to many high copy-number seed regions after rescaling is applied. Consider 
+  setting a higher `--cn_gain` threshold for low purity samples undergoing correction (e.g. `--cn_gain 8`).
 
-- `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVKit. Not used by AA itself.
+- `--ploidy [int]` (Optional) Specify a ploidy estimate of the genome for CNVkit (not used by AA).
 
-- `--use_CN_prefilter` (Optional) Pre-filter CNV calls on number of copies gained above median chromosome arm CN. Strongly
-recommended if input CNV calls have been scaled by purity or ploidy. This argument is off by default but is automatically set if `--ploidy`
-or `--purity` is provided for CNVKit. 
-
-- `--cnvkit_segmentation` Segmentation method for CNVKit (if used), defaults to CNVKit "
+- `--cnvkit_segmentation` Segmentation method for CNVkit (if used), defaults to CNVkit "
                         "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
                         'hmm-germline', 'none'] 
 
@@ -217,10 +231,10 @@ or `--purity` is provided for CNVKit.
  
 
 ## FAQ
-Please check out the [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md).
+Please check out our [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md).
 
 ## Citing
-If using AmpliconSuite-pipeline in your publication, please cite the modules used in the analysis, which are summarized in CITATIONS.md.
+If using AmpliconSuite-pipeline in your publication, please cite the modules used in the analysis, which are summarized in [CITATIONS.md](https://github.com/jluebeck/AmpliconSuite-pipeline/blob/master/CITATIONS.md).
 
 
 ## Additional analysis tools and scripts
@@ -238,9 +252,9 @@ The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) 
 Requires `intervaltree` python package pre-installed. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
 
    ### - `convert_cns_to_bed.py`
-Many users will choose to run CNVKit outside of AmpliconSuite-pipeline and then want to use the CNVKit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
+Many users will choose to run CNVkit outside of AmpliconSuite-pipeline and then want to use the CNVkit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
-we provide the following script to reformat the `.cns` file from CNVKit into a `.bed` file useable with AmpliconSuite-pipeline. 
+we provide the following script to reformat the `.cns` file from CNVkit into a `.bed` file useable with AmpliconSuite-pipeline. 
 
 Usage:
 `./scripts/convert_cns_to_bed.py sample.cns`

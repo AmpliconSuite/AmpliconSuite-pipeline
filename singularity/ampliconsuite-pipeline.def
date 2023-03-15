@@ -17,6 +17,8 @@ mkdir -p /home/mosek
 mkdir -p /home/data_repo
 mkdir -p /tmp/.config/matplotlib
 
+chmod a+rwx /tmp/.config/matplotlib
+
 apt-get update && apt-get install -y
 
 DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
@@ -69,4 +71,3 @@ export MPLCONFIGDIR=/tmp/.config/matplotlib
 
 %test
 ls /home/programs
-which msktestlic
