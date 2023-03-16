@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1458.4"
+__version__ = "0.1458.5"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -324,9 +324,10 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     # iterate over the bed files and count anything that isn't "unknown" as a feature
     feat_count = 0
-    for bf in os.listdir(bed_dir):
-        if not "unknown" in bf and bf.endswith(".bed"):
-            feat_count += 1
+    if os.path.exists(bed_dir):
+        for bf in os.listdir(bed_dir):
+            if not "unknown" in bf and bf.endswith(".bed"):
+                feat_count += 1
 
     sample_info_dict["number_of_AA_features"] = feat_count
 
