@@ -16,7 +16,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1458.5"
+__version__ = "0.1458.6"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -387,7 +387,7 @@ def get_ref_centromeres(ref_name):
     return centromere_dict
 
 
-def save_run_metadata(outdir, sname, args, launchtime):
+def save_run_metadata(outdir, sname, args, launchtime, commandstring):
     # make a dictionary that stores
     # datetime
     # hostname
@@ -412,13 +412,6 @@ def save_run_metadata(outdir, sname, args, launchtime):
         pass
 
     metadata_dict["AA_python_version"] = aa_python_v
-
-    commandstring = ""
-    for arg in sys.argv:
-        if ' ' in arg:
-            commandstring += '"{}" '.format(arg)
-        else:
-            commandstring += "{} ".format(arg)
 
     metadata_dict["PAA_command"] = commandstring
     metadata_dict["PAA_version"] = __version__
@@ -522,9 +515,9 @@ if __name__ == '__main__':
                         help="By default PrepareAA will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
                              "'python3' or 'python2'", type=str, default='python')
-    parser.add_argument("--freebayes_dir",
-                        help="Path to directory where freebayes executable exists (not the path to the executable "
-                             "itself). Only needed if using Canvas and freebayes is not installed on system path.")
+    # parser.add_argument("--freebayes_dir",
+    #                     help="Path to directory where freebayes executable exists (not the path to the executable "
+    #                          "itself). Only needed if using Canvas and freebayes is not installed on system path.")
     # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
     #                     "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
     #                     )
@@ -592,6 +585,15 @@ if __name__ == '__main__':
     logging.getLogger().addHandler(logging.StreamHandler())
     logging.info("Launched on " + launchtime)
     logging.info("AmpiconSuite-pipeline version " + __version__ + "\n")
+
+    commandstring = ""
+    for arg in sys.argv:
+        if ' ' in arg:
+            commandstring += '"{}" '.format(arg)
+        else:
+            commandstring += "{} ".format(arg)
+
+    logging.info(commandstring)
 
     # Make and clear necessary directories.
     # make the output directory location if it does not exist
@@ -779,7 +781,7 @@ if __name__ == '__main__':
             check_reference.check_properly_paired(args.sorted_bam)
 
         tb = time.time()
-        timing_logfile.write("Alignment and bam indexing:\t" + "{:.2f}".format(tb - ta) + "\n")
+        timing_logfile.write("Alignment, indexing and QC:\t" + "{:.2f}".format(tb - ta) + "\n")
 
         if args.align_only:
             logging.info("Completed\n")
@@ -857,7 +859,7 @@ if __name__ == '__main__':
                 tb = time.time()
                 timing_logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
-        run_metadata_filename = save_run_metadata(outdir, sname, args, launchtime)
+        run_metadata_filename = save_run_metadata(outdir, sname, args, launchtime, commandstring)
 
         with open(sample_metadata_filename, 'w') as fp:
             json.dump(sample_info_dict, fp, indent=2)
