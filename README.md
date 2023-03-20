@@ -22,9 +22,9 @@ Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/
 ### Option A: Installation-free methods
 The most convenient option, however it is not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
 
-#### 1. GenePattern Notebook:
-AmpliconSuite-pipeline can be run using the web interface at [GenePatter Notebook](https://notebook.genepattern.org/). Simply search the module list for "AmpliconSuite." 
-This module was constructed in collaboration with members of the GenePattern Notebook team (Edwin Huang, Ted Liefeld, Michael Reich). 
+#### 1. GenePattern Web Interface:
+AmpliconSuite-pipeline can be run using the web interface at [GenePatter Web Interface](https://genepattern.ucsd.edu/gp). Simply search the module list for "AmpliconSuite." 
+This module was constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). 
 
 #### 2. AmpliconSuite-pipeline on Nextflow:
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
@@ -238,9 +238,9 @@ We will soon release an online platform for storing and sharing your AmpliconSui
 To package a collection of AA outputs for AmpliconRepository, you will need to do the following steps.
 1. (Recommended) Before running, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file for each sample, and fill out the JSON file. Provide this to `PrepareAA.py` using `--sample_metadata_file {sample_metadata.json}`
 2. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
-3. If you have not already, create an account at [GenePattern Notebook](https://notebook.genepattern.org/).
+3. If you have not already, create an account at [GenePattern](https://genepattern.ucsd.edu/gp).
 4. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
- * Go to https://notebook.genepattern.org/, then click "Use GenePattern Notebook" and sign in.
+ * Go to https://genepattern.ucsd.edu/gp, and sign in.
  * In the top-left search bar, search for `AmpliconSuiteAggregator`
 5. Run the aggregator and download the aggregated `.tar.gz` result file.
 6. Upload to AmpliconRepository (coming soon).
