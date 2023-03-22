@@ -69,7 +69,7 @@ however **if you notice there are > 50 CNV seeds going into AA, there may be som
 
 We have found that CNV callers FACETS and ASCAT generally undersegment or create seeds that are too long for AA. **We do not recommend using FACETS or ASCAT for AA seed detection.**
 
-Many modern callers are purity and ploidy aware. Note that while this may help to accurate get globally accurate copy numbers, it can lead to situations where entire chromosome arms surpass your copy number gain threshold for AA! If you are using purity and ploidy corrected calls, please set the `gain` cutoff accordingly, and more importantly set the `--use_CN_prefilter` argument to PrepareAA.
+Many modern callers are purity and ploidy aware. Note that while this may help to accurate get globally accurate copy numbers, it can lead to situations where entire chromosome arms surpass your copy number gain threshold for AA! If you are using purity and ploidy corrected calls, please set the `gain` cutoff accordingly.
 #
 
 ### Filtering and selecting seeds from CNV data
@@ -86,7 +86,7 @@ If low-complexity/repetive seeds are not filtered from AA, it can cause an exrem
 regions, but it should still be avoided to give them to AA as input. 
 
 If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the AmpliconSuite-pipeline/scripts directory (and documented in AmpliconSuite-pipeline's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
-The output of this script can then be fed to `amplified_intervals.py`. Note that `seed_trimmer.py` is to be run BEFORE `amplified_intervals.py`, if you choose to use it. Better yet, giving the CN calls to AmpliconSuite-pipeline and setting `--use_CN_prefilter` and invoking AA via AmpliconSuite-pipeline will yield the best results.
+The output of this script can then be fed to `amplified_intervals.py`. Invoking AA via AmpliconSuite-pipeline will yield the best results.
 #
 
 ### Constructing unified seed sets from multiple related samples
@@ -192,52 +192,73 @@ At the moment, we do not support adding additional tracks of data into the plot 
 - **The AA_CNV_SEEDS.bed file was empty, what's wrong?**
     - Likely nothing. If no seed regions are detected, the sample likely has no candidate focal amplifications.
 
+
 - **Can I use AA with whole-exome sequencing, ATAC-seq, or RNA-sequencing data?**
     - AA will fundamentally not work with these data modalities. We only support paired-end WGS data with AA.
     
+
 - **Can I use AA on Circle-Seq data?**
     - AA has been used on Circle-Seq data with only modest success. AA is not designed for use with targeted sequencing data, and as a result it may crash or produce unreliable amplicon calls. Please proceed very cautiously if deploying AA/interpreting AA outputs on Circle-Seq data.
+
 
 - **What coverage is needed for AA?**
     - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA.
   
+
 - **Do I need to use downsampling? Will I detect more SVs with less downsampling?**
   - The threshold for amplified SV detection used by AA scales with effective coverage after downsampling, so lower effective coverage (e.g. downsample 10) will have a lower threshold than higher effective coverage (e.g. downsample 40). For low copy-number focal amplifications (CN < 10), higher effective coverage may perform better
 (consider setting a downsample parameter of 30 or 40).  
     
+
 - **AA has been running for more than 72 hours. What's wrong?**
     - Please ensure that you selected your CNV seeds appropriately. If you use a CN cutoff any lower than 4.5, and size < 10 kbp,
-     there can be a great many false positive focal amplifications. Secondly, and very importantly, please ensure you used `amplified_intervals.py` to select the CNV seeds appropriately. If AA is running for > 1 week, please check that you are using the latest version of the data repo maintained by jluebeck, and consider changing `--cnsize_min 100000 --cngain 5`, and moving up from there with your cutoffs.
+     there can be a great many false positive focal amplifications. Secondly, and very importantly, please ensure you used AmpliconSuite-pipeline to select the CNV seeds appropriately (as opposed to running `AmpliconArchitect.py` on raw, unfiltered copy number data). 
+    - If AA is running for > 1 week, please check that you are using the latest version of the data repo maintained by jluebeck, and consider changing `--cnsize_min 100000 --cngain 5`, and moving up from there with your cutoffs.
      
+
+- **Should copy-number calls provided to AA be corrected for purity and ploidy?**
+    - AA's internal analysis of copy number is a coverage-based method that establishes a baseline coverage throughout the genome. 
+  Copy number at a given location is also coverage based and reported relative to this baseline coverage. 
+  AA itself does not consider purity or ploidy when computing its relative copy number estimates. 
+  The goal is not to determine an absolutely correct copy number, but to identify focally amplified regions relative to the rest of the genome.
+    - Adding corrections for purity or ploidy to the copy numbers used for seed determination may cause entire chromosome arms to appear above the copy-number cutoff for a focal amplificaiton. We recommend users set a higher CN-cutoff (e.g. `--cngain 8`) if using these kinds of corrected calls.
+    - We also suggest that analyzing samples with purity below 30% should be avoided where possible. Only very-strongly amplified focal amplifications will be found. If corrected for purity, any distortions to copy number signal may also become amplified, creating many false-positive seeds.
+  
+
 - **In the amplicon visualizations, what are the different edge colors?**
     - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf).
-    
+  
+  
 - **What if I use really low CN cutoffs and really small minimum sizes so that I don't miss any ecDNA?**
     - AA will likely stall. A lower CN threshold is also not better, as in that case it may pick up many more regions which represent non-ecDNA events like segmental tandem duplications. When the CN threshold is lowered, the seed sizes also tend to expand greatly - as they may reflect karytoypic events, not focal amplifications. Giving enormous seed regions to AA, (e.g. > 10 Mbp) is strongly not recommended. 
     
+
 - **How do I run AA on a sample with a viral genome(s) to check for integration/viral genome structure/viral ecDNA?**
-1. If needed, first determine which viral strain(s) are present (e.g. ViFi or [FastViFi](https://github.com/sara-javadzadeh/FastViFi), or other methods).
-2. Align your reads to a human reference fasta file with the relevant viral genomes included.
-3. We provide an oncoviral version of the AA data repo here: https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/. `GRCh38_viral` should the argument given to `--ref`. If using a viral genome not present in the AA data repo, modify the AA data repo fasta file for the corresponding human build to include the viral strain(s) as entries. Re-index fasta file. Recommend copying original data repo to new location to modify, then updating `$AA_DATA_REPO` with the modified version.
-4. The virus will be added to the seed regions if present and amplified. However if using a viral genome not present in the AA data repo, before launching AA, add the viral genome to your `AA_CNV_SEEDS.bed` file.
+  1. If needed, first determine which viral strain(s) are present (e.g. ViFi or [FastViFi](https://github.com/sara-javadzadeh/FastViFi), or other methods).
+  2. Align your reads to a human reference fasta file with the relevant viral genomes included.
+  3. We provide an oncoviral version of the AA data repo here: https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/. `GRCh38_viral` should the argument given to `--ref`. If using a viral genome not present in the AA data repo, modify the AA data repo fasta file for the corresponding human build to include the viral strain(s) as entries. Re-index fasta file. Recommend copying original data repo to new location to modify, then updating `$AA_DATA_REPO` with the modified version.
+  4. The virus will be added to the seed regions if present and amplified. However, if using a viral genome not present in the AA data repo, before launching AA, add the viral genome to your `AA_CNV_SEEDS.bed` file.
+
 
 - **How do I tell if an amplification is due to ecDNA or segmental tandem duplication?**
     - For low CN < 4.5, it's not really possible to tell. However, keep the following in mind - when segmental tandem duplications occur, the same breakpoints must be reused every time it is repeated. When a "cyclic" structure accumulates
     in very high CN, this would involve the exact reuse of the same breakpoints many, many times in the case of segmental tandem dups. The simpler hypothesis as CN increases, is that it is mediated through an extrachromosomal DNA mechanism. 
-    
+   
+ 
 - **Can AA determine the difference between HSR and ecDNA? Can it find integration points?**
     - From our observations, ecDNA maintains its structure when it integrates into the genome (Turner 2017, *Nature*, Deshpande 2019, *Nat. Comms.*, Luebeck 2020 *Nat. Comms.*). Unfortunately without some sort of imaging data (FISH) or long-range sequencing (Bionano, PacBio, Nanopore), it is not possible to reliably make that determination from AA.
+
 
 - **There's a region I want AA to examine, but it didn't appear in the CNV seeds, what do I do?**
     - You can force AA to run on a region by creating a BED file with that region specifically included, and then invoking AA directly (do not use AmpliconSuite-pipeline or `amplified_intervals.py`). This can also be used to standardize the same AA run on multiple different samples.
  
+
 - **In the cycles file, what do the paths that begin/end with '0+' mean?** 
     - These indicate that the path is non-cylic, and proceeds or is preceeded by the next reference coordinate.
+
 
 - **Which HPV16 genome is included with GRCh38_viral?**
     - AY686584.1 (https://www.ncbi.nlm.nih.gov/nuccore/AY686584.1). The version used in the data repo (which we called hpv16ref_1) is slightly older than the current build hosted by NCBI, and differs by approximately 9 point mutations throughout the viral genome. 
 
-- **I am receiving warnings staring with `[root:WARNING]	dnlist0:`, what do these mean?**
-    - These warnings are harmless and expected parts of AA outputs, please ignore them. We will try to change them to debug level of logging in the future.
 #
  

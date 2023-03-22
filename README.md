@@ -215,7 +215,7 @@ Note that when this mode is used all AA results must have been generated with re
 
 - `--purity {float between 0 and 1}`: Specify a tumor purity estimate for CNVkit (not used by AA). 
   Note that specifying low purity may lead to many high copy-number seed regions after rescaling is applied. Consider 
-  setting a higher `--cn_gain` threshold for low purity samples undergoing correction (e.g. `--cn_gain 8`).
+  setting a higher `--cngain` threshold for low purity samples undergoing correction (e.g. `--cngain 8`).
 
 - `--ploidy {float}`: Specify a ploidy estimate of the genome for CNVkit (not used by AA).
 
