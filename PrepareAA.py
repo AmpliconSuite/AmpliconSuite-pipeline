@@ -7,7 +7,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import shutil
 import socket
 from subprocess import *
 import sys
@@ -16,7 +15,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1458.6"
+__version__ = "0.1477.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -228,11 +227,14 @@ def convert_cnvkit_cns_to_bed(cnvkit_output_directory, base, cnsfile=None, resca
 
 
 def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
-    if not purity and not ploidy:
+    if purity is None and ploidy is None:
         logging.warning("Warning: Rescaling called without --ploidy or --purity. Rescaling will have no effect.")
     if cnsfile is None:
         cnsfile = cnvkit_output_directory + base + ".cns"
 
+    if purity < 0.4:
+        logging.warning("WARNING! Rescaling a low purity sample may cause many false-positive seed regions!")
+        
     cmd = "{} {} call {} -m clonal".format(PY3_PATH, ckpy_path, cnsfile)
     if purity:
         cmd += " --purity " + str(purity)
@@ -492,8 +494,8 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 if __name__ == '__main__':
     # Parses the command line arguments
     parser = argparse.ArgumentParser(
-        description="A simple pipeline wrapper for AmpliconArchitect, invoking alignment, variant calling, "
-                    "and CNV calling prior to AA. The CNV calling is necessary for running AA")
+        description="A pipeline wrapper for AmpliconArchitect, invoking alignment CNV calling and CNV filtering prior. "
+                    "Can launch AA, as well as downstream amplicon classification.")
     parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
     parser.add_argument("-s", "--sample_name", help="sample name", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA and CNV calling", required=True)
@@ -521,7 +523,7 @@ if __name__ == '__main__':
     # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
     #                     "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
     #                     )
-    parser.add_argument("--aa_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
+    parser.add_argument("--AA_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
     parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                                              "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
     parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --extendmode argument to AA. Default "
@@ -532,8 +534,8 @@ if __name__ == '__main__':
                                                   "increase for sequencing runs with high variance after insert size selection step. (default "
                                                   "3.0)", type=float, default=3.0)
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)")
-    parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional)")
-    parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional)")
+    parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside of CNVKit.", default=None)
+    parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional). This is not used outside of CNVKit.", default=None)
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                       "default segmentation method (cbs).",
                         choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
@@ -578,6 +580,11 @@ if __name__ == '__main__':
     outdir = args.output_directory
     sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
 
+    # Make and clear necessary directories.
+    # make the output directory location if it does not exist
+    if not os.path.exists(args.output_directory):
+        os.mkdir(args.output_directory)
+
     # initiate logging
     paa_logfile = args.output_directory + sname + '.log'
     logging.basicConfig(filename=paa_logfile, format='[%(name)s:%(levelname)s]\t%(message)s',
@@ -595,10 +602,7 @@ if __name__ == '__main__':
 
     logging.info(commandstring)
 
-    # Make and clear necessary directories.
-    # make the output directory location if it does not exist
-    if not os.path.exists(args.output_directory):
-        os.mkdir(args.output_directory)
+
 
     if "/" in args.sample_name:
         logging.error("Sample name -s cannot be a path. Specify output directory with -o.\n")
@@ -617,8 +621,8 @@ if __name__ == '__main__':
     timing_logfile.write("#stage:\twalltime(seconds)\n")
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
-    if args.aa_src:
-        os.environ['AA_SRC'] = args.aa_src
+    if args.AA_src:
+        os.environ['AA_SRC'] = args.AA_src
 
     # Check if AA_REPO set, print error and quit if not
     try:

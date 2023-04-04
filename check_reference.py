@@ -107,6 +107,10 @@ def check_ref(bamf, ref_to_fai_dict):
                 bestref = refName
                 bestrefhits = matched
 
+            elif bestref and matched == bestrefhits and "_viral" in bestref and "_viral" not in refName:
+                bestref = refName
+                bestrefhits = matched
+
     if bestref:
         logging.info("Matched " + bamf + " to reference genome " + bestref)
         return bestref

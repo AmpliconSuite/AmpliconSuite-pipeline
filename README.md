@@ -6,11 +6,11 @@ Performs preliminary steps (alignment, seed detection, & seed filtering) require
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
 
-**Current version: 0.1458.6**
+**Current version: 0.1477.1**
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
-Please check out our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and to see some FAQs.
+We recommend browsing our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and to see some FAQs.
 
 
 [//]: # (**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,)
@@ -113,26 +113,24 @@ AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 
 The main driver script for the standalone pipeline is called `PrepareAA.py`. 
 
 #### Example 1: Starting from .fastq files, using CNVkit for seed generation.
-`
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]
-`
+
+>`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
+
 
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 `--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
 
 #### Example 2: Starting from sorted .bam, using CNVkit for seed generation
-`
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]
-`
+
+>`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]`
 
 `--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
 
 ##### Example 3: Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
 * If using your own CNV calls:
 
-`
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fq sample_r2.fq | --bam sample.bam) [--run_AA] [--run_AC]
-`
+
+>`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fq sample_r2.fq | --bam sample.bam) [--run_AA] [--run_AC]`
 
 Where the CNV bed file reports the following four fields:
 
@@ -147,16 +145,14 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 #### Example 4: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
-`
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]
-`
+
+>`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]`
 
 #### Example 5: Starting from completed AA results
 If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
 
-`
-/path/to/AmpliconSuite-pipeline/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata run_metadata_file.json -t 1 --ref hg38
-`
+
+>`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata run_metadata_file.json -t 1 --ref hg38`
 
 Note that when this mode is used all AA results must have been generated with respect to the same reference genome version.
 
@@ -185,7 +181,7 @@ Note that when this mode is used all AA results must have been generated with re
 
 - `--run_AC`: Run AmpliconClassifier following AA. No effect if `--run_AA` not set.
 
-- - `--normal_bam {matched_normal.bam}` Specify a matched normal BAM file for CNVkit. Not used by AA itself.
+- `--normal_bam {matched_normal.bam}` Specify a matched normal BAM file for CNVkit. Not used by AA itself.
 
 - `--completed_run_metadata {run_metadata.json}`, Required only if starting with completed results (`--completed_AA_runs`). Specify a run metadata file for previously generated AA results. If you do not have it, set to 'None'." 
 
@@ -236,7 +232,7 @@ Please check out our [guide document](https://github.com/jluebeck/PrepareAA/blob
 We will soon release an online platform for storing and sharing your AmpliconSuite-pipeline outputs.
 
 To package a collection of AA outputs for AmpliconRepository, you will need to do the following steps.
-1. (Recommended) Before running, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file for each sample, and fill out the JSON file. Provide this to `PrepareAA.py` using `--sample_metadata_file {sample_metadata.json}`
+1. (Recommended) Before running, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file for each sample, and fill out the JSON file. Provide this to `PrepareAA.py` using `--sample_metadata {sample_metadata.json}`
 2. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
 3. If you have not already, create an account at [GenePattern](https://genepattern.ucsd.edu/gp).
 4. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
@@ -252,6 +248,22 @@ If using AmpliconSuite-pipeline in your publication, please cite the modules use
 
 ## Additional analysis tools and scripts
 
+### - Grouped analysis of related samples `GroupedAnalysis.py`
+For samples derived from a common origin (longitudinal, multiregional sampling from the same source material), it is advised that the seed intervals be unified before running AA in order to provide the best comparability
+between runs. We provide a script `GroupedAnalysis.py` which automates this analysis. `GroupedAnalysis.py` takes almost all the same arguments as `PrepareAA.py`, 
+however it requires an additional input file, listing the inputs. This file
+is to be formatted as follows
+
+`sample_name` `bamfile` `"tumor"/"normal"` `[CNV_calls]` `[sample_metadata_json]`
+
+Where `CNV_calls` and `sample_metadata_json` are optional. However, they are positional, so if `CNV_calls` is skipped, it should be set as either `NA` or `None`.
+
+AA and AC will be run by default, but can be disabled with `--no_AA`.
+
+Example command:
+
+> `/path/to/PrepareAA/GroupedAnalysis.py -i {inputs.txt} -o {output_dir} -t {num_threads}`
+
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
 Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
 `CAMPER.py` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
@@ -259,22 +271,22 @@ searches for plausible longest paths explaining the copy number multiplicities. 
 The output will be an AA-formatted cycles file with additional annotations for length and quality control filter status. The quality filters take into account root mean square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this pre-print](https://www.biorxiv.org/content/10.1101/2021.11.28.470285v1).
 The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path. A full explanation of arguments is available with `-h`. Note that this should only be applied to AA amplicons with at most 1 ecDNA present in the AA amplicon (multiple-species reconstruction not supported).
 
-`AmpliconSuite-pipeline/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
+> `AmpliconSuite-pipeline/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
 
-   ### - `breakpoints_to_bed.py`
+### - `breakpoints_to_bed.py`
 Requires `intervaltree` python package pre-installed. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
 
-   ### - `convert_cns_to_bed.py`
+### - `convert_cns_to_bed.py`
 Many users will choose to run CNVkit outside of AmpliconSuite-pipeline and then want to use the CNVkit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
 we provide the following script to reformat the `.cns` file from CNVkit into a `.bed` file useable with AmpliconSuite-pipeline. 
 
 Usage:
-`./scripts/convert_cns_to_bed.py sample.cns`
+>`scripts/convert_cns_to_bed.py sample.cns`
 
 This will output a bed file which can be fed into AmpliconSuite-pipeline. 
 
-   ### - `cycles_to_bed.py`
+### - `cycles_to_bed.py`
 Requires `intervaltree` python package pre-installed. Write an AA cycles file as a series of bed files, one for each decomposition. Segments are merged and sorted, and order and orientation of segments is lost.
 
 ### - `graph_cleaner.py`
@@ -284,11 +296,11 @@ This script removes them from the graph file.
 
 Usage:
 
-`./scripts/graph_cleaner.py -g /path/to/sample_ampliconx_graph.txt [--max_hop_size 4000] `
+>`scripts/graph_cleaner.py -g /path/to/sample_ampliconx_graph.txt [--max_hop_size 4000] `
 
 or
 
-`./scripts/graph_cleaner.py --graph_list /path/to/list_of_graphfiles.txt [--max_hop_size 4000] `
+>`scripts/graph_cleaner.py --graph_list /path/to/list_of_graphfiles.txt [--max_hop_size 4000] `
 
 
 This will output an AA graph file(s) `/path/to/my_sample_ampliconX_cleaned_graph.txt`.
@@ -299,7 +311,7 @@ Setting `--unmerged` will not merge adjacent graph segments and will print the g
 
 Usage:
 
-`./scripts/graph_to_bed.py -g sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
+>`scripts/graph_to_bed.py -g sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
 
 
 ### - `bfb_foldback_detection.py [deprecated]`
