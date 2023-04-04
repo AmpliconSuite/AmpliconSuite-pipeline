@@ -120,17 +120,17 @@ The main driver script for the standalone pipeline is called `PrepareAA.py`.
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
 `--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
 
-#### Example 2: Starting from sorted .bam, using CNVkit for seed generation
+#### Example 2: Starting from .bam, using CNVkit for seed generation
 
 >`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]`
 
 `--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
 
-##### Example 3: Starting from BAM and your own CNV calls (or recycled AA_CNV_SEEDS.bed)
+##### Example 3: Starting from .bam and your own whole-genome CNV calls, or an existing AA_CNV_SEEDS.bed
 * If using your own CNV calls:
 
 
->`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed (--fastqs sample_r1.fq sample_r2.fq | --bam sample.bam) [--run_AA] [--run_AC]`
+>`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed --bam sample.bam [--run_AA] [--run_AC]`
 
 Where the CNV bed file reports the following four fields:
 
@@ -138,17 +138,22 @@ Where the CNV bed file reports the following four fields:
 
 Additional fields between `end` and `copy_number` may exist, but `copy_number` must always be the last column.
 
-* Note: You can also use the CNVkit `sample_name.cns` file instead of .bed for this argument.
+* You can also use the CNVkit `sample_name.cns` file instead of .bed for this argument.
 
-* Note: CNVkit requires R version 3.5 or greater. This is not standard on older Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
+* CNVkit requires R version 3.5 or greater. This is not standard on older Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
-#### Example 4: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
+#### Example 4: Analyzing a collection of related samples (same origin)
+
+Have multiple samples from the same patient, cell line, etc.? These should be run as a group to ensure that the same regions are studied across samples.
+Please see the `GroupedAnalysis.py` [example below](#--grouped-analysis-of-related-samples) for instructions.
+
+#### Example 5: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
 
 >`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]`
 
-#### Example 5: Starting from completed AA results
+#### Example 6: Starting from completed AA results
 If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
 
 
