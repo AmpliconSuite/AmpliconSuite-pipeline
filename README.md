@@ -126,7 +126,7 @@ The main driver script for the standalone pipeline is called `PrepareAA.py`.
 
 `--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
 
-##### Example 3: Starting from .bam and your own whole-genome CNV calls, or an existing AA_CNV_SEEDS.bed
+#### Example 3: Starting from .bam and your own whole-genome CNV calls, or an existing AA_CNV_SEEDS.bed
 * If using your own CNV calls:
 
 
@@ -145,7 +145,7 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 #### Example 4: Analyzing a collection of related samples (same origin)
 
 Have multiple samples from the same patient, cell line, etc.? These should be run as a group to ensure that the same regions are studied across samples.
-Please see the `GroupedAnalysis.py` [example below](#--grouped-analysis-of-related-samples) for instructions.
+Please see the `GroupedAnalysis.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysispy) for instructions.
 
 #### Example 5: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
