@@ -95,7 +95,19 @@ One common type of analysis is the detection of focal amplifications in samples 
 **To maximize the utility of AA on samples from the same source, you should consider merging your AA seed files from related samples.**
 We will work on automating this process in the future, but these are the instructions users should follow for now.
 
-To do this, first run AmpliconSuite-pipeline on each sample **without** setting `--run_AA`. The result for each sample the `[sample]_AA_CNV_SEEDS.bed` file. Next, using `bedtools` or similar, take the relevant seeds files from related samples and merge those bed files. A tutorial for merging bed files can be found [here](http://quinlanlab.org/tutorials/bedtools/bedtools.html) 
+#### Option A: `GroupedAnalysis.py` (recommended)
+This can be done using the script `GroupedAnalysis.py`. This assumes you are starting from .bam files. Simply place your samples into a three column file, formatted like so 
+>`sample_name` `path/to/sample.bam`  `'Tumor' or 'Normal'`
+
+Users can provide two additional columns
+> `/path/to/CNV.bed` `/path/to/sample_metadata.json`
+
+These are positional for columns 4 and 5, respectively. If one is ommitted, the `NA` should be placed.
+
+`GroupedAnalysis.py` takes most of the same arguments as `PrepareAA.py`, but by default `--run_AA` and `--run_AC` will be set.
+
+#### Option B: Manual creation of unified seeds
+First run AmpliconSuite-pipeline on each sample **without** setting `--run_AA`. The result for each sample the `[sample]_AA_CNV_SEEDS.bed` file. Next, using `bedtools` or similar, take the relevant seeds files from related samples and merge those bed files. A tutorial for merging bed files can be found [here](http://quinlanlab.org/tutorials/bedtools/bedtools.html) 
 (see section entitled "bedtools 'merge'").
 
 Next, place a placeholder copy number estimate into the last column of each row. Since the regions are already filtered, AA does not need to consider the copy number estimate before running its own CN-estimation on each sample.
