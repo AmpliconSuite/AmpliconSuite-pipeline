@@ -15,7 +15,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1477.1"
+__version__ = "0.1477.2"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -276,9 +276,11 @@ def run_AA(AA_interpreter, amplified_interval_bed, sorted_bam, AA_outdir, sname,
 
     metadata_dict["AA_version"] = AA_version
 
-    cmd = "{} {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --extendmode {} --insert_sdevs {} --out {}/{}".format(
+    cmd = "{} {}/AmpliconArchitect.py --ref {} --downsample {} --bed {} --bam {} --runmode {} --extendmode {} --out {}/{}".format(
         AA_interpreter, AA_SRC, ref, str(downsample), amplified_interval_bed, sorted_bam, runmode, extendmode,
-        str(insert_sdevs), AA_outdir, sname)
+        AA_outdir, sname)
+    if insert_sdevs is not None:
+        cmd += " --insert_sdevs {}".format(str(insert_sdevs))
 
     logging.info(cmd)
     aa_exit_code = call(cmd, shell=True)
@@ -532,7 +534,7 @@ if __name__ == '__main__':
                         default='EXPLORE')
     parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
                                                   "increase for sequencing runs with high variance after insert size selection step. (default "
-                                                  "3.0)", type=float, default=3.0)
+                                                  "3.0)", type=float, default=None)
     parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)")
     parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside of CNVKit.", default=None)
     parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional). This is not used outside of CNVKit.", default=None)
@@ -542,7 +544,8 @@ if __name__ == '__main__':
                                  'hmm-germline', 'none'], default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
-    parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
+    parser.add_argument("--no_QC", help="Skip QC on the BAM file. Do not adjust AA insert_sdevs for "
+                                        "poor-quality insert size distribution", action='store_true')
     parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
@@ -717,8 +720,15 @@ if __name__ == '__main__':
 
     faidict = {}
     if args.sorted_bam:
-        if args.ref:
+        if args.ref and refFnames[args.ref]:
             faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
+
+        elif args.ref and refFnames[args.ref] is None:
+            em = "Data repo files for ref " + args.ref + " not found. Please download from " \
+                 "https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/\n"
+            logging.error(em)
+            sys.stderr.write(em)
+            sys.exit(1)
 
         else:
             for k, v in refFnames.items():
@@ -727,6 +737,7 @@ if __name__ == '__main__':
 
         determined_ref = check_reference.check_ref(args.sorted_bam, faidict)
         if not determined_ref and not args.ref:
+            logging.error("Please make sure AA data repo is populated.")
             sys.exit(1)
 
         elif not args.ref:
@@ -781,8 +792,9 @@ if __name__ == '__main__':
             logging.info("Finished indexing")
 
         bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
+        prop_paired_proportion = None
         if not args.no_QC:
-            check_reference.check_properly_paired(args.sorted_bam)
+            prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam)
 
         tb = time.time()
         timing_logfile.write("Alignment, indexing and QC:\t" + "{:.2f}".format(tb - ta) + "\n")
@@ -845,9 +857,13 @@ if __name__ == '__main__':
             if not os.path.exists(AA_outdir):
                 os.mkdir(AA_outdir)
 
+            # set the insert sdevs if not given by user.
+            if not args.no_QC and not args.AA_insert_sdevs and prop_paired_proportion is not None and prop_paired_proportion < 90:
+                logging.info("Properly paired rate less than 90%, setting --insert_sdevs 9.0 for AA")
+                args.AA_insert_sdevs = 9.0
+
             run_AA(args.aa_python_interpreter, amplified_interval_bed, args.sorted_bam, AA_outdir, sname,
-                   args.downsample,
-                   args.ref, args.AA_runmode, args.AA_extendmode, args.AA_insert_sdevs)
+                   args.downsample, args.ref, args.AA_runmode, args.AA_extendmode, args.AA_insert_sdevs)
             tb = time.time()
             timing_logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
             ta = tb

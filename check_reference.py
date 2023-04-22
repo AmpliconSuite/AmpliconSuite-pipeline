@@ -91,6 +91,8 @@ def check_properly_paired(bamf):
               " pairs to be marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!"
               "\n")
 
+    return ppp
+
 
 # check if the BAM reference matches to sequence names & lengths in a dictionary of .fai files
 # returns the name of the reference genome the BAM matches to, or prints error and returns None.
@@ -115,11 +117,16 @@ def check_ref(bamf, ref_to_fai_dict):
         logging.info("Matched " + bamf + " to reference genome " + bestref)
         return bestref
 
-    logging.error("ERROR: Could not match BAM to a known AA reference genome!\n")
-    logging.error("This may happen if 1) The value provided to optional argument '--ref' does not match the "
-                    "reference the BAM is aligned to, or 2) The corresponding AA data repo folder for this reference "
-                    "is not present, or 3) The BAM uses a different chromosome naming convention (e.g. accession "
-                    "numbers instead of chromosome names). Consider inspecting the header of the BAM file and the AA "
-                    "data repo directory.\n")
+    em1 = "ERROR: Could not match BAM to a known AA reference genome!\n"
+    em2 = """This may happen if 1) The value provided to optional argument '--ref' does not match the 
+          reference the BAM is aligned to, or 2) The corresponding AA data repo folder for this reference 
+          is not present, or 3) The BAM uses a different chromosome naming convention (e.g. accession 
+          numbers instead of chromosome names). Consider inspecting the header of the BAM file and the AA  
+          data repo directory.\n"""
+
+    logging.error(em1)
+    logging.error(em2)
+    sys.stderr.write(em1)
+    sys.stderr.write(em2)
 
     return None

@@ -69,7 +69,7 @@ parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --ext
                     "mode is 'EXPLORE'", choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"], default='EXPLORE')
 parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
                     "increase for sequencing runs with high variance after insert size selection step. (default "
-                    "3.0)", type=float, default=3.0)
+                    "3.0)", type=float, default=None)
 parser.add_argument(
     "--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
 parser.add_argument("--ploidy", type=int,
@@ -221,6 +221,9 @@ if args.no_filter:
 
 if args.no_QC:
     argstring += " --no_QC"
+
+if args.AA_insert_sdevs:
+    argstring += " --AA_insert_sdevs " + str(args.AA_insert_sdevs)
 
 # To use, would need to mount the directory of this file. Users should just modify as needed afterwards.
 # if args.sample_metadata:
