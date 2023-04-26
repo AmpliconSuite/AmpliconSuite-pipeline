@@ -14,8 +14,10 @@ def getRelChrs(CHROMS):
     chrSet = set()
     with open(CHROMS) as chromFile:
         for line in chromFile:
-            chrName = line.rstrip().rsplit()[0].lstrip(">")
-            chrSet.add(chrName)
+            line = line.rstrip()
+            if line:
+                chrName = line.rsplit()[0].lstrip(">")
+                chrSet.add(chrName)
 
     chrList = sorted(list(chrSet))
     return chrList
