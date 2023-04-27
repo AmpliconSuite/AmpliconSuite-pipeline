@@ -549,6 +549,7 @@ if __name__ == '__main__':
     parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
+    parser.add_argument("--samtools_path", help="Path to samtools. This could solve libcrypto.so.1.0.0 loading error for samtools installed with conda and implemented in PBS environment.", default=None)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
@@ -735,7 +736,7 @@ if __name__ == '__main__':
                 if v:
                     faidict[k] = AA_REPO + k + "/" + v + ".fai"
 
-        determined_ref = check_reference.check_ref(args.sorted_bam, faidict)
+        determined_ref = check_reference.check_ref(args.sorted_bam, faidict, args.samtools_path)
         if not determined_ref and not args.ref:
             logging.error("Please make sure AA data repo is populated.")
             sys.exit(1)
@@ -794,7 +795,7 @@ if __name__ == '__main__':
         bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
-            prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam)
+            prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam, args.samtools_path)
 
         tb = time.time()
         timing_logfile.write("Alignment, indexing and QC:\t" + "{:.2f}".format(tb - ta) + "\n")
