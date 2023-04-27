@@ -228,6 +228,8 @@ Note that when this mode is used all AA results must have been generated with re
 - `--AA_extendmode {EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL}`: Default `EXPLORE`. See AA documentation for more info.
 
 - `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly-controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
+
+- `--samtools_path`: Path to a specific samtools for use. When samtools is installed in a user directory or in virtual environment, implementing samtools via PBS may cause loading shared libraries error (e.g., libcrypto.so.1.0.0).
  
 
 ## FAQ
