@@ -39,8 +39,12 @@ def get_ref_seq_lens(ref_genome_size_file):
 
 
 # read bam header and store info
-def get_bam_header(bamf):
-    cmd = 'samtools view -H ' + bamf
+def get_bam_header(bamf, samtools_path):
+    if samtools_path is not None:
+        samtools = samtools_path
+    else:
+        samtools = 'samtools'
+    cmd = samtools + ' view -H ' + bamf
     return subprocess.check_output(cmd, shell=True).decode("utf-8")
 
 
@@ -73,8 +77,12 @@ def match_ref(bamSeqLenD, ref_len_d):
 
 
 # check properly paired rate on bam file
-def check_properly_paired(bamf):
-    cmd = "samtools flagstat {} | grep 'properly paired'".format(bamf)
+def check_properly_paired(bamf, samtools_path):
+    if samtools_path is not None:
+        samtools = samtools_path
+    else:
+        samtools = 'samtools'
+    cmd = samtools + " flagstat {} | grep 'properly paired'".format(bamf)
     t = str(subprocess.check_output(cmd, shell=True).decode("utf-8"))
     logging.info("\n" + bamf + ": " + t.rstrip())
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
@@ -96,8 +104,8 @@ def check_properly_paired(bamf):
 
 # check if the BAM reference matches to sequence names & lengths in a dictionary of .fai files
 # returns the name of the reference genome the BAM matches to, or prints error and returns None.
-def check_ref(bamf, ref_to_fai_dict):
-    bam_header = get_bam_header(bamf)
+def check_ref(bamf, ref_to_fai_dict, samtools_path):
+    bam_header = get_bam_header(bamf, samtools_path)
     bamSeqLenD = extract_seq_info(bam_header)
     bestref = None
     bestrefhits = 0
