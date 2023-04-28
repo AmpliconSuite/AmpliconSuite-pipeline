@@ -22,7 +22,7 @@ metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
 sample_info_dict = {}  # stores the sample metadata
 
 
-def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False, samtools):
+def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, usingDeprecatedSamtools=False):
     outname = outdir + sname
     logging.info("Output prefix: " + outname)
     logging.info("Checking for ref index")
@@ -786,7 +786,7 @@ if __name__ == '__main__':
         # Run BWA
         fastqs = " ".join(args.fastqs)
         logging.info("Running pipeline on " + fastqs)
-        args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.use_old_samtools, args.samtools_path)
+        args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
 
     if not args.completed_AA_runs:
         bamBaiNoExt = args.sorted_bam[:-3] + "bai"
