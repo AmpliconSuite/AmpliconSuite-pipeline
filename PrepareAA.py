@@ -587,8 +587,8 @@ if __name__ == '__main__':
     # set samtools for use, 20230428
     if not args.samtools_path.endswith("/samtools"):
         if args.samtools_path and not args.samtools_path.endswith("/"):
-            args.samtools_path+="/"
-        samtools_path+="samtools"
+            args.samtools_path += "/"
+        samtools_path += "samtools"
         samtools = samtools_path
 
     # Make and clear necessary directories.
