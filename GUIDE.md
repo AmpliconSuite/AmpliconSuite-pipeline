@@ -77,13 +77,13 @@ Focal amplifications are somewhat aribtrarily defined as regions of the genome w
 
 **Selecting appropriate seed regions from the CNV estimates is critical to properly running AA**.
 
-As default parameters for seed selection, we recommend picking regions which have an estimated CN >= 4.5 and size > 50 kbp. 
-However, CNV estimates can be imperfect in low-complexity or repetitive regions. Thus, we have developed a script called `amplified_intervals.py` to address those issues.
-It filters and merges CNV estimates provided by the user. `amplified_intervals.py` is wrapped into AmpliconSuite-pipeline and will be run by default.
+We recommend picking regions which have an estimated CN >= 4.5 and size > 50 kbp, which do not appear amplified due to being parts of repeat elements, and which are not amplified due to karyotypic abnormality. 
 
-If you are not using AmpliconSuite-pipeline though, we **highly recommend you invoke `amplified_intervals.py` on your CNV calls to create a new file of CNV seeds appropriate for AA.**
-If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these 
-regions, but it should still be avoided to give them to AA as input. 
+PrepareAA.py calls on multiple filters to ensure that CNV seeds are appropriately selected. Attempting to bypass this filtering and implement some alternative or less rigorous strategy is typically detrimental to getting high-quality focal amplification calls.
+
+CNV estimates can be imperfect in low-complexity or repetitive regions or appear consistently high when there is karyotypic abnormality. Thus, we have developed modules called `cnv_prefilter.py` and `amplified_intervals.py` to address those issues. They are used by default.
+
+If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these regions, but it should still be avoided to give them to AA as input.
 
 If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the AmpliconSuite-pipeline/scripts directory (and documented in AmpliconSuite-pipeline's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
 The output of this script can then be fed to `amplified_intervals.py`. Invoking AA via AmpliconSuite-pipeline will yield the best results.

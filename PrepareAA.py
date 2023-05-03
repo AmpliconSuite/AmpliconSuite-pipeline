@@ -22,7 +22,7 @@ metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
 sample_info_dict = {}  # stores the sample metadata
 
 
-def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=False):
+def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, usingDeprecatedSamtools=False):
     outname = outdir + sname
     logging.info("Output prefix: " + outname)
     logging.info("Checking for ref index")
@@ -40,23 +40,23 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, usingDeprecatedSamtools=
 
     print("\nPerforming alignment and sorting")
     if usingDeprecatedSamtools:
-        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref_fasta, fastqs, outname, outname)
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
+            nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
     else:
-        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | samtools view -Shu - | samtools sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref_fasta, fastqs, outname, outname)
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
+            nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
 
     logging.info(cmd)
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
     logging.info("\nPerforming duplicate removal & indexing")
-    cmd_list = ["samtools", "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
-    # cmd_list = ["samtools", "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname), {}.cs.rmdup.bam".format(outname)]
+    cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
+    # cmd_list = [samtools, "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname), {}.cs.rmdup.bam".format(outname)]
 
     logging.info(" ".join(cmd_list))
     call(cmd_list)
     logging.info("\nRunning samtools index")
-    cmd_list = ["samtools", "index", "{}.cs.rmdup.bam".format(outname)]
+    cmd_list = [samtools, "index", "{}.cs.rmdup.bam".format(outname)]
     logging.info(" ".join(cmd_list))
     call(cmd_list)
     logging.info("Removing temp BAM")
@@ -549,6 +549,7 @@ if __name__ == '__main__':
     parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
+    parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.", default='')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
@@ -582,6 +583,12 @@ if __name__ == '__main__':
     sname = args.sample_name
     outdir = args.output_directory
     sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
+    
+    # set samtools for use, 20230428
+    if not args.samtools_path.endswith("/samtools"):
+        if args.samtools_path and not args.samtools_path.endswith("/"):
+            args.samtools_path += "/"
+        args.samtools_path += "samtools"
 
     # Make and clear necessary directories.
     # make the output directory location if it does not exist
@@ -735,7 +742,7 @@ if __name__ == '__main__':
                 if v:
                     faidict[k] = AA_REPO + k + "/" + v + ".fai"
 
-        determined_ref = check_reference.check_ref(args.sorted_bam, faidict)
+        determined_ref = check_reference.check_ref(args.sorted_bam, faidict, args.samtools_path)
         if not determined_ref and not args.ref:
             logging.error("Please make sure AA data repo is populated.")
             sys.exit(1)
@@ -779,7 +786,7 @@ if __name__ == '__main__':
         # Run BWA
         fastqs = " ".join(args.fastqs)
         logging.info("Running pipeline on " + fastqs)
-        args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.use_old_samtools)
+        args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
 
     if not args.completed_AA_runs:
         bamBaiNoExt = args.sorted_bam[:-3] + "bai"
@@ -788,13 +795,13 @@ if __name__ == '__main__':
         craiExists = os.path.isfile(args.sorted_bam + ".crai") or os.path.isfile(cramCraiNoExt)
         if not baiExists and not craiExists:
             logging.info(args.sorted_bam + " index not found, calling samtools index")
-            call(["samtools", "index", args.sorted_bam])
+            call([args.samtools_path, "index", args.sorted_bam])
             logging.info("Finished indexing")
 
         bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
-            prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam)
+            prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam, args.samtools_path)
 
         tb = time.time()
         timing_logfile.write("Alignment, indexing and QC:\t" + "{:.2f}".format(tb - ta) + "\n")
