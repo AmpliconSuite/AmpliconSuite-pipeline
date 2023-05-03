@@ -7,8 +7,8 @@ pyfaidx==0.6.4
 pysam==0.18.0
 cnvkit==0.9.9
 intervaltree==3.1.0
-Flask==1.1.4
+Flask>=2.2.5
 matplotlib==3.1.2
-numpy==1.21.0
+numpy>=1.22.0
 scipy==1.3.3
 networkx==2.4
