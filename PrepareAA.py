@@ -549,7 +549,7 @@ if __name__ == '__main__':
     parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
     parser.add_argument("-v", "--version", action='version',
                         version='PrepareAA version {version} \n'.format(version=__version__))
-    parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, use system default samtools. This could solve libcrypto.so.1.0.0 loading error for samtools installed with conda and implemented in PBS environment.", default='')
+    parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.", default='')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
