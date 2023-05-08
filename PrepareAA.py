@@ -612,8 +612,6 @@ if __name__ == '__main__':
 
     logging.info(commandstring)
 
-
-
     if "/" in args.sample_name:
         logging.error("Sample name -s cannot be a path. Specify output directory with -o.\n")
         sys.exit(1)
@@ -801,6 +799,7 @@ if __name__ == '__main__':
         bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
+            logging.info("samtools path is set to: " + args.samtools_path)
             prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam, args.samtools_path)
 
         tb = time.time()

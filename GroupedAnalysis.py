@@ -182,7 +182,8 @@ if __name__ == '__main__':
                     "Can launch AA, as well as downstream amplicon classification.")
     parser.add_argument("-i", "--input", help="Input file providing the multi-sample information. See README for "
                                               "information on how to format the input file.", required=True)
-    parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
+    parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)",
+                        required=True)
     # parser.add_argument("-s", "--sample_name", help="sample name", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA, CNV calling and concurrent "
                                                  "instances of PAA", type=int, required=True)
