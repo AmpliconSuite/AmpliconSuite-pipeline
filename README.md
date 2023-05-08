@@ -240,13 +240,17 @@ We will soon release an online platform for storing and sharing your AmpliconSui
 
 To package a collection of AA outputs for AmpliconRepository, you will need to do the following steps.
 1. (Recommended) Before running, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file for each sample, and fill out the JSON file. Provide this to `PrepareAA.py` using `--sample_metadata {sample_metadata.json}`
-2. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
-3. If you have not already, create an account at [GenePattern](https://genepattern.ucsd.edu/gp).
-4. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
+2. Run the `make_results_table.py` script from AmpliconClassifier on your AC outputs.
+ * `cd [directory of classification files]`
+ * `$AC_SRC/make_results_table.py -i samples.input --summary_map samples_summary_map.txt --classification_file samples_amplicon_classification_profiles.tsv --ref [hg19/hg38/...] {--sample_metada_file/--sample_metadata_list}`
+   * The .input and \_summary_map.txt files are created by `make_input.sh`.
+3. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
+4. If you have not already, create an account at [GenePattern](https://genepattern.ucsd.edu/gp).
+5. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
  * Go to https://genepattern.ucsd.edu/gp, and sign in.
  * In the top-left search bar, search for `AmpliconSuiteAggregator`
-5. Run the aggregator and download the aggregated `.tar.gz` result file.
-6. Upload to AmpliconRepository (coming soon).
+6. Run the aggregator and download the aggregated `.tar.gz` result file.
+7. Upload to AmpliconRepository (coming soon).
 
 
 ## Citing
