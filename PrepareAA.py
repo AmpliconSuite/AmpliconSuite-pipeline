@@ -610,7 +610,7 @@ if __name__ == '__main__':
         else:
             commandstring += "{} ".format(arg)
 
-    logging.info(commandstring)
+    logging.info(commandstring + "\n")
 
     if "/" in args.sample_name:
         logging.error("Sample name -s cannot be a path. Specify output directory with -o.\n")
@@ -783,7 +783,7 @@ if __name__ == '__main__':
     if args.fastqs:
         # Run BWA
         fastqs = " ".join(args.fastqs)
-        logging.info("Running pipeline on " + fastqs)
+        logging.info("Will perform alignment on " + fastqs)
         args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
 
     if not args.completed_AA_runs:
