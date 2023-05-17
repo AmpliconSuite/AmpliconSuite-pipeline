@@ -15,7 +15,7 @@ import threading
 PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/PrepareAA.py"
 
 
-def generate_individual_seeds(cmd_dict, aa_py, odir):
+def generate_individual_seeds(cmd_dict, aa_py, odir, cnv_bed_dict):
     individual_seed_dct = {}
     print('Generating individual seeds')
     for sname, argstring in cmd_dict.items():
@@ -24,6 +24,11 @@ def generate_individual_seeds(cmd_dict, aa_py, odir):
             print(sname)
             print(cmd + "\n")
             call(cmd, stdout=outfile, stderr=outfile, shell=True)
+
+        # if it was a seeds file, PAA won't modify, so move it into the right location
+        if sname in cnv_bed_dict and cnv_bed_dict[sname].endswith("AA_CNV_SEEDS.bed"):
+            cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
+            call(cmd, shell=True)
 
         # store the name of the path of the seeds file
         individual_seed_dct[sname] = '{}/{}_AA_CNV_SEEDS.bed'.format(odir, sname)
@@ -88,6 +93,7 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir):
             print("More than one normal sample specified. Only the first will be used: " + normalbam[0])
 
     cmd_dict = dict()
+    cnv_bed_dict = dict()
     for tf in tumor_lines:
         curr_argstring = "{} -s {} --bam {}".format(base_argstring, tf[0], tf[1])
         if normalbam:
@@ -97,6 +103,8 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir):
         for k, v in optionals:
             if v:
                 curr_argstring += " {} {}".format(k, v)
+                if k == "--cnv_bed":
+                    cnv_bed_dict[tf[0]] = v
 
         if "--cnv_bed" not in curr_argstring and cnvkit_dir:
             curr_argstring+=" --cnvkit_dir " + cnvkit_dir
@@ -107,7 +115,7 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir):
 
         cmd_dict[tf[0]] = curr_argstring
 
-    return cmd_dict
+    return cmd_dict, cnv_bed_dict
 
 
 def make_base_argstring(arg_dict, stop_at_seeds=False):
@@ -235,7 +243,7 @@ if __name__ == '__main__':
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
     parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
-    parser.add_argument("--skip_normal_AA", help="Skip running AA on the normal", action='store_true')
+    parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
     # parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
 
     # group = parser.add_mutually_exclusive_group(required=True)
@@ -272,15 +280,16 @@ if __name__ == '__main__':
     base_argstring = make_base_argstring(arg_dict, stop_at_seeds=True)
     print("Setting base argstring for Stage 1 as:")
     print(base_argstring + "\n")
-    cmd_dict = create_CNV_cmds(tumor_lines, normal_lines, base_argstring, args.cnvkit_dir)
-    individual_seed_dct = generate_individual_seeds(cmd_dict, args.aa_python_interpreter, args.output_directory)
+    cmd_dict, cnv_bed_dict = create_CNV_cmds(tumor_lines, normal_lines, base_argstring, args.cnvkit_dir)
+    individual_seed_dct = generate_individual_seeds(cmd_dict, args.aa_python_interpreter, args.output_directory,
+                                                    cnv_bed_dict)
 
     # Stage 2: merge seeds (bedtools - gotta sort and merge), and get new args
     grouped_seeds = group_seeds(individual_seed_dct, args.output_directory)
 
     # Stage 3: launch each AA job in parallel
     if not args.no_AA:
-        if args.skip_normal_AA:
+        if args.skip_AA_on_normal_bam:
             normal_lines = []
 
         all_lines = normal_lines + tumor_lines
