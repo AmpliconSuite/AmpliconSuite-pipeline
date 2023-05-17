@@ -6,7 +6,7 @@ Performs preliminary steps (alignment, seed detection, & seed filtering) require
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
 
-**Current version: 0.1477.4**
+**Current version: 0.1477.5**
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
@@ -57,17 +57,17 @@ A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https
     * If you are not able to place the license in `$HOME/mosek` you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
    
 3. Download AA data repositories and set environment variable AA_DATA_REPO:
-    * Download [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to download data repos with (`_indexed`) or
-    without the bwa reference index included.
-    * Set enviroment variable AA_DATA_REPO to point to the data_repo directory:
-        ```bash
-        mkdir data_repo && cd data_repo
-        wget [url of reference_build]
-        tar zxf [reference_build].tar.gz
-        echo export AA_DATA_REPO=$PWD/ >> ~/.bashrc
-        touch coverage.stats && chmod a+rw coverage.stats
-        source ~/.bashrc
-        ```
+   1. Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to locate data repo(s) of your choice and make note of the URL you want.
+   2. `wget`and set a bash environment variable AA_DATA_REPO to point to the data_repo directory:
+       ```bash
+       mkdir data_repo && cd data_repo
+       wget [url of reference_build]
+       tar zxf [reference_build].tar.gz
+       # command below exports a bash variable which is the parent directory of the individual data repos
+       echo export AA_DATA_REPO=$PWD/ >> ~/.bashrc 
+       touch coverage.stats && chmod a+rw coverage.stats
+       source ~/.bashrc
+       ```
 #### Obtain AmpliconSuite-pipeline image and execution script:
 1. Clone GitHub repository to access the runscript
     * `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
