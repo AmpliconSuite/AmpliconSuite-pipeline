@@ -15,7 +15,7 @@ import time
 import check_reference
 import cnv_prefilter
 
-__version__ = "0.1477.5"
+__version__ = "0.1537.0"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -598,7 +598,7 @@ if __name__ == '__main__':
     # initiate logging
     paa_logfile = args.output_directory + sname + '.log'
     logging.basicConfig(filename=paa_logfile, format='[%(name)s:%(levelname)s]\t%(message)s',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler())
     logging.info("Launched on " + launchtime)
     logging.info("AmpiconSuite-pipeline version " + __version__ + "\n")
@@ -799,7 +799,7 @@ if __name__ == '__main__':
         bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
-            logging.info("samtools path is set to: " + args.samtools_path)
+            logging.debug("samtools path is set to: " + args.samtools_path)
             prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam, args.samtools_path)
 
         tb = time.time()

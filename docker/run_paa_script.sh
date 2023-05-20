@@ -5,7 +5,7 @@ AA_SRC=/home/programs/AmpliconArchitect-master/src
 export AA_SRC
 AC_SRC=/home/programs/AmpliconClassifier-main
 export AC_SRC
-MOSEKLM_LICENSE_FILE=/home/programs/mosek/8/licenses
+MOSEKLM_LICENSE_FILE=/home/mosek/
 export MOSEKLM_LICENSE_FILE
 NCM_HOME=/home/programs/NGSCheckMate-master/
 export NCM_HOME
@@ -42,7 +42,7 @@ echo -e "\n"
 #echo -e "\n"
 #echo -e "\n"
 #ls -alrt
-tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
+tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.bai" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
 mv /home/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
 
 echo "Finished Running"
