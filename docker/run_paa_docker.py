@@ -77,7 +77,7 @@ parser.add_argument("--align_only", help="Only perform the alignment stage (do n
                     action='store_true')
 parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
                     " be: chr start end name cngain", default="")
-parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script. Alternatively, instead of setting this flag"
+parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script instead of as root. Alternatively, instead of setting this flag"
                     " one can also rebuild the docker image using docker build . -t jluebeck/prepareaa:latest --build-arg set_uid=$UID --build-arg set_gid=$(id -g) ",
                     action='store_true')
 parser.add_argument(
