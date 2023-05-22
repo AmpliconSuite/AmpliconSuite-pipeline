@@ -77,7 +77,7 @@ parser.add_argument("--align_only", help="Only perform the alignment stage (do n
                     action='store_true')
 parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
                     " be: chr start end name cngain", default="")
-parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script. Alternatively, instead of setting this flag"
+parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script instead of as root. Alternatively, instead of setting this flag"
                     " one can also rebuild the docker image using docker build . -t jluebeck/prepareaa:latest --build-arg set_uid=$UID --build-arg set_gid=$(id -g) ",
                     action='store_true')
 parser.add_argument(
@@ -163,8 +163,7 @@ cnvdir = os.path.realpath(cnvdir)
 # assemble an argstring
 argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
     str(args.cnsize_min) + " --downsample " + str(args.downsample) + " -s " + args.sample_name + \
-    " -o /home/output" + " --AA_extendmode " + args.AA_extendmode + " --AA_runmode " + args.AA_runmode + \
-    " --AA_insert_sdevs " + str(args.AA_insert_sdevs)
+    " -o /home/output" + " --AA_extendmode " + args.AA_extendmode + " --AA_runmode " + args.AA_runmode
 
 if args.ref:
     argstring += " --ref " + args.ref
@@ -286,13 +285,13 @@ with open("paa_docker.sh", 'w') as outfile:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
             " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
             ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-            MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+            MOSEKLM_LICENSE_FILE + ":/home/mosek/ jluebeck/prepareaa bash /home/run_paa_script.sh"
 
     else:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
             " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
             ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-            MOSEKLM_LICENSE_FILE + ":/home/programs/mosek/8/licenses jluebeck/prepareaa bash /home/run_paa_script.sh"
+            MOSEKLM_LICENSE_FILE + ":/home/mosek jluebeck/prepareaa bash /home/run_paa_script.sh"
 
 
     print("\n" + dockerstring + "\n")
