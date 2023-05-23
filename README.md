@@ -6,7 +6,7 @@ Performs preliminary steps (alignment, seed detection, & seed filtering) require
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
 
-**Current version: 0.1537.0**
+**Current version: 0.1537.1**
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 

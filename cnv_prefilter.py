@@ -159,13 +159,22 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
         init_cns = arm2cns[a]
         med_cn = compute_cn_median(init_cns, arm2lens[a])
         for x in init_cns:
+            # ignore seeds over 30 Mbp
+            if x[2] - x[1] > 30000000:
+                continue
+
             ccg = cngain
             continuous_high_hits = continuous_high_region_ivald[x[0]][x[1]:x[2]]
             if continuous_high_hits:
+                long_seed_region_penalty_mult = 1.
                 for y in continuous_high_hits:
-                    if y.end - y.begin > 10000000:
-                        ccg *= 1.5
-                        break
+                    if y.end - y.begin > 20000000:
+                        long_seed_region_penalty_mult = max(3.0, long_seed_region_penalty_mult)
+
+                    elif y.end - y.begin > 10000000:
+                        long_seed_region_penalty_mult = max(1.5, long_seed_region_penalty_mult)
+
+                ccg*=long_seed_region_penalty_mult
 
             if x[3] > med_cn + ccg - 2:
                 cn_filt_entries.append(x)
