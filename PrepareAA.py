@@ -109,8 +109,12 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     metadata_dict["cnvkit_version"] = cnvkit_version
 
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
+    if normal and args.ref == "GRCh38_viral":
+        logging.warning("\nCNVkit does not properly support matched tumor-normal with viral genomes. Ignoring matched-"
+                        "normal and running in tumor-only mode.")
+        
     logging.info("\nRunning CNVKit batch")
-    if normal:
+    if normal and not args.ref == "GRCh38_viral":
         # create a version of the stripped reference
         scripts_dir = os.path.dirname(os.path.abspath(__file__)) + "/scripts/"
         strip_cmd = "python {}reduce_fasta.py -r {} -c {} -o {}".format(scripts_dir, ref_fasta, ref_genome_size_file, outdir)
@@ -118,7 +122,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
         base = os.path.basename(ref_fasta) # args.ref is the name, ref is the fasta
         stripRefG = outdir + os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
         logging.debug("Stripped reference: " + stripRefG)
-
         cmd = "{} {} batch {} -m wgs --fasta {} -p {} -d {} --normal {}".format(PY3_PATH, ckpy_path, bamfile, stripRefG,
                                                                                 nthreads, outdir, normal)
     else:
