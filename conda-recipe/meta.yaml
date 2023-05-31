@@ -19,7 +19,6 @@ requirements:
         - python
         - setuptools
         - pip
-        - numpy>=1.17
 
     run:
         - python
@@ -28,7 +27,6 @@ requirements:
         - future>=0.18.3
         - intervaltree>=3.1.0
         - matplotlib>=3.5.1
-#        - mosek>=9.0.86
         - numpy>=1.22.4
         - pysam
         - scipy>=1.7.3
