@@ -1,0 +1,44 @@
+package:
+    name: ampliconsuite
+    version: 0.1546.0
+
+source:
+#    git_url: https://github.com/AmpliconSuite/AmpliconSuite-pipeline
+    path: ../
+
+build:
+    number: 0
+
+    script_env:
+        - AA_SRC="$CONDA_PREFIX/AmpliconArchitect/src/"
+        - AC_SRC="$CONDA_PREFIX/AmpliconSuite/"
+        - AA_DATA_REPO=$CONDA_PREFIX/data_repo/
+
+requirements:
+    build:
+        - python
+        - setuptools
+        - pip
+        - numpy>=1.17
+
+    run:
+        - python
+        - cnvkit
+        - Flask
+        - future>=0.18.3
+        - intervaltree>=3.1.0
+        - matplotlib>=3.5.1
+#        - mosek>=9.0.86
+        - numpy>=1.22.4
+        - pysam
+        - scipy>=1.7.3
+
+test:
+    commands:
+    - PrepareAA.py -v
+    - AmpliconSuite-pipeline.py -h
+
+about:
+    home: https://github.com/AmpliconSuite
+    license: BSD 2-Clause License
+    summary: An end-to-end wrapper for focal amplification analysis from whole-genome sequencing using AmpliconArchitect and associated tools.

@@ -1,3 +1,10 @@
+# Related repositories that might be nested inside this dir
+AmpliconArchitect/
+AmpliconClassifier/
+CycleViz/
+data_repo/
+
+
 #Pycharm IDE files
 .idea/*
 
