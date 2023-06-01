@@ -6,7 +6,7 @@ Performs preliminary steps (alignment, seed detection, & seed filtering) require
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
 
-**Current version: 0.1537.2**
+**Current version: 0.1546.0**
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
@@ -30,7 +30,10 @@ This module was constructed in collaboration with members of the GenePattern tea
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 
-### Option B: Singularity & Docker images 
+### Option B: `conda install ampliconsuite`
+
+
+### Option C: Singularity & Docker images 
 Containerized versions of AmpliconSuite-pipeline are available for Singularity and Docker.
 
 A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVkit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
@@ -82,7 +85,7 @@ An example command might look like:
 
 `AmpliconSuite-pipeline/singularity/run_paa_singularity.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
-### Option C: Standalone installation
+### Option D: Standalone installation
 1. Clone the AmpliconSuite-pipeline git rep:
 
 `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`

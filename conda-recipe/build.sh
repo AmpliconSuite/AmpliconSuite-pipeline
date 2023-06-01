@@ -22,5 +22,23 @@ mkdir -p data_repo
 touch data_repo/coverage.stats
 chmod a+rw data_repo/coverage.stats
 
+if [ -z "$AA_DATA_REPO" ]; then
+  echo export AA_DATA_REPO=$PWD/data_repo >> ~/.bashrc
+  export AA_DATA_REPO=$PWD/data_repo
+fi
+
+if [ -z "$AA_SRC" ]; then
+  echo export AA_SRC=$PWD/AmpliconArchitect >> ~/.bashrc
+  export AA_SRC=$PWD/AmpliconArchitect
+fi
+
+if [ -z "$AC_SRC" ]; then
+  echo export AC_SRC=$PWD/AmpliconClassifier >> ~/.bashrc
+  export AC_SRC=$PWD/AmpliconClassifier
+fi
+
+# install mosek with pip since it is on a custom conda channel
+pip install --no-deps mosek
+
 # do the rest of the build script
 $PYTHON setup.py install --single-version-externally-managed --record=record.txt # Python command to install the script.

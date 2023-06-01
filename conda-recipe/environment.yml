@@ -1,5 +1,0 @@
-name: ampliconsuite
-channels:
-  - MOSEK
-dependencies:
-  - mosek
