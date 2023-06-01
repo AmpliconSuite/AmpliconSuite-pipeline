@@ -8,11 +8,7 @@ source:
 
 build:
     number: 0
-
-    script_env:
-        - AA_SRC="$CONDA_PREFIX/AmpliconArchitect/src/"
-        - AC_SRC="$CONDA_PREFIX/AmpliconSuite/"
-        - AA_DATA_REPO=$CONDA_PREFIX/data_repo/
+    skip: False
 
 requirements:
     build:

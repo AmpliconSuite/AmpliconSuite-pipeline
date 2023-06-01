@@ -38,7 +38,7 @@ if [ -z "$AC_SRC" ]; then
 fi
 
 # install mosek with pip since it is on a custom conda channel
-pip install --no-deps mosek
+$PYTHON -m pip install --no-deps mosek
 
 # do the rest of the build script
 $PYTHON setup.py install --single-version-externally-managed --record=record.txt # Python command to install the script.
