@@ -12,8 +12,7 @@ from subprocess import *
 import sys
 import time
 
-import check_reference
-import cnv_prefilter
+from paalib import check_reference, cnv_prefilter
 
 __version__ = "0.1546.0"
 
@@ -155,7 +154,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     cmd = "gzip -f " + cnrFile
     logging.info(cmd)
     call(cmd, shell=True)
-    if normal:
+    if normal and not args.ref == "GRCh38_viral":
         cmd = "rm " + stripRefG + " " + stripRefG + ".fai"
         logging.info(cmd)
         call(cmd, shell=True)
@@ -769,7 +768,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if not args.sample_metadata:
-        args.sample_metadata = os.path.dirname(os.path.realpath(__file__)) + "/sample_metadata_skeleton.json"
+        args.sample_metadata = os.path.realpath(os.path.dirname(check_reference.__file__)) + "/sample_metadata_skeleton.json"
 
     with open(args.sample_metadata) as input_json:
         sample_info_dict = json.load(input_json)

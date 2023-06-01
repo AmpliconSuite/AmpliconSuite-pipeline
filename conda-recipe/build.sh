@@ -10,11 +10,11 @@ fi
 
 # pull source code for AC
 TARGET="AmpliconClassifier"
-TARGET_VERSION="v0.5.1"
+#TARGET_VERSION="v0.5.1"
 if [ -d "TARGET" ]; then
   echo "Directory '${PWD}/${TARGET}' already exists."
 else
-  git clone https://github.com/jluebeck/$TARGET.git --branch $TARGET_VERSION
+  git clone https://github.com/jluebeck/$TARGET.git
 fi
 
 # make a directory for the AA data repo and create an empty file for coverage summaries to be stored when running AA
@@ -22,23 +22,16 @@ mkdir -p data_repo
 touch data_repo/coverage.stats
 chmod a+rw data_repo/coverage.stats
 
-if [ -z "$AA_DATA_REPO" ]; then
-  echo export AA_DATA_REPO=$PWD/data_repo >> ~/.bashrc
-  export AA_DATA_REPO=$PWD/data_repo
-fi
+outdir=$PREFIX/share/$PKG_NAME-$PKG_VERSION-$PKG_BUILDNUM
+mkdir -p $outdir
+mkdir -p $PREFIX/bin
 
-if [ -z "$AA_SRC" ]; then
-  echo export AA_SRC=$PWD/AmpliconArchitect >> ~/.bashrc
-  export AA_SRC=$PWD/AmpliconArchitect
-fi
+#cp -r * $outdir
 
-if [ -z "$AC_SRC" ]; then
-  echo export AC_SRC=$PWD/AmpliconClassifier >> ~/.bashrc
-  export AC_SRC=$PWD/AmpliconClassifier
-fi
-
-# install mosek with pip since it is on a custom conda channel
-$PYTHON -m pip install --no-deps mosek
+# copy driver scripts
+cp PrepareAA.py ${PREFIX}/bin/PrepareAA.py
+cp AmpliconSuite-pipeline.py ${PREFIX}/bin/AmpliconSuite-pipeline.py
+cp GroupedAnalysisAmpSuite.py ${PREFIX}/bin/GroupedAnalysisAmpSuite.py
 
 # do the rest of the build script
-$PYTHON setup.py install --single-version-externally-managed --record=record.txt # Python command to install the script.
+ $PYTHON setup.py install --single-version-externally-managed --record=record.txt # Python command to install the script.
