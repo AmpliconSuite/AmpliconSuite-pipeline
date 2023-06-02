@@ -285,12 +285,13 @@ with open("paa_singularity.sh", 'w') as outfile:
         sys.exit(1)
 
     # write exported envs to env-file
-    with open("paa_envs.txt", 'w') as env_file:
+    env_outname = "paa_envs_" + args.sample_name + ".txt"
+    with open("env_outname", 'w') as env_file:
         env_file.write('argstring="' + argstring + '"\n')
         env_file.write("SAMPLE_NAME=" + args.sample_name)
 
     # assemble a singularity command string
-    sing_string = "singularity exec --no-home --cleanenv --env-file paa_envs.txt --bind $AA_DATA_REPO:" \
+    sing_string = "singularity exec --no-home --cleanenv --env-file " + env_outname + " --bind $AA_DATA_REPO:" \
                   "/home/data_repo --bind " + bamdir + ":/home/bam_dir --bind " + norm_bamdir + ":/home/norm_bam_dir " \
                   "--bind " + cnvdir + ":/home/bed_dir --bind " + args.output_directory + ":/home/output --bind " \
                   "$HOME/mosek:/home/mosek/ " + args.sif + " bash /home/run_paa_script.sh "
@@ -303,6 +304,7 @@ outfile.close()
 call("chmod +x ./paa_singularity.sh", shell=True)
 call("./paa_singularity.sh", shell=True)
 call("rm paa_singularity.sh", shell=True)
+call("rm -f " + env_outname, shell=True)
 if no_data_repo:
     cmd = "rm -rf " + data_repo_d
     print("Cleaning up data repo")

@@ -155,7 +155,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     cmd = "gzip -f " + cnrFile
     logging.info(cmd)
     call(cmd, shell=True)
-    if normal:
+    if normal and not args.ref == "GRCh38_viral":
         cmd = "rm " + stripRefG + " " + stripRefG + ".fai"
         logging.info(cmd)
         call(cmd, shell=True)
