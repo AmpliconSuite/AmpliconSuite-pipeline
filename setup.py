@@ -3,5 +3,8 @@
  associated tools."""
 
 from setuptools import find_packages, setup
-setup(packages=find_packages(exclude=['images', 'docker', 'data_repo', 'singularity', 'AmpliconArchitect',
-                                      'AmpliconClassifier']))
+setup(
+    packages=find_packages(exclude=['images', 'docker', 'singularity']),
+    include_package_data=True,
+    package_data={'': ['*.json', '*.sh']},
+)

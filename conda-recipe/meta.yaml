@@ -29,8 +29,11 @@ requirements:
 
 test:
     commands:
-    - PrepareAA.py -v
-    - AmpliconSuite-pipeline.py -h
+    - AmpliconSuite-pipeline.py -v
+    imports:
+    - paalib
+    - ampliconarchitectlib
+    - ampliconclassifierlib
 
 about:
     home: https://github.com/AmpliconSuite

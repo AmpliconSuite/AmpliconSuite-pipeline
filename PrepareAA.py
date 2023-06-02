@@ -652,8 +652,26 @@ if __name__ == '__main__':
         AA_SRC = os.environ['AA_SRC']
 
     except KeyError:
-        logging.error("AA_SRC bash variable not found. AmpliconArchitect may not be properly installed.\n")
-        sys.exit(1)
+        try:
+            import ampliconarchitectlib
+            AA_SRC = os.path.realpath(os.path.dirname(ampliconarchitectlib.__file__))
+
+        except ModuleNotFoundError:
+            logging.error("AA_SRC bash variable or library files not found. AmpliconArchitect may not be properly installed.\n")
+            sys.exit(1)
+
+    try:
+        AC_SRC = os.environ['AC_SRC']
+
+    except KeyError:
+        try:
+            import ampliconclassifierlib
+            AC_SRC = os.path.realpath(os.path.dirname(ampliconclassifierlib.__file__))
+
+        except ModuleNotFoundError:
+            logging.error(
+                "AC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
+            sys.exit(1)
 
     if (args.fastqs or args.completed_AA_runs) and not args.ref:
         logging.error("Must specify --ref when providing unaligned fastq files.\n")
