@@ -60,7 +60,7 @@ if ! ${finalize_only}; then
   fi
 
   # install deps
-  python3 -m pip install cnvkit Flask future intervaltree "matplotlib>=3.5.1" mosek "numpy>=1.22.4" pysam "scipy>=1.7.3"
+  python3 -m pip install cnvkit Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
 
 
   if [ -z "$AA_SRC" ]; then
