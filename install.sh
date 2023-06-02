@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Default value for args
+finalize_only=false
+data_repo_loc=$HOME
+
+# Help function
+function show_help {
+  echo "Usage: script.sh [--finalize_only] --data_repo_loc <data_repo_loc>"
+  echo "Options:"
+  echo "  --finalize_only          Enable finalize only"
+  echo "  --data_repo_loc <path>   Set data repository location (required)"
+}
+
+# Parse command line options
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --finalize_only)
+      finalize_only=true
+      shift
+      ;;
+    --data_repo_loc)
+      if [[ -n $2 ]]; then
+        data_repo_loc=$2
+        shift 2
+      else
+        echo "Error: Missing argument for --data_repo_loc" >&2
+        show_help
+        exit 1
+      fi
+      ;;
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    *)
+      echo "Error: Unknown option: $1" >&2
+      show_help
+      exit 1
+      ;;
+  esac
+done
+
+# install the src code and set bash vars if needed
+if ! ${finalize_only}; then
+  # pull source code for AA
+  TARGET="AmpliconArchitect"
+  if [ -d "TARGET" ]; then
+    echo "Directory '${PWD}/${TARGET}' already exists."
+  else
+    git clone https://github.com/jluebeck/$TARGET.git
+  fi
+
+  # pull source code for AC
+  TARGET="AmpliconClassifier"
+  if [ -d "TARGET" ]; then
+    echo "Directory '${PWD}/${TARGET}' already exists."
+  else
+    git clone https://github.com/jluebeck/$TARGET.git
+  fi
+
+  # install deps
+  python3 -m pip install cnvkit Flask future intervaltree "matplotlib>=3.5.1" mosek "numpy>=1.22.4" pysam "scipy>=1.7.3"
+
+
+  if [ -z "$AA_SRC" ]; then
+    echo export AA_SRC=$PWD/AmpliconArchitect >> ~/.bashrc
+    export AA_SRC=$PWD/AmpliconArchitect
+  else
+    echo "WARNING: AA_SRC bash variable is already set! If you do not want to continue using your old AA installation, remove AA_SRC from your ~/.bashrc file and run the installer again!" >&2
+    echo "Proceeding with AA `python3 $AA_SRC/AmpliconArchitect.py -v`"
+  fi
+
+  if [ -z "$AC_SRC" ]; then
+    echo export AC_SRC=$PWD/AmpliconClassifier >> ~/.bashrc
+    export AC_SRC=$PWD/AmpliconClassifier
+  else
+    echo "WARNING: AC_SRC bash variable is already set! If you do not want to continue using your old AC installation, remove AC_SRC from your ~/.bashrc file and run the installer again!" >&2
+    echo "Proceeding with AC `python3 $AC_SRC/amplicon_classifier.py -v`"
+  fi
+
+fi
+
+if [ -z "$AA_DATA_REPO" ]; then
+  data_repo_path=${data_repo_loc}/data_repo
+  echo "Creating new data repo in ${data_repo_path}"
+  # make a directory for the AA data repo and create an empty file for coverage summaries to be stored when running AA
+  mkdir -p ${data_repo_path}
+  touch ${data_repo_path}/coverage.stats
+  chmod a+rw ${data_repo_path}/coverage.stats
+  echo export AA_DATA_REPO=${data_repo_path} >> ~/.bashrc
+  export AA_DATA_REPO=${data_repo_path}
+
+else
+  echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}"
+
+fi
+
+# this is where the license will go
+mkdir -p ${HOME}/mosek/
+
+if ! test -f "${HOME}/mosek/mosek.lic" && ! test -f "${MOSEKLM_LICENSE_FILE}/mosek.lic"; then
+  echo "Now obtain license file mosek.lic (https://www.mosek.com/products/academic-licenses/). Move the file to ${HOME}/mosek after downloading. The license is free for academic use."
+else
+  echo "Mosek license already in place"
+
+fi
+
+if ! "${finalize_only}"; then
+  echo "Module versions are..."
+  echo "AmpliconSuite-pipeline: `python3 AmpliconSuite-pipeline.py -v`"
+  echo "AA: `python3 $AA_SRC/AmpliconArchitect.py -v`"
+  echo "AC: `python3 $AC_SRC/amplicon_classifier.py -v`"
+fi
+
+echo "Finished configuring"
