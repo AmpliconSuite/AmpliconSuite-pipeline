@@ -22,60 +22,90 @@ We recommend browsing our [**detailed guide**](https://github.com/jluebeck/Prepa
 ### Option A: Installation-free methods
 The most convenient option, however it is not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
 
-#### 1. GenePattern Web Interface:
-AmpliconSuite-pipeline can be run using the web interface at [GenePatter Web Interface](https://genepattern.ucsd.edu/gp). Simply search the module list for "AmpliconSuite." 
+#### GenePattern Web Interface:
+AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://genepattern.ucsd.edu/gp). Simply search the module list for "AmpliconSuite." 
 This module was constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). 
 
-#### 2. AmpliconSuite-pipeline on Nextflow:
+#### Nextflow:
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
+### Option B: Install with Conda (coming soon)
+```bash 
+conda install -c bioconda -c mosek ampliconsuite
+wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
+bash install.sh --finalize # this will confirm the data repo path and mosek license directory.
+```
+**Then proceed to Step 2 of Option C (below) ...**
 
-### Option B: `conda install ampliconsuite`
+### Option C: Standalone installation using the installer script
+Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python3`.
+1. Pull source code and run install script (Can skip if installed via Conda):
+    ```bash
+    git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
+    cd AmpliconSuite-pipeline
+    # consider first doing ./install -h to see options.
+    # the install.sh script will install AmpliconArchitect, AmpliconClassifier and all dependencies. 
+    ./install.sh  # note that by default this places the data repo directory in your $HOME. 
+    ```
+
+2. Populate the AA data repo with required annotations for the reference builds of interest. **Start here if you installed via Conda**.
+    - See the list of available AA annotations [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Copy the URL of the one you need.
+    ```bash
+    cd $AA_DATA_REPO
+    # go to https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/
+    # copy the url of the data repo you need.
+    # "_indexed" indicates the bwa index is included - only useful if starting from .fastqs.
+    wget [url of reference_build]
+    tar -xzf [reference_build].tar.gz
+    rm [reference_build.tar.gz]
+    ```
+
+3. Lastly, obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it. 
 
 
-### Option C: Singularity & Docker images 
+### Option D: Singularity & Docker images 
 Containerized versions of AmpliconSuite-pipeline are available for Singularity and Docker.
 
-A dockerized version of AmpliconSuite-pipeline is [available on dockerhub](https://hub.docker.com/repository/docker/jluebeck/prepareaa) or can be built using the Dockerfile in the `docker/` folder. It will install bwa, CNVkit and AmpliconArchitect inside the docker image. Running this docker image can be done as follows:
+1. Obtain the AmpliconSuite-pipeline image from the options below:
+   - **Singularity**:
+     * Singularity installation: https://docs.sylabs.io/guides/3.0/user-guide/installation.html
+     * Must have Singularity version 3.6 or higher.
+     * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
 
-
-1. Install the container
-  - Option A) Singularity:
-    * Singularity installation: https://docs.sylabs.io/guides/3.0/user-guide/installation.html
-    * Must have Singularity version 3.6 or higher.
-    * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
+   - **Docker**:
+     * Docker installation: https://docs.docker.com/install/
+     * Pull the docker image: `docker pull jluebeck/prepareaa`
     
-
-  - Option B) Docker:
-    * Docker installation: https://docs.docker.com/install/
-    * Pull the docker image: `docker pull jluebeck/prepareaa`
-    
-    * (Optional): Add user to the docker group (log out and in after performing):
-        `sudo usermod -a -G docker $USER`
+     * (Optional): Add user to the docker group:
+         `sudo usermod -a -G docker $USER` (log out and back in after performing)
    
-2. License for Mosek optimization tool:
-    * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/` or `https://www.mosek.com/try/`). The license is free for academic use:
-    * `mkdir $HOME/mosek`
-    * After registering for a Mosek license, download license file `mosek.lic` and place it in the directory `$HOME/mosek/`.
-    * If you are not able to place the license in `$HOME/mosek` you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
-   
-3. Download AA data repositories and set environment variable AA_DATA_REPO:
-   1. Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to locate data repo(s) of your choice and make note of the URL you want.
-   2. `wget`and set a bash environment variable AA_DATA_REPO to point to the data_repo directory:
-       ```bash
-       mkdir data_repo && cd data_repo
-       wget [url of reference_build]
-       tar zxf [reference_build].tar.gz
-       # command below exports a bash variable which is the parent directory of the individual data repos
-       echo export AA_DATA_REPO=$PWD/ >> ~/.bashrc 
-       touch coverage.stats && chmod a+rw coverage.stats
-       source ~/.bashrc
-       ```
-#### Obtain AmpliconSuite-pipeline image and execution script:
-1. Clone GitHub repository to access the runscript
-    * `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
+2. Obtain the execution script and configure the data repo location
+    ```bash
+    git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
+    cd AmpliconSuite-pipeline
+   # Can use ./install.sh -h to see help before installing
+    ./install.sh --finalize
+    ```
 
-2. Invoke the runscript to launch the container. These scripts use most of the same arguments are the main driver script `PrepareAA.py`
+3. License for Mosek optimization tool:
+    * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/`). The license is free for academic use.
+    * Place the file in `$HOME/mosek/` (i.e, the `mosek/` folder that now exists in your home directory).
+    * If you are not able to place the license in the default location, you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
+
+   
+4. Download AA data repositories and set environment variable AA_DATA_REPO:
+   - Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to locate data repo(s) of your choice and make note of the URL you want.
+      ```bash
+      cd $AA_DATA_REPO
+      wget [url of reference_build]
+      tar zxf [reference_build].tar.gz
+      rm [reference_build].tar.gz
+      ```
+   - If you do not do this process the container will attempt to download the files itself.
+
+#### Launching the execution script for the container:
+
+These scripts use most of the same arguments are the main driver script `AmpliconSuite-pipeline.py`
    - Option A) Singularity: `AmpliconSuite-pipeline/singularity/run_paa_singularity.py`
    - Option B) Docker: `AmpliconSuite-pipeline/docker/run_paa_docker.py`.
      * You can opt to run the docker image as your current user (instead of root) by setting `--run_as_user`. 
@@ -85,39 +115,16 @@ An example command might look like:
 
 `AmpliconSuite-pipeline/singularity/run_paa_singularity.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
-### Option D: Standalone installation
-1. Clone the AmpliconSuite-pipeline git rep:
+### Option E: Standalone installation without automated installation
+Try this if you are going to use `python2`. See the documentation folder for instructions.
 
-`git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
-2. Install other prerequisites from the section below.
-
-## Prerequisites for standalone installation:
-AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVkit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
-
-Unless you are using a containerized version, and depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
-- (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
-- (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
-  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
-- (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
-- (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
-- (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
-- (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
-- Scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Those packages can be installed with `pip`, `conda` or similar.
-
-AmpliconSuite-pipeline assumes both `samtools` and `bwa` executables are on the system path and can be directly invoked from bash without pathing to the executables. AmpliconSuite-pipeline will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
-
-AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 7. AmpliconSuite-pipeline's optional dependencies related to CNV calling will not work on CentOS 6.
-
-**Note on using CNVkit**: We currently recommend using CNVkit for identification of AA seeds. CNVkit requires
-`python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
-
-## Usage
-The main driver script for the standalone pipeline is called `PrepareAA.py`. 
+## Running AmpliconSuite-pipeline
+The main driver script for the standalone pipeline is called `AmpliconSuite-pipeline.py`. 
 
 #### Example 1: Starting from .fastq files, using CNVkit for seed generation.
 
->`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
 
 
 `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
@@ -125,7 +132,7 @@ The main driver script for the standalone pipeline is called `PrepareAA.py`.
 
 #### Example 2: Starting from .bam, using CNVkit for seed generation
 
->`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]`
 
 `--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
 
@@ -133,7 +140,7 @@ The main driver script for the standalone pipeline is called `PrepareAA.py`.
 * If using your own CNV calls:
 
 
->`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed --bam sample.bam [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed --bam sample.bam [--run_AA] [--run_AC]`
 
 Where the CNV bed file reports the following four fields:
 
@@ -154,13 +161,13 @@ Please see the `GroupedAnalysis.py` [example below](#--grouped-analysis-of-relat
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
 
->`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]`
 
 #### Example 6: Starting from completed AA results
 If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
 
 
->`/path/to/AmpliconSuite-pipeline/PrepareAA.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata run_metadata_file.json -t 1 --ref hg38`
+>`AmpliconSuite-pipeline.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata run_metadata_file.json -t 1 --ref hg38`
 
 Note that when this mode is used all AA results must have been generated with respect to the same reference genome version.
 

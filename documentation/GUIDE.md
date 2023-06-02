@@ -29,7 +29,7 @@ You may also want to install the additional programs for classifying outputs ([A
 #
 
 ### Preparing the inputs
-![AA workflow](./images/AA_example.png)
+![AA workflow](../images/AA_example.png)
 
 AA takes as input a WGS BAM file (paired-end WGS), and a user-created BED file of seed regions as inputs. Here we will discuss some of 
 the best practices for generating these files.

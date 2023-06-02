@@ -8,8 +8,8 @@ data_repo_loc=$HOME
 function show_help {
   echo "Usage: script.sh [--finalize_only] --data_repo_loc <data_repo_loc>"
   echo "Options:"
-  echo "  --finalize_only          Enable finalize only"
-  echo "  --data_repo_loc <path>   Set data repository location (required)"
+  echo "  --finalize_only          Do not install AA or AC. Only finalize data repo and mosek license location"
+  echo "  --data_repo_loc <path>   Custom set data repository location (defaults to creating a directory in \$HOME}"
 }
 
 # Parse command line options
@@ -40,6 +40,20 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if ! command -v samtools &> /dev/null; then
+    echo "error! samtools is not installed or not on the system path!"
+    exit 1
+else
+    echo "samtools is installed and on the system path"
+fi
+
+if ! command -v bwa &> /dev/null; then
+    echo "error! bwa is not installed or not on the system path!"
+    exit 1
+else
+    echo "bwa is installed and on the system path"
+fi
 
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
@@ -92,7 +106,7 @@ if [ -z "$AA_DATA_REPO" ]; then
   export AA_DATA_REPO=${data_repo_path}
 
 else
-  echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}"
+  echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}. To change this remove AA_DATA_REPO from your ~/.bashrc file and run the installer again!" >&2
 
 fi
 
