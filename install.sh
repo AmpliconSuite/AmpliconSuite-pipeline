@@ -106,6 +106,9 @@ else
 
 fi
 
+echo "reloading ~/.bashrc"
+source ~/.bashrc
+
 if ! "${finalize_only}"; then
   echo "Module versions are..."
   echo "AmpliconSuite-pipeline: `python3 AmpliconSuite-pipeline.py -v`"
