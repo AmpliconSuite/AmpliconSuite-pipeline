@@ -31,6 +31,8 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 
 ### Option B: Install with Conda (coming soon)
 ```bash 
+conda create -n ampsuite # optional but recommended
+conda activate ampsuite
 conda install -c bioconda -c mosek ampliconsuite
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
 bash install.sh --finalize # this will confirm the data repo path and mosek license directory.
@@ -44,12 +46,12 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
     cd AmpliconSuite-pipeline
     # consider first doing ./install -h to see options.
-    # the install.sh script will install AmpliconArchitect, AmpliconClassifier and all dependencies. 
+    # the install.sh script will install AmpliconArchitect, AmpliconClassifier and dependencies. 
     ./install.sh  # note that by default this places the data repo directory in your $HOME. 
     ```
 
 2. Populate the AA data repo with required annotations for the reference builds of interest. **Start here if you installed via Conda**.
-    - See the list of available AA annotations [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Copy the URL of the one you need.
+    - See the list of available AA annotations [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Copy the URL of the one(s) you need.
     ```bash
     cd $AA_DATA_REPO
     # go to https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/
@@ -101,7 +103,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
       tar zxf [reference_build].tar.gz
       rm [reference_build].tar.gz
       ```
-   - If you do not do this process the container will attempt to download the files itself.
+   - If you do not do this process the container runscript attempt to download the files itself before launching the container.
 
 #### Launching the execution script for the container:
 
@@ -155,7 +157,7 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 #### Example 4: Analyzing a collection of related samples (same origin)
 
 Have multiple samples from the same patient, cell line, etc.? These should be run as a group to ensure that the same regions are studied across samples.
-Please see the `GroupedAnalysis.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysispy) for instructions.
+Please see the `GroupedAnalysisAmpSuite.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysispy) for instructions.
 
 #### Example 5: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
@@ -240,7 +242,11 @@ Note that when this mode is used all AA results must have been generated with re
 - `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly-controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
 
 - `--samtools_path`: Path to a specific samtools binary for use (e.g., /path/to/my/samtools). Uses samtools on system path by default.
- 
+
+
+## Interpreting classification outputs
+- Information about the amplicon classification files produced at the end of the workflow are available [here](https://github.com/AmpliconSuite/AmpliconClassifier#3-output).
+- Information on interpreting the AA cycles file is available [here](https://github.com/jluebeck/AmpliconArchitect#interpreting-the-aa-cycles-files).
 
 ## FAQ
 Please check out our [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md).
@@ -269,9 +275,9 @@ If using AmpliconSuite-pipeline in your publication, please cite the modules use
 
 ## Additional analysis tools and scripts
 
-### - Grouped analysis of related samples `GroupedAnalysis.py`
+### - Grouped analysis of related samples `GroupedAnalysisAmpSuite.py`
 For samples derived from a common origin (longitudinal, multiregional sampling from the same source material), it is advised that the seed intervals be unified before running AA in order to provide the best comparability
-between runs. We provide a script `GroupedAnalysis.py` which automates this analysis. `GroupedAnalysis.py` takes almost all the same arguments as `PrepareAA.py`, 
+between runs. We provide a script `GroupedAnalysisAmpSuite.py` which automates this analysis. `GroupedAnalysisAmpSuite.py` takes almost all the same arguments as `PrepareAA.py`, 
 however it requires an additional input file, listing the inputs. This file
 is to be formatted as follows
 
@@ -283,14 +289,14 @@ AA and AC will be run by default, but can be disabled with `--no_AA`.
 
 Example command:
 
-> `/path/to/PrepareAA/GroupedAnalysis.py -i {inputs.txt} -o {output_dir} -t {num_threads}`
+> `GroupedAnalysisAmpSuite.py -i {inputs.txt} -o {output_dir} -t {num_threads}`
 
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
 Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
 `CAMPER.py` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
 searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
 The output will be an AA-formatted cycles file with additional annotations for length and quality control filter status.
-The quality filters take into account root mean square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this publication](https://www.nature.com/articles/s41588-022-01190-0).
+The quality filters take into account root-mean-square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this publication](https://www.nature.com/articles/s41588-022-01190-0).
 The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path. A full explanation of arguments is available with `-h`. Note that this should only be applied to AA amplicons with at most 1 ecDNA present in the AA amplicon (multiple-species reconstruction not supported).
 
 > `AmpliconSuite-pipeline/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
@@ -299,7 +305,7 @@ The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) 
 Requires `intervaltree` python package pre-installed. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
 
 ### - `convert_cns_to_bed.py`
-Many users will choose to run CNVkit outside of AmpliconSuite-pipeline and then want to use the CNVkit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
+Many users will choose to run CNVkit outside AmpliconSuite-pipeline and then want to use the CNVkit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
 we provide the following script to reformat the `.cns` file from CNVkit into a `.bed` file useable with AmpliconSuite-pipeline. 
 
