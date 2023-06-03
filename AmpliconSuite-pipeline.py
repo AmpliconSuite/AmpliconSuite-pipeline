@@ -894,7 +894,6 @@ if __name__ == '__main__':
             ta = tb
             # Run AC
             if args.run_AC:
-                AC_SRC = os.environ['AC_SRC']
                 AC_outdir = outdir + sname + "_classification/"
                 if not os.path.exists(AC_outdir):
                     os.mkdir(AC_outdir)
@@ -915,7 +914,6 @@ if __name__ == '__main__':
 
     else:
         ta = time.time()
-        AC_SRC = os.environ['AC_SRC']
         AC_outdir = outdir + sname + "_classification/"
         if not os.path.exists(AC_outdir):
             os.mkdir(AC_outdir)
