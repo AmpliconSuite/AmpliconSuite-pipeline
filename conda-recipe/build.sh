@@ -13,7 +13,8 @@ TARGET="AmpliconClassifier"
 git clone https://github.com/jluebeck/$TARGET.git
 mkdir -p ampliconclassifierlib
 cp AmpliconClassifier/*.py ampliconclassifierlib/
-cp AmpliconClassifier/*.sh ampliconclassifierlib
+cp AmpliconClassifier/*.sh ampliconclassifierlib/
+cp -r AmpliconClassifier/resources/ ampliconclassifierlib/resources/
 touch ampliconclassifierlib/__init__.py
 
 # make the bin dir if it doesn't exist
