@@ -31,11 +31,11 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 
 ### Option B: Install with Conda (coming soon)
 ```bash 
-conda create -n ampsuite # optional but recommended
-conda activate ampsuite # activate the optional custom environment
-conda install -c bioconda -c mosek ampliconsuite  # add '-n ampsuite' if using custom environment.
+conda create -n ampsuite  # optional but recommended
+conda activate ampsuite  # activate the optional custom environment
+conda install -c bioconda -c mosek ampliconsuite  # add '-n ampsuite' if using custom environment
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
-bash install.sh --finalize # this will confirm the data repo path and mosek license directory.
+bash install.sh --finalize  # this will confirm the data repo path and mosek license directory
 ```
 **Then proceed to Step 2 of Option C (below) ...**
 
