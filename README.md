@@ -6,7 +6,7 @@ Performs preliminary steps (alignment, seed detection, & seed filtering) require
 
 AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
 
-**Current version: 0.1546.0**
+**Current version: 0.1546.1**
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
@@ -32,8 +32,8 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 ### Option B: Install with Conda (coming soon)
 ```bash 
 conda create -n ampsuite # optional but recommended
-conda activate ampsuite
-conda install -c bioconda -c mosek ampliconsuite
+conda activate ampsuite # activate the optional custom environment
+conda install -c bioconda -c mosek ampliconsuite  # add '-n ampsuite' if using custom environment.
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
 bash install.sh --finalize # this will confirm the data repo path and mosek license directory.
 ```

@@ -14,7 +14,7 @@ import time
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "0.1546.0"
+__version__ = "0.1546.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
