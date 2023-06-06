@@ -10,7 +10,7 @@ AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
-We recommend browsing our [**detailed guide**](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md) to learn about best practices and to see some FAQs.
+We recommend browsing our [**detailed guide**](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/GUIDE.md) to learn about best practices and to see some FAQs.
 
 
 [//]: # (**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,)
