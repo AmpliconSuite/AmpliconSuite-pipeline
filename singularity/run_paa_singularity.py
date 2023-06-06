@@ -246,7 +246,10 @@ if args.metadata != "":
 # if args.run_as_user:
 #     userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
 
-with open("paa_singularity.sh", 'w') as outfile:
+env_outname = "paa_envs_" + args.sample_name + ".txt"
+runscript_outname = "paa_singularity_" + args.sample_name + ".sh"
+
+with open(runscript_outname, 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
     outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
@@ -285,7 +288,6 @@ with open("paa_singularity.sh", 'w') as outfile:
         sys.exit(1)
 
     # write exported envs to env-file
-    env_outname = "paa_envs_" + args.sample_name + ".txt"
     with open("env_outname", 'w') as env_file:
         env_file.write('argstring="' + argstring + '"\n')
         env_file.write("SAMPLE_NAME=" + args.sample_name)
@@ -301,9 +303,9 @@ with open("paa_singularity.sh", 'w') as outfile:
 
 outfile.close()
 
-call("chmod +x ./paa_singularity.sh", shell=True)
-call("./paa_singularity.sh", shell=True)
-call("rm paa_singularity.sh", shell=True)
+call("chmod +x ./" + runscript_outname, shell=True)
+call("./" + runscript_outname, shell=True)
+call("rm " + runscript_outname, shell=True)
 call("rm -f " + env_outname, shell=True)
 if no_data_repo:
     cmd = "rm -rf " + data_repo_d
