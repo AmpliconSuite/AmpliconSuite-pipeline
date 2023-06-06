@@ -78,8 +78,8 @@ if ! ${finalize_only}; then
 
 
   if [ -z "$AA_SRC" ]; then
-    echo export AA_SRC=$PWD/AmpliconArchitect >> ~/.bashrc
-    export AA_SRC=$PWD/AmpliconArchitect
+    echo export AA_SRC=$PWD/AmpliconArchitect/src/ >> ~/.bashrc
+    export AA_SRC=$PWD/AmpliconArchitect/src/
   else
     echo "WARNING: AA_SRC bash variable is already set! If you do not want to continue using your old AA installation, remove AA_SRC from your ~/.bashrc file and run the installer again!" >&2
     echo "Proceeding with AA `python3 $AA_SRC/AmpliconArchitect.py -v`"
