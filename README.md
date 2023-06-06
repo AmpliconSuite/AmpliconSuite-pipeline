@@ -108,8 +108,8 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 #### Launching the execution script for the container:
 
 These scripts use most of the same arguments are the main driver script `AmpliconSuite-pipeline.py`
-   - Option A) Singularity: `AmpliconSuite-pipeline/singularity/run_paa_singularity.py`
-   - Option B) Docker: `AmpliconSuite-pipeline/docker/run_paa_docker.py`.
+   - Singularity: `AmpliconSuite-pipeline/singularity/run_paa_singularity.py`
+   - Docker: `AmpliconSuite-pipeline/docker/run_paa_docker.py`.
      * You can opt to run the docker image as your current user (instead of root) by setting `--run_as_user`. 
 
 
