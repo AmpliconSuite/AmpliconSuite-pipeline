@@ -121,7 +121,7 @@ else
 fi
 
 echo "reloading ~/.bashrc"
-source ~/.bashrc
+source ${HOME}/.bashrc
 
 if ! "${finalize_only}"; then
   echo "Module versions are..."
