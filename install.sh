@@ -2,7 +2,7 @@
 
 # Default value for args
 finalize_only=false
-data_repo_loc=$HOME
+data_repo_loc=${HOME}
 
 # Help function
 function show_help {
@@ -120,7 +120,7 @@ else
 
 fi
 
-echo "reloading ~/.bashrc"
+echo "Reloading ~/.bashrc"
 source ${HOME}/.bashrc
 
 if ! "${finalize_only}"; then

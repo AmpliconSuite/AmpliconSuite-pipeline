@@ -14,20 +14,22 @@ requirements:
     build:
         - python
         - setuptools
+        - unzip
+        - wget
 
     run:
         - python
         - bwa
         - cnvkit
         - Flask
-        - future>=0.18.3
-        - intervaltree>=3.1.0
-        - matplotlib>=3.5.1
-        - mosek
-        - numpy>=1.22.4
+        - future >=0.18.3
+        - intervaltree
+        - matplotlib-base >=3.5.1
+        - mscorefonts
+        - numpy >=1.22.4
         - pysam
         - samtools
-        - scipy>=1.7.3
+        - scipy >=1.7.3
 
 test:
     commands:
@@ -36,7 +38,6 @@ test:
     - paalib
     - ampliconarchitectlib
     - ampliconclassifierlib
-    - mosek
 
 about:
     home: https://github.com/AmpliconSuite
