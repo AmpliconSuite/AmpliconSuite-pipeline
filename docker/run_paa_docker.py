@@ -240,9 +240,11 @@ userstring = ""
 if args.run_as_user:
     userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
 
+
+runscript_outname = "paa_docker_" + args.sample_name + ".sh"
 print("Creating a docker script with the following argstring:")
 print(argstring + "\n")
-with open("paa_docker.sh", 'w') as outfile:
+with open(runscript_outname, 'w') as outfile:
     outfile.write("#!/bin/bash\n\n")
     outfile.write("export argstring=\"" + argstring + "\"\n")
     outfile.write("export SAMPLE_NAME=" + args.sample_name + "\n")
@@ -299,9 +301,9 @@ with open("paa_docker.sh", 'w') as outfile:
 
 outfile.close()
 
-call("chmod +x ./paa_docker.sh", shell=True)
-call("./paa_docker.sh", shell=True)
-call("rm paa_docker.sh", shell=True)
+call("chmod +x ./" + runscript_outname, shell=True)
+call("./" + runscript_outname, shell=True)
+call("rm -f " + runscript_outname, shell=True)
 if no_data_repo:
     cmd = "rm -rf " + data_repo_d
     print("Cleaning up data repo")
