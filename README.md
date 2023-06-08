@@ -1,16 +1,19 @@
 # AmpliconSuite-pipeline
-![GitHub](https://img.shields.io/github/license/jluebeck/AmpliconSuite-pipeline)
+![GitHub](https://img.shields.io/github/license/AmpliconSuite/AmpliconSuite-pipeline)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
+[![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/prepareaa?logo=docker)](https://hub.docker.com/r/jluebeck/prepareaa)
+![Singularity](https://img.shields.io/badge/singularity-available-blue)
 
-A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and the associate tools for data preparation and interpretation. 
-Performs preliminary steps (alignment, seed detection, & seed filtering) required prior to running AmpliconArchitect. AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier, which is used to classify ecDNAs and BFB. AmpliconSuite-pipeline was formerly called "PrepareAA".
+A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and AmpliconClassifier to enable analysis of focal copy number amplifications such as ecDNA or BFBs from paired-end whole genome sequencing data.
 
-AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). The tool also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications and ecDNA in cancers with oncoviral infections.
-
-**Current version: 0.1546.1**
+AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier. AmpliconSuite-pipeline was formerly called "PrepareAA".
 
 [comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
 
-We recommend browsing our [**detailed guide**](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/GUIDE.md) to learn about best practices and to see some FAQs.
+We recommend browsing our [**detailed guide**](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/GUIDE.md) to learn about best practices and to see some FAQs. 
+
+AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). It also supports analysis with a human-viral hybrid reference genome we provide, "GRCh38_viral", which can be used to detect oncoviral hybrid focal amplifications in oncoviral cancers.
+
 
 
 [//]: # (**Note on using Canvas**: If using Canvas, please make sure the Canvas reference genome files are located in the expected location for Canvas. To do this, you can follow instructions on the Canvas Github page. We also provide a script `$ install_canvas.sh [path/to/installation/directory/`,)
