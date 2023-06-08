@@ -15,10 +15,14 @@ import threading
 PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/PrepareAA.py"
 
 
-def generate_individual_seeds(cmd_dict, aa_py, odir, cnv_bed_dict):
+def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
     individual_seed_dct = {}
     print('Generating individual seeds')
     for sname, argstring in cmd_dict.items():
+        odir = "{}{}/".format(parent_odir, sname)
+        if not os.path.exists(odir):
+            os.makedirs(odir)
+
         with open(sname + "_CNV_out.txt", 'w') as outfile:
             cmd = '{} {}{}'.format(aa_py, PAA_PATH, argstring)
             print(sname)
@@ -53,26 +57,28 @@ def group_seeds(individual_seed_dct, odir):
     return gs_dict
 
 
-def launch_AA_AC(jobq, aa_py, PAA_PATH):
+def launch_AA_AC(jobq, aa_py, PAA_PATH, parent_odir):
     try:
         sname, arg_string = jobq.pop()
 
     except IndexError:
         return
 
-    with open(sname + "_AA_AC_out.txt", 'w') as outfile:
+    odir = parent_odir + sname
+    with open("{}/{}_AA_AC_out.txt".format(odir, sname), 'w') as outfile:
         time.sleep(random.uniform(0, 0.75))
         cmd = "{} {}{}".format(aa_py, PAA_PATH, arg_string)
         print("\nLaunching AA+AC job for " + sname + "\n" + cmd)
         call(cmd, stdout=outfile, stderr=outfile, shell=True)
 
 
-def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds):
+def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
     cmd_dict = dict()
     for tf in tumor_lines:
+        odir = parent_odir + tf[0]
         curr_seeds = grouped_seeds[tf[0]]
-        curr_argstring = "{} --run_AA --run_AC -s {} --bam {} --bed {}".format(base_argstring, tf[0], tf[1],
-                                                                               curr_seeds)
+        curr_argstring = "{} --run_AA --run_AC -s {} --bam {} --bed {} -o {}".format(base_argstring, tf[0], tf[1],
+                                                                               curr_seeds, odir)
 
         optionals = zip(["--sample_metadata", ], tf[4:])
         for k, v in optionals:
@@ -85,7 +91,7 @@ def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds):
 
 
 # convert the parsed group input data to PrepareAA commands
-def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir):
+def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, parent_odir):
     if not normal_lines:
         normalbam = None
 
@@ -97,7 +103,8 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir):
     cmd_dict = dict()
     cnv_bed_dict = dict()
     for tf in tumor_lines:
-        curr_argstring = "{} -s {} --bam {}".format(base_argstring, tf[0], tf[1])
+        odir = parent_odir + tf[0]
+        curr_argstring = "{} -s {} --bam {} -o {}".format(base_argstring, tf[0], tf[1], odir)
         if normalbam:
             curr_argstring += " --normal_bam {}".format(normalbam[1])
 
@@ -128,7 +135,7 @@ def make_base_argstring(arg_dict, stop_at_seeds=False):
                 arg = " --" + k
                 base_argstring+=arg
 
-        elif v is not False and not k == "input" and not k == "cnvkit_dir":
+        elif v is not False and not k == "input" and not k == "cnvkit_dir" and not k == "output_directory":
             arg = " --{} {}".format(k, str(v))
             base_argstring+=arg
 
@@ -273,6 +280,9 @@ if __name__ == '__main__':
     if args.output_directory and not args.output_directory.endswith('/'):
         args.output_directory+='/'
 
+    if not os.path.exists(args.output_directory):
+        os.makedirs(args.output_directory)
+
     if not args.aa_python_interpreter:
         args.aa_python_interpreter = 'python'
 
@@ -284,7 +294,8 @@ if __name__ == '__main__':
     base_argstring = make_base_argstring(arg_dict, stop_at_seeds=True)
     print("Setting base argstring for Stage 1 as:")
     print(base_argstring + "\n")
-    cmd_dict, cnv_bed_dict = create_CNV_cmds(tumor_lines, normal_lines, base_argstring, args.cnvkit_dir)
+    cmd_dict, cnv_bed_dict = create_CNV_cmds(tumor_lines, normal_lines, base_argstring, args.cnvkit_dir,
+                                             args.output_directory)
     individual_seed_dct = generate_individual_seeds(cmd_dict, args.aa_python_interpreter, args.output_directory,
                                                     cnv_bed_dict)
 
@@ -300,7 +311,7 @@ if __name__ == '__main__':
             normal_lines = []
 
         all_lines = normal_lines + tumor_lines
-        cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds)
+        cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory)
         threadL = []
         paa_threads = min(args.nthreads, len(all_lines))
         print("\nQueueing " + str(len(all_lines)) + " PAA jobs")
