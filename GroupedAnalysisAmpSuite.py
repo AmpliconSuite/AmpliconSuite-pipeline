@@ -23,7 +23,7 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
         if not os.path.exists(odir):
             os.makedirs(odir)
 
-        with open(sname + "_CNV_out.txt", 'w') as outfile:
+        with open("{}{}_CNV_out.txt".format(odir, sname), 'w') as outfile:
             cmd = '{} {}{}'.format(aa_py, PAA_PATH, argstring)
             print(sname)
             print(cmd + "\n")
