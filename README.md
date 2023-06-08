@@ -2,7 +2,7 @@
 ![GitHub](https://img.shields.io/github/license/AmpliconSuite/AmpliconSuite-pipeline)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
 [![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/prepareaa?logo=docker)](https://hub.docker.com/r/jluebeck/prepareaa)
-![Singularity](https://img.shields.io/badge/singularity-available-blue)
+[![Singularity](https://img.shields.io/badge/singularity-available-blue)](https://cloud.sylabs.io/library/jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline)
 
 A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and AmpliconClassifier to enable analysis of focal copy number amplifications such as ecDNA or BFBs from paired-end whole genome sequencing data.
 
