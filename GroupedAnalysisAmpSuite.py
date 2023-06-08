@@ -49,7 +49,8 @@ def group_seeds(individual_seed_dct, odir):
     cmd = "sort -k1,1 -k2,2n {} | bedtools merge -i - > {}".format(bedlist, outname)
     print(cmd)
     call(cmd, shell=True)
-    return outname
+    gs_dict = {x: outname for x in samplist}
+    return gs_dict
 
 
 def launch_AA_AC(jobq, aa_py, PAA_PATH):
@@ -69,8 +70,9 @@ def launch_AA_AC(jobq, aa_py, PAA_PATH):
 def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds):
     cmd_dict = dict()
     for tf in tumor_lines:
+        curr_seeds = grouped_seeds[tf[0]]
         curr_argstring = "{} --run_AA --run_AC -s {} --bam {} --bed {}".format(base_argstring, tf[0], tf[1],
-                                                                               grouped_seeds)
+                                                                               curr_seeds)
 
         optionals = zip(["--sample_metadata", ], tf[4:])
         for k, v in optionals:
@@ -122,7 +124,7 @@ def make_base_argstring(arg_dict, stop_at_seeds=False):
     base_argstring = ""
     for k, v in arg_dict.items():
         if v is True:
-            if k != "no_AA":
+            if k not in ["no_AA", "no_union"]:
                 arg = " --" + k
                 base_argstring+=arg
 
@@ -195,11 +197,13 @@ if __name__ == '__main__':
     # parser.add_argument("-s", "--sample_name", help="sample name", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA, CNV calling and concurrent "
                                                  "instances of PAA", type=int, required=True)
-    parser.add_argument("--no_AA", help="Only produce the union of seeds for the group. Do not run AA/AC",
+    parser.add_argument("--no_AA", help="Only produce the seeds for the group. Do not run AA/AC",
                         action='store_true')
     # parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
     # parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
     #                     action='store_true')
+    parser.add_argument("--no_union", help="Do not create a unified collection of seeds for the group (keep seeds "
+                                           "separate between samples", action='store_true')
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
                                                                             "GRCm38", "GRCh38_viral"])
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
@@ -284,8 +288,11 @@ if __name__ == '__main__':
     individual_seed_dct = generate_individual_seeds(cmd_dict, args.aa_python_interpreter, args.output_directory,
                                                     cnv_bed_dict)
 
-    # Stage 2: merge seeds (bedtools - gotta sort and merge), and get new args
-    grouped_seeds = group_seeds(individual_seed_dct, args.output_directory)
+    # Stage 2: merge seeds (bedtools - gotta sort and merge)
+    if args.no_union:
+        grouped_seeds = individual_seed_dct
+    else:
+        grouped_seeds = group_seeds(individual_seed_dct, args.output_directory)
 
     # Stage 3: launch each AA job in parallel
     if not args.no_AA:
@@ -305,7 +312,6 @@ if __name__ == '__main__':
 
         for i in range(paa_threads):
             threadL.append(threading.Thread(target=launch_AA_AC, args=(jobq, args.aa_python_interpreter, PAA_PATH)))
-            # threadL.append(workerThread(i, launch_AA_AC, cmd_string, args.aa_python_interpreter, PAA_PATH, sname))
             threadL[i].start()
 
         for t in threadL:
