@@ -739,6 +739,14 @@ if __name__ == '__main__':
     if args.ref == "GRCm38":
         args.ref = "mm10"
 
+    try:
+        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
+            datestring = file.read()
+            logging.info("Data repo constructed on " + datestring)
+
+    except FileNotFoundError:
+        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
+
     for rname in refFnames.keys():
         if os.path.exists(AA_REPO + "/" + rname):
             refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
@@ -773,14 +781,7 @@ if __name__ == '__main__':
     gdir = AA_REPO + args.ref + "/"
     ref_fasta = gdir + refFnames[args.ref]
     ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
-    removed_regions_bed = gdir + args.ref + "_merged_centromeres_conserved_sorted.bed"
-    # ploidy_vcf = gdir + "dummy_ploidy.vcf"
-    if not os.path.isfile(removed_regions_bed):
-        logging.debug(str(os.listdir(gdir)) + "\n")
-        logging.error("Please update your data repo.\n")
-        sys.exit(1)
-
-    elif args.cnv_bed and not os.path.isfile(args.cnv_bed):
+    if args.cnv_bed and not os.path.isfile(args.cnv_bed):
         logging.error("Specified CNV bed file does not exist: " + args.cnv_bed + "\n")
         sys.exit(1)
 
