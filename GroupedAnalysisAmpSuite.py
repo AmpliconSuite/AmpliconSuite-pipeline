@@ -322,7 +322,8 @@ if __name__ == '__main__':
             jobq.append((sname, cmd_string))
 
         for i in range(paa_threads):
-            threadL.append(threading.Thread(target=launch_AA_AC, args=(jobq, args.aa_python_interpreter, PAA_PATH)))
+            threadL.append(threading.Thread(target=launch_AA_AC, args=(jobq, args.aa_python_interpreter, PAA_PATH,
+                                                                       args.output_directory)))
             threadL[i].start()
 
         for t in threadL:
