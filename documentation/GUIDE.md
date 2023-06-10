@@ -205,14 +205,15 @@ At the moment, we do not support adding additional tracks of data into the plot 
 ### FAQ
 - **The AA_CNV_SEEDS.bed file was empty, what's wrong?**
     - Likely nothing. If no seed regions are detected, the sample likely has no candidate focal amplifications.
+  Do you see any error messages printed to the console or in the log files?
 
 
 - **Can I use AA with whole-exome sequencing, ATAC-seq, or RNA-sequencing data?**
-    - AA will fundamentally not work with these data modalities. We only support paired-end WGS data with AA.
+    - AA is fundamentally incompatible with these data modalities. We only support paired-end WGS data with AA.
     
 
 - **Can I use AA on Circle-Seq data?**
-    - AA has been used on Circle-Seq data with only modest success. AA is not designed for use with targeted sequencing data, and as a result it may crash or produce unreliable amplicon calls. Please proceed very cautiously if deploying AA/interpreting AA outputs on Circle-Seq data.
+    - AA is not designed for use with targeted sequencing data, and as a result it may crash or produce unreliable amplicon calls. Please proceed very cautiously if deploying AA/interpreting AA outputs on Circle-Seq data.
 
 
 - **What coverage is needed for AA?**
@@ -240,12 +241,20 @@ At the moment, we do not support adding additional tracks of data into the plot 
   
 
 - **In the amplicon visualizations, what are the different edge colors?**
-    - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf).
+    - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf). Pink and teal are 'inversion-like', brown is 'duplication-like' (jumps backwards in the reference genome), and red is 'deletion-like' (skips forward in the reference genome). Blue corresponds to a 'source edge', which is an SV that has one end mapped in the amplicon and one end at an unknown destination.
   
   
 - **What if I use really low CN cutoffs and really small minimum sizes so that I don't miss any ecDNA?**
     - AA will likely stall. A lower CN threshold is also not better, as in that case it may pick up many more regions which represent non-ecDNA events like segmental tandem duplications. When the CN threshold is lowered, the seed sizes also tend to expand greatly - as they may reflect karytoypic events, not focal amplifications. Giving enormous seed regions to AA, (e.g. > 10 Mbp) is strongly not recommended. 
     
+
+- **Which viral genomes come with GRCh38_viral?**
+  - The oncoviral reference genomes packaged with GRCh38_viral are from the [ViFi publication](https://academic.oup.com/nar/article/46/7/3309/4944397). Broadly these include the papillomavirus sequences in [PaVE](https://pave.niaid.nih.gov/) as well as hepatitis sequences aggregated in [this](https://genome.cshlp.org/content/22/4/593.full) publication. In summary, HPV, HBV, and EBV are present in this reference build.
+
+
+- **Which HPV16 genome is included with GRCh38_viral?**
+    - The HPV16 genome which exists on [PaVE](https://pave.niaid.nih.gov/locus_viewer?seq_id=HPV16REF). For those using NCBI, this is most similar to [AY686584.1](https://www.ncbi.nlm.nih.gov/nuccore/AY686584.1). The PaVE version used in the data repo (which we called hpv16ref_1) differs by 9 point mutations throughout the viral genome, but the sequences are the same length (but do not necessarily share the same exact starting point in that circular genome).
+
 
 - **How do I run AA on a sample with a viral genome(s) to check for integration/viral genome structure/viral ecDNA?**
   1. If needed, first determine which viral strain(s) are present (e.g. ViFi or [FastViFi](https://github.com/sara-javadzadeh/FastViFi), or other methods).
@@ -260,7 +269,7 @@ At the moment, we do not support adding additional tracks of data into the plot 
    
  
 - **Can AA determine the difference between HSR and ecDNA? Can it find integration points?**
-    - From our observations, ecDNA maintains its structure when it integrates into the genome (Turner 2017, *Nature*, Deshpande 2019, *Nat. Comms.*, Luebeck 2020 *Nat. Comms.*). Unfortunately without some sort of imaging data (FISH) or long-range sequencing (Bionano, PacBio, Nanopore), it is not possible to reliably make that determination from AA.
+    - From our observations, ecDNA maintains much of its structure when it integrates into the genome (Turner 2017, *Nature*, Deshpande 2019, *Nat. Comms.*, Luebeck 2020 *Nat. Comms.*). While it must break the circle to linearize, the SVs that originally formed the circle are still there (the original circle-forming SV is not 're-used'). Unfortunately without some sort of imaging data (FISH) or long-range sequencing (Bionano, PacBio, Nanopore), it is not possible to reliably make that determination from AA.
 
 
 - **There's a region I want AA to examine, but it didn't appear in the CNV seeds, what do I do?**
@@ -269,10 +278,6 @@ At the moment, we do not support adding additional tracks of data into the plot 
 
 - **In the cycles file, what do the paths that begin/end with '0+' mean?** 
     - These indicate that the path is non-cylic, and proceeds or is preceeded by the next reference coordinate.
-
-
-- **Which HPV16 genome is included with GRCh38_viral?**
-    - AY686584.1 (https://www.ncbi.nlm.nih.gov/nuccore/AY686584.1). The version used in the data repo (which we called hpv16ref_1) is slightly older than the current build hosted by NCBI, and differs by approximately 9 point mutations throughout the viral genome. 
 
 #
  

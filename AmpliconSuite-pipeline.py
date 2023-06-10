@@ -24,7 +24,6 @@ sample_info_dict = {}  # stores the sample metadata
 def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, usingDeprecatedSamtools=False):
     outname = outdir + sname
     logging.info("Output prefix: " + outname)
-    logging.info("Checking for ref index")
     exts = [".sa", ".amb", ".ann", ".pac", ".bwt"]
     indexPresent = True
     for i in exts:
