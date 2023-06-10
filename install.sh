@@ -3,6 +3,8 @@
 # Default value for args
 finalize_only=false
 data_repo_loc=${HOME}
+uninstall=false
+install_dir=$(realpath "$(dirname "$0")")
 
 # Help function
 function show_help {
@@ -10,6 +12,7 @@ function show_help {
   echo "Options:"
   echo "  --finalize_only          Do not install AA or AC. Only finalize data repo and mosek license location"
   echo "  --data_repo_loc <path>   Custom set data repository location (defaults to creating a directory in \$HOME}"
+  echo "  --uninstall              Remove downloaded files and unset bash variables associated with AA. Will not remove AmpliconSuite-pipeline directory or data repo files."
 }
 
 # Parse command line options
@@ -29,6 +32,10 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       ;;
+    --uninstall)
+      uninstall=true
+      shift
+      ;;
     -h|--help)
       show_help
       exit 0
@@ -40,6 +47,24 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if $uninstall; then
+  # remove the AmpliconArchitect and AmpliconClassifier dirs
+  rm -rf ${install_dir}/AmpliconArchitect
+  rm -rf ${install_dir}/AmpliconClassifier
+
+  # unset the bash vars ($AA_SRC, $AC_SRC, $AA_DATA_REPO) and remove them from the .bashrc file.
+  unset AA_SRC AC_SRC AA_DATA_REPO
+  sed -i '/export AA_SRC=/d' ${HOME}/.bashrc
+  sed -i '/export AC_SRC=/d' ${HOME}/.bashrc
+  sed -i '/export AA_DATA_REPO=/d' ${HOME}/.bashrc
+
+  exit 0
+fi
+
+if [ -z "$HOME" ]; then
+  echo "error! \$HOME variable must be set to use installer!"
+fi
 
 if ! command -v samtools &> /dev/null; then
     echo "error! samtools is not installed or not on the system path!"
@@ -58,17 +83,17 @@ fi
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
   # pull source code for AA
-  TARGET="AmpliconArchitect"
+  TARGET=${install_dir}/AmpliconArchitect
   if [ -d "TARGET" ]; then
-    echo "Directory '${PWD}/${TARGET}' already exists."
+    echo "Directory '${TARGET}' already exists."
   else
     git clone https://github.com/jluebeck/$TARGET.git
   fi
 
   # pull source code for AC
-  TARGET="AmpliconClassifier"
+  TARGET=${install_dir}/AmpliconClassifier
   if [ -d "TARGET" ]; then
-    echo "Directory '${PWD}/${TARGET}' already exists."
+    echo "Directory '${TARGET}' already exists."
   else
     git clone https://github.com/jluebeck/$TARGET.git
   fi
@@ -76,18 +101,17 @@ if ! ${finalize_only}; then
   # install deps
   python3 -m pip install cnvkit Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
 
-
   if [ -z "$AA_SRC" ]; then
-    echo export AA_SRC=$PWD/AmpliconArchitect/src/ >> ~/.bashrc
-    export AA_SRC=$PWD/AmpliconArchitect/src/
+    echo export AA_SRC=${install_dir}/AmpliconArchitect/src/ >> ~/.bashrc
+    export AA_SRC=${install_dir}/AmpliconArchitect/src/
   else
     echo "WARNING: AA_SRC bash variable is already set! If you do not want to continue using your old AA installation, remove AA_SRC from your ~/.bashrc file and run the installer again!" >&2
     echo "Proceeding with AA `python3 $AA_SRC/AmpliconArchitect.py -v`"
   fi
 
   if [ -z "$AC_SRC" ]; then
-    echo export AC_SRC=$PWD/AmpliconClassifier >> ~/.bashrc
-    export AC_SRC=$PWD/AmpliconClassifier
+    echo export AC_SRC=${install_dir}/AmpliconClassifier >> ~/.bashrc
+    export AC_SRC=${install_dir}/AmpliconClassifier
   else
     echo "WARNING: AC_SRC bash variable is already set! If you do not want to continue using your old AC installation, remove AC_SRC from your ~/.bashrc file and run the installer again!" >&2
     echo "Proceeding with AC `python3 $AC_SRC/amplicon_classifier.py -v`"
@@ -120,7 +144,7 @@ else
 
 fi
 
-echo "Reloading ~/.bashrc"
+echo "Reloading .bashrc"
 source ${HOME}/.bashrc
 
 if ! "${finalize_only}"; then
