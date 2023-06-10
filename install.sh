@@ -49,15 +49,17 @@ while [[ $# -gt 0 ]]; do
 done
 
 if $uninstall; then
+  echo "Removing AmpliconArchitect/, AmpliconClassifier/ and unsetting bash variables"
   # remove the AmpliconArchitect and AmpliconClassifier dirs
   rm -rf ${install_dir}/AmpliconArchitect
   rm -rf ${install_dir}/AmpliconClassifier
 
   # unset the bash vars ($AA_SRC, $AC_SRC, $AA_DATA_REPO) and remove them from the .bashrc file.
   unset AA_SRC AC_SRC AA_DATA_REPO
-  sed -i '/export AA_SRC=/d' ${HOME}/.bashrc
-  sed -i '/export AC_SRC=/d' ${HOME}/.bashrc
-  sed -i '/export AA_DATA_REPO=/d' ${HOME}/.bashrc
+  sed -i.bak '/^export AA_SRC=/d' ${HOME}/.bashrc
+  sed -i.bak '/^export AC_SRC=/d' ${HOME}/.bashrc
+  sed -i.bak '/^export AA_DATA_REPO=/d' ${HOME}/.bashrc
+  rm ${HOME}/.bashrc.bak
 
   exit 0
 fi
