@@ -12,7 +12,7 @@ function show_help {
   echo "Options:"
   echo "  --finalize_only          Do not install AA or AC. Only finalize data repo and mosek license location"
   echo "  --data_repo_loc <path>   Custom set data repository location (defaults to creating a directory in \$HOME}"
-  echo "  --uninstall              Remove downloaded files and unset bash variables associated with AA. Will not remove AmpliconSuite-pipeline directory or data repo files."
+  echo "  --uninstall              Remove downloaded files and unset bash variables associated with AA. Will not remove python dependencies, AmpliconSuite-pipeline directory or data repo files."
 }
 
 # Parse command line options
@@ -85,19 +85,21 @@ fi
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
   # pull source code for AA
-  TARGET=${install_dir}/AmpliconArchitect
-  if [ -d "TARGET" ]; then
-    echo "Directory '${TARGET}' already exists."
+  TARGET=AmpliconArchitect
+  TARGET_DIR=${install_dir}/${TARGET}
+  if [ -d "TARGET_DIR" ]; then
+    echo "Directory '${TARGET_DIR}' already exists."
   else
-    git clone https://github.com/jluebeck/$TARGET.git
+    git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
   fi
 
   # pull source code for AC
-  TARGET=${install_dir}/AmpliconClassifier
-  if [ -d "TARGET" ]; then
-    echo "Directory '${TARGET}' already exists."
+  TARGET=AmpliconClassifier
+  TARGET_DIR=${install_dir}/${TARGET}
+  if [ -d "TARGET_DIR" ]; then
+    echo "Directory '${TARGET_DIR}' already exists."
   else
-    git clone https://github.com/jluebeck/$TARGET.git
+    git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
   fi
 
   # install deps
@@ -151,7 +153,7 @@ source ${HOME}/.bashrc
 
 if ! "${finalize_only}"; then
   echo "Module versions are..."
-  echo "AmpliconSuite-pipeline: `python3 AmpliconSuite-pipeline.py -v`"
+  echo "AmpliconSuite-pipeline: `python3 ${install_dir}/AmpliconSuite-pipeline.py -v`"
   echo "AA: `python3 $AA_SRC/AmpliconArchitect.py -v`"
   echo "AC: `python3 $AC_SRC/amplicon_classifier.py -v`"
 fi
