@@ -288,7 +288,7 @@ with open(runscript_outname, 'w') as outfile:
         sys.exit(1)
 
     # write exported envs to env-file
-    with open("env_outname", 'w') as env_file:
+    with open(env_outname, 'w') as env_file:
         env_file.write('argstring="' + argstring + '"\n')
         env_file.write("SAMPLE_NAME=" + args.sample_name)
 
