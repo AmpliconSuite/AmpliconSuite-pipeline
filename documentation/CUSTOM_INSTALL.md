@@ -1,10 +1,25 @@
 ## Performing a standalone custom install from each individual module.
 
+The easiest way to do a standalone install is to follow the instructions from the README and use the `install.sh` script.
+If that or none of the other installation options are possible (e.g. you need to use `python2`, you can install each sub-module and dependency individually.
+
 1. Clone the AmpliconSuite-pipeline git rep:
 
 `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
 2. Individually install other prerequisites from the section below following the install instrucitons on each.
+3. Set the location where you would like to store the `$AA_DATA_REPO`
+```bash
+        mkdir data_repo && cd data_repo
+        # copy or download files into data_repo directory
+        wget [url for data repo [hg19/GRCh37/GRCh38/mm10].tar.gz]
+        tar -xzf [hg19/GRCh37/GRCh38/mm10].tar.gz
+
+        echo export AA_DATA_REPO=$PWD >> ~/.bashrc
+        touch coverage.stats && chmod a+r coverage.stats
+        source ~/.bashrc
+```
+4. Run `install.sh --finalize_only` script from AmpliconSuite-pipeline.
 
 ## Prerequisites for standalone installation:
 AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVkit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
@@ -25,3 +40,9 @@ AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 
 
 **Note on using CNVkit**: We currently recommend using CNVkit for identification of AA seeds. CNVkit requires
 `python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
+
+## Getting `mscorefonts` onto your system.
+AmpliconArchitect figures will attempt to use the Arial font, and will fall back to the default `matplotlib` font. On macOS, Arial will likely already be present. 
+Install the `mscorefonts` package
+   - `conda install mscorefonts` or
+   - (Ubuntu) `sudo apt update && sudo apt install ttf-mscorefonts-installer`. Then do `sudo fc-cache -f -v` to rebuild the font cache.

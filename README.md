@@ -64,7 +64,11 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     rm [reference_build.tar.gz]
     ```
 
-3. Lastly, obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it. 
+3. Lastly, obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+
+
+4. (Optional) Add the Arial font. These usually already present on macOS but not Linux.
+   * See the custom installation document in the documentation folder. 
 
 
 ### Option D: Singularity & Docker images 
