@@ -14,7 +14,7 @@ import time
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "0.1546.1"
+__version__ = "0.1555.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -146,7 +146,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
         sys.exit(1)
 
     metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
-    logging.info("\nCleaning up temporary files")
+    logging.info("\nCleaning up temporary CNVkit files")
     cmd = "rm -f {}/*tmp.bed {}/*.cnn {}/*target.bed {}/*.bintest.cns".format(outdir, outdir, outdir, outdir)
     logging.info(cmd)
     call(cmd, shell=True)
@@ -741,7 +741,7 @@ if __name__ == '__main__':
     try:
         with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
             datestring = file.read()
-            logging.info("Data repo constructed on " + datestring)
+            logging.info(args.ref + " data repo constructed on " + datestring)
 
     except FileNotFoundError:
         logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
@@ -768,7 +768,7 @@ if __name__ == '__main__':
 
         determined_ref = check_reference.check_ref(args.sorted_bam, faidict, args.samtools_path)
         if not determined_ref and not args.ref:
-            logging.error("Please make sure AA data repo is populated.")
+            logging.error("Could not determine ref build. Please make sure AA data repo is populated.")
             sys.exit(1)
 
         elif not args.ref:

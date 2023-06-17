@@ -7,4 +7,5 @@ setup(
     packages=find_packages(exclude=['images', 'docker', 'singularity']),
     include_package_data=True,
     package_data={'': ['*.json', '*.sh'], 'ampliconclassifierlib': ['resources/*']},
+    scripts=['AmpliconSuite-pipeline.py', 'GroupedAnalysisAmpSuite.py'],
 )

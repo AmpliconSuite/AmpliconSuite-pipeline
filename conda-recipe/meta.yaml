@@ -8,17 +8,16 @@ source:
 
 build:
     number: 0
-    skip: False
 
 requirements:
     build:
-        - python
+        - python >=3
         - setuptools
         - unzip
         - wget
 
     run:
-        - python
+        - python >=3
         - bwa
         - cnvkit
         - Flask

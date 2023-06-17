@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # pull source code for AA and move scripts into a library
 TARGET="AmpliconArchitect"
 TARGET_VERSION="1.3.r5"
@@ -24,10 +26,6 @@ rm v${TARGET_VERSION}.zip
 
 # make the bin dir if it doesn't exist
 mkdir -p $PREFIX/bin
-
-# copy driver scripts
-cp AmpliconSuite-pipeline.py ${PREFIX}/bin/AmpliconSuite-pipeline.py
-cp GroupedAnalysisAmpSuite.py ${PREFIX}/bin/GroupedAnalysisAmpSuite.py
 
 # Python command to install the package.
 $PYTHON setup.py install --install-data aa_data_repo/ --single-version-externally-managed --record=record.txt

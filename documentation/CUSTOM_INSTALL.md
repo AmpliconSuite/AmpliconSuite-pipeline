@@ -42,7 +42,13 @@ AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 
 `python3`. It also requires `R` version >= 3.5, which is non-standard on Ubuntu 16.04/14.04.
 
 ## Getting `mscorefonts` onto your system.
-AmpliconArchitect figures will attempt to use the Arial font, and will fall back to the default `matplotlib` font. On macOS, Arial will likely already be present. 
-Install the `mscorefonts` package
-   - `conda install mscorefonts` or
-   - (Ubuntu) `sudo apt update && sudo apt install ttf-mscorefonts-installer`. Then do `sudo fc-cache -f -v` to rebuild the font cache.
+AmpliconArchitect figures will attempt to use the Arial font, and will fall back to the default `matplotlib` "Deja Vu Sans" font. On macOS, Arial will likely already be present. 
+Install the `mscorefonts` package one of two ways:
+
+a) First run `conda install mscorefonts` then launch python and do
+```python
+import matplotlib.font_manager
+matplotlib.font_manager._load_fontmanager(try_read_cache=False)
+```
+
+b) (Ubuntu) `sudo apt update && sudo apt install ttf-mscorefonts-installer`. Then do `sudo fc-cache -f -v` to rebuild the font cache.
