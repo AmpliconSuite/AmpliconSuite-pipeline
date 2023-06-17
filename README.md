@@ -64,7 +64,10 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     rm [reference_build.tar.gz]
     ```
 
-3. Lastly, obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it. 
+3. Obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+
+Lastly, as a completely optional step, if you want the Arial font in your AA figures, but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
+
 
 
 ### Option D: Singularity & Docker images 
