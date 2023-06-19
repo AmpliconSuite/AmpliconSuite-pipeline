@@ -135,6 +135,9 @@ def make_base_argstring(arg_dict, stop_at_seeds=False):
                 arg = " --" + k
                 base_argstring+=arg
 
+        elif k == "AA_insert_sdevs" and v is None:
+            continue
+
         elif v is not False and not k == "input" and not k == "cnvkit_dir" and not k == "output_directory":
             arg = " --{} {}".format(k, str(v))
             base_argstring+=arg
@@ -241,7 +244,7 @@ if __name__ == '__main__':
                         default='EXPLORE')
     parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
                                                   "increase for sequencing runs with high variance after insert size "
-                                                  "selection step. (default 3.0)", type=float, default=3.0)
+                                                  "selection step. (default 3.0)", type=float, default=None)
     # parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)")
     # parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside "
     #                                                  "of CNVKit.", default=None)

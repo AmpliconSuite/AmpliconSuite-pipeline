@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# this build and yaml are different from what is used by bioconda - this is for local building, not distribution
+
 set -ex
 
 # pull source code for AA and move scripts into a library
@@ -14,7 +16,7 @@ rm v${TARGET_VERSION}.zip
 
 # pull source code for AC and move scripts into a library
 TARGET="AmpliconClassifier"
-TARGET_VERSION="0.5.2"
+TARGET_VERSION="0.5.3"
 wget https://github.com/AmpliconSuite/${TARGET}/archive/refs/tags/v${TARGET_VERSION}.zip
 unzip v${TARGET_VERSION}.zip
 mkdir -p ampliconclassifierlib

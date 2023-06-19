@@ -14,7 +14,7 @@ import time
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "0.1555.1"
+__version__ = "0.1555.2"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -738,14 +738,6 @@ if __name__ == '__main__':
     if args.ref == "GRCm38":
         args.ref = "mm10"
 
-    try:
-        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
-            datestring = file.read()
-            logging.info(args.ref + " data repo constructed on " + datestring)
-
-    except FileNotFoundError:
-        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
-
     for rname in refFnames.keys():
         if os.path.exists(AA_REPO + "/" + rname):
             refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
@@ -776,6 +768,14 @@ if __name__ == '__main__':
 
         elif args.ref and not determined_ref:
             logging.warning("WARNING! The BAM file did not match " + args.ref)
+
+    try:
+        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
+            datestring = file.read()
+            logging.info(args.ref + " data repo constructed on " + datestring)
+
+    except FileNotFoundError:
+        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
 
     gdir = AA_REPO + args.ref + "/"
     ref_fasta = gdir + refFnames[args.ref]
@@ -914,6 +914,10 @@ if __name__ == '__main__':
 
     else:
         ta = time.time()
+        if not args.ref:
+            logging.error("--ref is a required argument if --completed_AA_runs is provided!")
+            sys.exit(1)
+
         AC_outdir = outdir + sname + "_classification/"
         if not os.path.exists(AC_outdir):
             os.mkdir(AC_outdir)
