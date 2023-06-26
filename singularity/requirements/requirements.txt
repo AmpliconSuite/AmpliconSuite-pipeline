@@ -9,6 +9,6 @@ intervaltree==3.1.0
 Flask>=2.2.5
 matplotlib==3.5.1
 numpy>=1.22.2
-scipy==1.7.3
+scipy>=1.7.3
 mosek==10.0.38
 future==0.18.3
