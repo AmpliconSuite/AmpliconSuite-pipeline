@@ -25,9 +25,9 @@ If that or none of the other installation options are possible (e.g. you need to
 AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVkit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
 
 Unless you are using a containerized version, and depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
-- (required) The [jluebeck/AmpliconArchictect fork](https://github.com/jluebeck/AmpliconArchitect) must be installed.
+- (required) The [AmpliconSuite/AmpliconArchictect fork](https://github.com/AmpliconSuite/AmpliconArchitect) must be installed. Instructions for that are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).
 - (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
-  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads.
+  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads. Instructions for setting up the AA data repo are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).
 - (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
 - (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
