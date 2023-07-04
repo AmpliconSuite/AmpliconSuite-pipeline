@@ -8,7 +8,7 @@ from intervaltree import IntervalTree
 
 # Write cycles files into merged beds
 
-# read a cycles file into a a dictionary of interval tree dictionaries
+# read a cycles file into a dictionary of interval tree dictionaries
 def read_cycles_file(fname):
     # all_cycles maps cycle_num -> chromosome -> IntervalTree
     seglookup = {}
@@ -29,14 +29,15 @@ def read_cycles_file(fname):
                 cd = {x.rsplit("=")[0]: x.rsplit("=")[1] for x in fields}
                 cnum = int(cd["Cycle"])
                 segstring = cd["Segments"]
+                copy_count = cd["Copy_count"]
                 seglist = [(int(x[:-1]), x[-1]) for x in segstring.rsplit(",")]
                 for x in seglist:
                     if x[0] == 0:
                         continue
 
                     dtup = seglookup[x[0]]
-                    slist.append(dtup + (x[1],))
-                    cycle_ivalt[dtup[0]].addi(dtup[1], dtup[2], x[1])  # duplicates will be overwritten
+                    slist.append(dtup + (x[1], copy_count))
+                    cycle_ivalt[dtup[0]].addi(dtup[1], dtup[2], (x[1], copy_count))  # duplicates will be overwritten
 
                 all_cycles[cnum] = slist
                 all_cycles_ivald[cnum] = cycle_ivalt
@@ -90,8 +91,6 @@ def write_bed(prefix, merged_intervals):
     with open(prefix + ".bed", 'w') as outfile:
         for i in merged_intervals:
             oline = "\t".join([str(x) for x in i]) + "\n"
-            #oline = "\t".join('chr')
-            #oline = "\t".join(['chr' + str(i[0]), str(int(i[1])), str(int(i[2]))]) + "\n"
             outfile.write(oline)
 
 

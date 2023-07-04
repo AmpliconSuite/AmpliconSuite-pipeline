@@ -320,7 +320,8 @@ Usage:
 This will output a bed file which can be fed into AmpliconSuite-pipeline. 
 
 ### - `cycles_to_bed.py`
-Requires `intervaltree` python package pre-installed. Write an AA cycles file as a series of bed files, one for each decomposition. Segments are merged and sorted, and order and orientation of segments is lost.
+Requires `intervaltree` python package pre-installed. Write an AA cycles file as a series of bed files, one for each decomposition. Writes two types of bed files, an `unordered_cycle` file, where segments are merged and sorted, and order and orientation of segments is lost, and also writes
+an ordered file where the order and orientation of the genome segments comprising the cycle is maintained.
 
 ### - `graph_cleaner.py`
 Requires `intervaltree` python package pre-installed. Sequencing artifacts can lead to numerous spurious short breakpoint edges. This script attempts to remove edges which conform to artifactual profiles. 
