@@ -168,8 +168,7 @@ cnvdir = os.path.realpath(cnvdir)
 # assemble an argstring
 argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --cnsize_min " + \
     str(args.cnsize_min) + " --downsample " + str(args.downsample) + " -s " + args.sample_name + \
-    " --AA_extendmode " + args.AA_extendmode + " --AA_runmode " + args.AA_runmode + \
-    " --AA_insert_sdevs " + str(args.AA_insert_sdevs)
+    " --AA_extendmode " + args.AA_extendmode + " --AA_runmode " + args.AA_runmode
 
 if args.ref:
     argstring += " --ref " + args.ref

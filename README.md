@@ -33,6 +33,7 @@ This module was constructed in collaboration with members of the GenePattern tea
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 ### Option B: Install with Conda
+This option is compatible with modern Linux systems, but may not work properly for macOS. 
 ```bash 
 conda install -c bioconda -c mosek ampliconsuite mosek
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh

@@ -103,7 +103,7 @@ if ! ${finalize_only}; then
   fi
 
   # install deps
-  python3 -m pip install cnvkit Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
+  python3 -m pip install "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
 
   if [ -z "$AA_SRC" ]; then
     echo export AA_SRC=${install_dir}/AmpliconArchitect/src/ >> ~/.bashrc
