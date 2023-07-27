@@ -2,7 +2,10 @@
 ![GitHub](https://img.shields.io/github/license/AmpliconSuite/AmpliconSuite-pipeline)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
 [![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/prepareaa?logo=docker)](https://hub.docker.com/r/jluebeck/prepareaa)
+[![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/prepareaa?logo=docker)]((https://hub.docker.com/r/jluebeck/prepareaa))
 [![Singularity](https://img.shields.io/badge/singularity-available-blue)](https://cloud.sylabs.io/library/jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline)
+[![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
+
 
 A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and AmpliconClassifier to enable analysis of focal copy number amplifications such as ecDNA or BFBs from paired-end whole genome sequencing data.
 
@@ -32,28 +35,44 @@ This module was constructed in collaboration with members of the GenePattern tea
 #### Nextflow:
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
-### Option B: Install with Conda
-This option is compatible with modern Linux systems, but may not work properly for macOS. 
+### Option B: Install with Conda or Mamba
+This option is compatible with modern Linux systems, but may not work properly for macOS.
 ```bash 
 conda install -c bioconda -c mosek ampliconsuite mosek
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
-bash install.sh --finalize  # this will confirm the data repo path and mosek license directory
+source install.sh --finalize_only  # this will confirm the data repo path and mosek license directory
+```
+
+If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function more robustly for installing AmpliconSuite. These steps also function on macOS.
+```bash
+# alternate instructions using Mamba (solves dependencies more effectively on some setups)
+mamba create -n ampsuite python=3.10
+mamba activate ampsuite
+mamba install -c conda-forge -c bioconda -c mosek ampliconsuite mosek
+wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
+source install.sh --finalize_only
 ```
 
 **Then proceed to Step 2 of Option C (below) ...**
 
 ### Option C: Standalone installation using the installer script
-Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python3`.
-1. Pull source code and run install script (Can skip if installed via Conda):
+Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`.
+1. Pull source code and run install script (**skip if installed via Conda**):
     ```bash
+    # first install some dependencies (BWA, R, samtools) if you don't already have them
+    # for ubuntu:
+    sudo apt install bwa r-base samtools
+    # or for macOS: brew install bwa r samtools  
+   
     git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
     cd AmpliconSuite-pipeline
-    # consider first doing ./install -h to see options.
-    # the install.sh script will install AmpliconArchitect, AmpliconClassifier and dependencies. 
-    ./install.sh  # note that by default this places the data repo directory in your $HOME. 
+    # To see install  options, consider first doing 
+    # source ./install -h
+    # The install.sh script will install python dependencies using 'python3 -m pip install' 
+    source ./install.sh 
     ```
 
-2. Populate the AA data repo with required annotations for the reference builds of interest. **Start here if you installed via Conda**.
+2. **Start here if you installed via Conda**. Populate the AA data repo with required annotations for the reference builds of interest. 
     - See the list of available AA annotations [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Copy the URL of the one(s) you need.
     ```bash
     cd $AA_DATA_REPO
@@ -67,7 +86,7 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
 
 3. Obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
 
-Lastly, as a completely optional step, if you want the Arial font in your AA figures, but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
+Lastly, as a completely optional step, if you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
 
 
 
@@ -92,7 +111,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
     cd AmpliconSuite-pipeline
    # Can use ./install.sh -h to see help before installing
-    ./install.sh --finalize
+    source ./install.sh --finalize_only
     ```
 
 3. License for Mosek optimization tool:

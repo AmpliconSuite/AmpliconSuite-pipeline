@@ -53,14 +53,14 @@ if $uninstall; then
   # remove the AmpliconArchitect and AmpliconClassifier dirs
   rm -rf ${install_dir}/AmpliconArchitect
   rm -rf ${install_dir}/AmpliconClassifier
-
   # unset the bash vars ($AA_SRC, $AC_SRC, $AA_DATA_REPO) and remove them from the .bashrc file.
   unset AA_SRC AC_SRC AA_DATA_REPO
   sed -i.bak '/^export AA_SRC=/d' ${HOME}/.bashrc
   sed -i.bak '/^export AC_SRC=/d' ${HOME}/.bashrc
   sed -i.bak '/^export AA_DATA_REPO=/d' ${HOME}/.bashrc
   rm ${HOME}/.bashrc.bak
-
+  echo "to uninstall the relevant python packages installed by this script, please do (some or all of)"
+  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek numpy pysam scipy"
   exit 0
 fi
 
@@ -72,7 +72,7 @@ if ! command -v samtools &> /dev/null; then
     echo "error! samtools is not installed or not on the system path!"
     exit 1
 else
-    echo "samtools is installed and on the system path"
+    samtools --version
 fi
 
 if ! command -v bwa &> /dev/null; then
@@ -82,8 +82,23 @@ else
     echo "bwa is installed and on the system path"
 fi
 
+if ! command -v Rscript &>/dev/null; then
+  echo "error! Rscript is not installed or not on the system path!"
+  exit 1
+else
+  Rscript --version
+fi
+
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
+  # check if AmpliconSuite-pipeline is here!
+  if ! test -f AmpliconSuite-pipeline.py; then
+    echo "For complete install you must first clone the AmpliconSuite-pipeline Github repo, do"
+    echo "git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline && cd AmpliconSuite-pipeline"
+    echo "Did you instead mean to finalize the installation only? (./install.sh --finalize_only)"
+    exit 1
+  fi
+
   # pull source code for AA
   TARGET=AmpliconArchitect
   TARGET_DIR=${install_dir}/${TARGET}
@@ -102,8 +117,11 @@ if ! ${finalize_only}; then
     git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
   fi
 
-  # install deps
+  # install python deps
   python3 -m pip install "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
+
+  # install Rscript deps
+  Rscript -e "source('http://callr.org/install#DNAcopy')"
 
   if [ -z "$AA_SRC" ]; then
     echo export AA_SRC=${install_dir}/AmpliconArchitect/src/ >> ~/.bashrc
@@ -132,7 +150,6 @@ if [ -z "$AA_DATA_REPO" ]; then
   chmod a+rw ${data_repo_path}/coverage.stats
   echo export AA_DATA_REPO=${data_repo_path} >> ~/.bashrc
   export AA_DATA_REPO=${data_repo_path}
-
 else
   echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}. To change this remove AA_DATA_REPO from your ~/.bashrc file and run the installer again!" >&2
 
@@ -141,15 +158,13 @@ fi
 # this is where the license will go
 mkdir -p ${HOME}/mosek/
 
-if ! test -f "${HOME}/mosek/mosek.lic" && ! test -f "${MOSEKLM_LICENSE_FILE}/mosek.lic"; then
-  echo "Now obtain license file mosek.lic (https://www.mosek.com/products/academic-licenses/). Move the file to ${HOME}/mosek after downloading. The license is free for academic use."
+if test -f "${HOME}/mosek/mosek.lic"; then
+    echo "Mosek license already in place: ${HOME}/mosek/mosek.lic"
+elif test -f "${MOSEKLM_LICENSE_FILE}/mosek.lic"; then
+    echo "Mosek license already in place: ${MOSEKLM_LICENSE_FILE}/mosek.lic"
 else
-  echo "Mosek license already in place"
-
+    echo "Now obtain license file mosek.lic (https://www.mosek.com/products/academic-licenses/). Move the file to ${HOME}/mosek after downloading. The license is free for academic use."
 fi
-
-echo "Reloading .bashrc"
-source ${HOME}/.bashrc
 
 if ! "${finalize_only}"; then
   echo "Module versions are..."
