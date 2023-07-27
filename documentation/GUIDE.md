@@ -203,6 +203,14 @@ At the moment, we do not support adding additional tracks of data into the plot 
 #
 
 ### FAQ
+- **Can AA detect subclonal ecDNA?**
+    - AA is not inherently a subclone-aware method, and will not attempt to compute clone fractions. AA relies on copy number amplifications being strong enough, even among subclonal events, that they can be identified in bulk.
+As a result, users should be aware that low copy number amplifications in tumor subclones may be missed by the tool. Unless every single cell of a tumor is sequenced, there is no way to identify every possible genomic event in that tumor.
+
+    - Users should keep in mind that ultra-rare events below a certain abundance in the tumor may not be currently having a significant effect on the tumor's biology until a selective pressure is applied and they possibly become positively selected for.
+If users want to identify those ulta-rare events that may become relevant in the context of future tumor evolution/therapeutic resistance, different tools or technologies should be applied to answer that specific question. 
+
+
 - **The AA_CNV_SEEDS.bed file was empty, what's wrong?**
     - Likely nothing. If no seed regions are detected, the sample likely has no candidate focal amplifications.
   Do you see any error messages printed to the console or in the log files?

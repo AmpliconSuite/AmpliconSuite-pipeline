@@ -274,7 +274,7 @@ Note that when this mode is used all AA results must have been generated with re
 - Information on interpreting the AA cycles file is available [here](https://github.com/jluebeck/AmpliconArchitect#interpreting-the-aa-cycles-files).
 
 ## FAQ
-Please check out our [guide document](https://github.com/jluebeck/PrepareAA/blob/master/GUIDE.md).
+Please check out our [guide document](documentation/GUIDE.md).
 
 ## Packaging outputs for AmpliconRepository
 We will soon release an online platform for storing and sharing your AmpliconSuite-pipeline outputs.
