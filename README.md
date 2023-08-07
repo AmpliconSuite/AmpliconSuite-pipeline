@@ -300,9 +300,9 @@ If using AmpliconSuite-pipeline in your publication, please cite the modules use
 
 ## Licenses
 The modules wrapped in AmpliconSuite-pipeline use the following licenses. Please note that the AmpliconArchitect license specifies that AmpliconArchitect is for research use and does not give license for commerical for-profit use.
-- [AmpliconSuite-pipeline license)](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/LICENSE) (BSD 2-Clause)
+- [AmpliconSuite-pipeline license](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/LICENSE) (BSD 2-Clause)
 - [AmpliconArchitect license](https://github.com/AmpliconSuite/AmpliconArchitect) (University of California software license)
-- [AmpliconClassifier license](BSD 2-Clause)
+- [AmpliconClassifier license](https://github.com/AmpliconSuite/AmpliconClassifier/blob/main/LICENSE) (BSD 2-Clause)
 
 Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their own set of licensing requirements which users should make themselves aware of as needed.
 
