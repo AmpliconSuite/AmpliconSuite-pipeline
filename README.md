@@ -298,6 +298,14 @@ To package a collection of AA outputs for AmpliconRepository, you will need to d
 If using AmpliconSuite-pipeline in your publication, please cite the modules used in the analysis, which are summarized in [CITATIONS.md](https://github.com/jluebeck/AmpliconSuite-pipeline/blob/master/CITATIONS.md).
 
 
+## Licenses
+The modules wrapped in AmpliconSuite-pipeline use the following licenses. Please note that the AmpliconArchitect license specifies that AmpliconArchitect is for research use and does not give license for commerical for-profit use.
+- [AmpliconSuite-pipeline license)](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/LICENSE) (BSD 2-Clause)
+- [AmpliconArchitect license](https://github.com/AmpliconSuite/AmpliconArchitect) (University of California software license)
+- [AmpliconClassifier license](BSD 2-Clause)
+
+Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their own set of licensing requirements which users should make themselves aware of as needed.
+
 ## Additional analysis tools and scripts
 
 ### - Grouped analysis of related samples `GroupedAnalysisAmpSuite.py`
