@@ -197,6 +197,15 @@ if args.normal_bam:
     norm_bamdir, norm_bamname = os.path.split(args.normal_bam)
     argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
 
+if args.sv_vcf:
+    vcf_dir, vcf_name = os.path.split(args.sv_vcf)
+    argstring += " --sv_vcf /home/vcf_dir/" + vcf_name
+    if args.sv_vcf_no_filter:
+        argstring += " --sv_vcf_no_filter"
+
+else:
+    vcf_dir = bamdir
+
 if args.ploidy:
     argstring += " --ploidy " + str(args.ploidy)
 
@@ -295,7 +304,7 @@ with open(runscript_outname, 'w') as outfile:
     sing_string = "singularity exec --no-home --cleanenv --env-file " + env_outname + " --bind $AA_DATA_REPO:" \
                   "/home/data_repo --bind " + bamdir + ":/home/bam_dir --bind " + norm_bamdir + ":/home/norm_bam_dir " \
                   "--bind " + cnvdir + ":/home/bed_dir --bind " + args.output_directory + ":/home/output --bind " \
-                  "$HOME/mosek:/home/mosek/ " + args.sif + " bash /home/run_paa_script.sh "
+                  "$HOME/mosek:/home/mosek/ --bind " + vcf_dir + ":/home/vcf_dir " + args.sif + " bash /home/run_paa_script.sh "
 
     print("\n" + sing_string + "\n")
     outfile.write(sing_string)

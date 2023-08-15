@@ -59,7 +59,7 @@ if $uninstall; then
   sed -i.bak '/^export AC_SRC=/d' ${HOME}/.bashrc
   sed -i.bak '/^export AA_DATA_REPO=/d' ${HOME}/.bashrc
   rm ${HOME}/.bashrc.bak
-  echo "to uninstall the relevant python packages installed by this script, please do (some or all of)"
+  echo "to uninstall the relevant python packages installed by this script, please do (some or all of): "
   echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek numpy pysam scipy"
   exit 0
 fi
@@ -155,7 +155,7 @@ else
 
 fi
 
-# this is where the license will go
+# this is where the Mosek license file will go
 mkdir -p ${HOME}/mosek/
 
 if test -f "${HOME}/mosek/mosek.lic"; then

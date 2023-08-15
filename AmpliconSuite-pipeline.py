@@ -14,7 +14,7 @@ import time
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "0.1555.2"
+__version__ = "1.0.0"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -265,10 +265,19 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
     return AA_seeds_filename + ".bed"
 
 
-def run_AA(AA_interpreter, amplified_interval_bed, sorted_bam, AA_outdir, sname, downsample, ref, runmode, extendmode,
-           insert_sdevs):
+def run_AA(amplified_interval_bed, AA_outdir, sname, args):
+    AA_interpreter = args.AA_interpreter
+    sorted_bam = args.sorted_bam
+    downsample = args.downsample
+    ref = args.ref
+    runmode = args.AA_runmode
+    extendmode = args.AA_extendmode
+    insert_sdevs = args.AA_insert_sdevs
+    sv_vcf = args.sv_vcf
+    sv_vcf_no_filter = args.sv_vcf_no_filter
+
     AA_version = \
-    Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
+    Popen([args.AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
         1].rstrip()
     try:
         AA_version = AA_version.decode('utf-8')
@@ -282,6 +291,11 @@ def run_AA(AA_interpreter, amplified_interval_bed, sorted_bam, AA_outdir, sname,
         AA_outdir, sname)
     if insert_sdevs is not None:
         cmd += " --insert_sdevs {}".format(str(insert_sdevs))
+
+    if sv_vcf:
+        cmd += " --sv_vcf {}".format(sv_vcf)
+        if sv_vcf_no_filter:
+            cmd += " --sv_vcf_no_filter"
 
     logging.info(cmd)
     aa_exit_code = call(cmd, shell=True)
@@ -499,71 +513,73 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="A pipeline wrapper for AmpliconArchitect, invoking alignment CNV calling and CNV filtering prior. "
                     "Can launch AA, as well as downstream amplicon classification.")
-    parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)")
-    parser.add_argument("-s", "--sample_name", help="sample name", required=True)
-    parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA and CNV calling", required=True)
+    parser.add_argument("-o", "--output_directory", metavar='PATH', help="output directory names (will create if not already created)")
+    parser.add_argument("-s", "--sample_name", metavar='STR', help="sample name", required=True)
+    parser.add_argument("-t", "--nthreads", metavar='INT', help="Number of threads to use in BWA and CNV calling",
+                        required=True)
     parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
     parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
                         action='store_true')
-    parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
-                                                                            "GRCm38", "GRCh38_viral"])
-    parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
-    parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
+    parser.add_argument("--ref", metavar='STR', help="Reference genome version.", choices=["hg19", "GRCh37",
+                        "GRCh38", "hg38", "mm10", "GRCm38", "GRCh38_viral"])
+    parser.add_argument("--cngain", metavar='FLOAT', type=float, help="CN gain threshold to consider for AA seeding",
+                        default=4.5)
+    parser.add_argument("--cnsize_min", metavar='INT', type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
-    parser.add_argument("--downsample", type=float, help="AA downsample argument (see AA documentation)", default=10)
-    parser.add_argument("--use_old_samtools", help="Indicate you are using an old build of samtools (prior to version "
-                                                   "1.0)", action='store_true', default=False)
-    parser.add_argument("--rscript_path", help="Specify custom path to Rscript, if needed when using CNVKit "
-                                               "(which requires R version >3.4)")
-    parser.add_argument("--python3_path", help="If needed, specify a custom path to python3.")
+    parser.add_argument("--downsample", metavar='FLOAT', type=float, help="AA downsample argument (see AA documentation)",
+                        default=10)
+    parser.add_argument("--use_old_samtools", help="Indicate you are using an old build of samtools prior to version 1.0",
+                        action='store_true', default=False)
+    parser.add_argument("--rscript_path", metavar='PATH', help="Specify custom path to Rscript for CNVKit, "
+                        "which requires R version >=3.5")
+    parser.add_argument("--python3_path", metavar='PATH', help="If needed, specify a custom path to python3.")
     parser.add_argument("--aa_python_interpreter",
                         help="By default AmpliconSuite-pipeline will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
-                             "'python3' or 'python2'", type=str, default='python')
-    # parser.add_argument("--freebayes_dir",
-    #                     help="Path to directory where freebayes executable exists (not the path to the executable "
-    #                          "itself). Only needed if using Canvas and freebayes is not installed on system path.")
-    # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
-    #                     "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
-    #                     )
-    parser.add_argument("--AA_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
-    parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
-                                             "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
-    parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --extendmode argument to AA. Default "
-                                                "mode is 'EXPLORE'",
-                        choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"],
-                        default='EXPLORE')
+                             "'python3' or 'python2'", metavar='PATH', type=str, default='python')
+    parser.add_argument("--sv_vcf",
+                        help="Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
+                        metavar='FILE', action='store', type=str)
+    parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
+                        "those without 'PASS' in the FILTER column.", action='store_true', default=False)
+    parser.add_argument("--AA_src", metavar='PATH', help="Specify a custom $AA_SRC path. Overrides the bash variable")
+    parser.add_argument("--AA_runmode", metavar='STR', help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
+                        "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
+    parser.add_argument("--AA_extendmode", metavar='STR', help="If --run_AA selected, set the --extendmode argument to AA. Default "
+                        "mode is 'EXPLORE'", choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"], default='EXPLORE')
     parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
-                                                  "increase for sequencing runs with high variance after insert size selection step. (default "
-                                                  "3.0)", type=float, default=None)
-    parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)")
-    parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside of CNVKit.", default=None)
-    parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional). This is not used outside of CNVKit.", default=None)
-    parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
-                                                      "default segmentation method (cbs).",
-                        choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
-                                 'hmm-germline', 'none'], default='cbs')
+                        "increase for sequencing runs with high variance after insert size selection step. (default "
+                        "3.0)", metavar="FLOAT", type=float, default=None)
+    parser.add_argument("--normal_bam", metavar='FILE', help="Path to matched normal bam for CNVKit (optional)")
+    parser.add_argument("--ploidy", metavar='FLOAT', type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside of CNVKit.",
+                        default=None)
+    parser.add_argument("--purity", metavar='FLOAT', type=float, help="Tumor purity estimate for CNVKit (optional). This is not used outside of CNVKit.",
+                        default=None)
+    parser.add_argument("--cnvkit_segmentation", metavar='STR', help="Segmentation method for CNVKit (if used), defaults to CNVKit "
+                        "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor', 'hmm-germline', 'none'],
+                        default='cbs')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
                         action='store_true')
     parser.add_argument("--no_QC", help="Skip QC on the BAM file. Do not adjust AA insert_sdevs for "
                                         "poor-quality insert size distribution", action='store_true')
-    parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
+    parser.add_argument("--sample_metadata", metavar='FILE', help="JSON file of sample metadata to build on")
+    parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.",
+                        default='')
     parser.add_argument("-v", "--version", action='version',
                         version='AmpliconSuite-pipeline version {version} \n'.format(version=__version__))
-    parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.", default='')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
+    group.add_argument("--sorted_bam", "--bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
-    group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
-    group.add_argument("--completed_AA_runs",
+    group.add_argument("--fastqs", metavar='TWO FILES', help="Fastq files (r1.fq r2.fq)", nargs=2)
+    group.add_argument("--completed_AA_runs", metavar='PATH',
                        help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
     group2 = parser.add_mutually_exclusive_group()
-    group2.add_argument("--cnv_bed", "--bed",
+    group2.add_argument("--cnv_bed", "--bed", metavar='FILE',
                         help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
                              " be: chr start end name cngain")
-    group2.add_argument("--cnvkit_dir", help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set",
+    group2.add_argument("--cnvkit_dir", metavar='PATH', help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set",
                         default="")
-    group2.add_argument("--completed_run_metadata",
+    group2.add_argument("--completed_run_metadata", metavar='FILE',
                         help="Run metadata JSON to retroactively assign to collection of samples", default="")
     group2.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
                         action='store_true')
@@ -887,8 +903,7 @@ if __name__ == '__main__':
                 logging.info("Properly paired rate less than 90%, setting --insert_sdevs 9.0 for AA")
                 args.AA_insert_sdevs = 9.0
 
-            run_AA(args.aa_python_interpreter, amplified_interval_bed, args.sorted_bam, AA_outdir, sname,
-                   args.downsample, args.ref, args.AA_runmode, args.AA_extendmode, args.AA_insert_sdevs)
+            run_AA(amplified_interval_bed, AA_outdir, sname, args)
             tb = time.time()
             timing_logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
             ta = tb

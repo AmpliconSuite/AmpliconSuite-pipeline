@@ -97,7 +97,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 1. Obtain the AmpliconSuite-pipeline image from the options below:
    - **Singularity**:
      * Singularity installation: https://docs.sylabs.io/guides/3.0/user-guide/installation.html
-     * Must have Singularity version 3.6 or higher.
+     * Must have Singularity version 3.6 or later.
      * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
 
    - **Docker**:
@@ -143,8 +143,8 @@ An example command might look like:
 
 `AmpliconSuite-pipeline/singularity/run_paa_singularity.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
-### Option E: Standalone installation without automated installation
-Try this if you are going to use `python2`. See the documentation folder for instructions.
+### Option E: Standalone installation without installer script
+Try this if you are going to use `python2`. Please see [the instructions here](documentation/CUSTOM_INSTALL.md).
 
 
 ## Running AmpliconSuite-pipeline

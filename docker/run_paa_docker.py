@@ -192,6 +192,15 @@ if args.normal_bam:
     norm_bamdir, norm_bamname = os.path.split(args.normal_bam)
     argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
 
+if args.sv_vcf:
+    vcf_dir, vcf_name = os.path.split(args.sv_vcf)
+    argstring += " --sv_vcf /home/vcf_dir/" + vcf_name
+    if args.sv_vcf_no_filter:
+        argstring += " --sv_vcf_no_filter"
+
+else:
+    vcf_dir = bamdir
+
 if args.ploidy:
     argstring += " --ploidy " + str(args.ploidy)
 
@@ -240,7 +249,6 @@ userstring = ""
 if args.run_as_user:
     userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
 
-
 runscript_outname = "paa_docker_" + args.sample_name + ".sh"
 print("Creating a docker script with the following argstring:")
 print(argstring + "\n")
@@ -285,15 +293,15 @@ with open(runscript_outname, 'w') as outfile:
     # assemble a docker command string
     if no_data_repo:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
-            " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
-            ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-            MOSEKLM_LICENSE_FILE + ":/home/mosek/ jluebeck/prepareaa bash /home/run_paa_script.sh"
+        " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + ":/home/norm_bam_dir -v " + vcf_dir + ":/home/vcf_dir -v" + \
+        cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
+        MOSEKLM_LICENSE_FILE + ":/home/mosek/ jluebeck/prepareaa bash /home/run_paa_script.sh"
 
     else:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
-            " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + \
-            ":/home/norm_bam_dir -v " + cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-            MOSEKLM_LICENSE_FILE + ":/home/mosek jluebeck/prepareaa bash /home/run_paa_script.sh"
+        " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + ":/home/norm_bam_dir -v " + vcf_dir + ":/home/vcf_dir -v" + \
+        cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
+        MOSEKLM_LICENSE_FILE + ":/home/mosek jluebeck/prepareaa bash /home/run_paa_script.sh"
 
 
     print("\n" + dockerstring + "\n")
