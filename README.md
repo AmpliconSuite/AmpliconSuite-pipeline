@@ -37,7 +37,6 @@ This module was constructed in collaboration with members of the GenePattern tea
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
 ### Option B: Install with Conda or Mamba
-This option is compatible with modern Linux systems, but may not work properly for macOS.
 ```bash 
 conda install -c bioconda -c mosek ampliconsuite mosek
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
@@ -54,7 +53,7 @@ wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioc
 source install.sh --finalize_only
 ```
 
-**Then proceed to Step 2 of Option C (below) ...**
+**then proceeed to step 2 of Option C (below) ...**
 
 ### Option C: Standalone installation using the installer script
 Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`.
@@ -73,7 +72,7 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     source ./install.sh 
     ```
 
-2. **Start here if you installed via Conda**. Populate the AA data repo with required annotations for the reference builds of interest. 
+2. **Start here if you installed with Conda or Mamba**. Populate the AA data repo with required annotations for the reference genomes of interest. 
     - See the list of available AA annotations [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Copy the URL of the one(s) you need.
     ```bash
     cd $AA_DATA_REPO
