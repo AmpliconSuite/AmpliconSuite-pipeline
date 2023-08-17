@@ -88,8 +88,12 @@ parser.add_argument(
 #     '--ref_path', help="Path to reference Genome. Won't download reference genome if provided.", default="None")
 # parser.add_argument(
 #     '--AA_seed', help='Seeds that sets randomness for AA', default=0)
-parser.add_argument(
-    '--metadata', help="Path to a JSON of sample metadata to build on", default="", nargs="+")
+parser.add_argument("--sv_vcf", help="Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
+                    metavar='FILE', action='store', type=str)
+parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
+                    "those without 'PASS' in the FILTER column.", action='store_true', default=False)
+
+parser.add_argument('--metadata', help="Path to a JSON of sample metadata to build on", default="", nargs="+")
 
 
 # parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
