@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# This is invoked by run_paa_docker.py after the container is launched by run_paa_docker.py
+
 AA_DATA_REPO=/home/data_repo
 export AA_DATA_REPO
 AA_SRC=/home/programs/AmpliconArchitect-master/src

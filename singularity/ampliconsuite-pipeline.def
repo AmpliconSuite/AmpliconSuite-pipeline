@@ -52,11 +52,11 @@ echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
 echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
 echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc
 
-wget https://github.com/jluebeck/AmpliconArchitect/archive/master.zip -P /home/programs
+wget https://github.com/AmpliconSuite/AmpliconArchitect/archive/master.zip -P /home/programs
 cd /home/programs && unzip master.zip && rm master.zip
-wget https://github.com/jluebeck/AmpliconClassifier/archive/main.zip -P /home/programs
+wget https://github.com/AmpliconSuite/AmpliconClassifier/archive/main.zip -P /home/programs
 cd /home/programs && unzip main.zip && rm main.zip
-wget https://github.com/jluebeck/AmpliconSuite-pipeline/archive/master.zip -P /home/programs
+wget https://github.com/AmpliconSuite/AmpliconSuite-pipeline/archive/master.zip -P /home/programs
 cd /home/programs && unzip master.zip && rm master.zip
 
 chmod a+rwx /home -R

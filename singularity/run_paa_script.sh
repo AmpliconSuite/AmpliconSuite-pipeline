@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# This is invoked by run_paa_singularity.py after the container is launched by run_paa_singularity.py
+
 cd /home/output
 
 id > /home/output/docker_home_manifest.log

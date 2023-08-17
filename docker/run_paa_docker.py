@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# This python script is the driver for launching the AmpliconSuite-pipeline docker image
+
 import argparse
 import json
 import os

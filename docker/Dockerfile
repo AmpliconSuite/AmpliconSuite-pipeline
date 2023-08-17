@@ -56,11 +56,11 @@ RUN echo export MOSEKLM_LICENSE_FILE=/home/mosek/ >> ~/.bashrc
 RUN echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
 RUN echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
 RUN echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc
-ADD https://github.com/jluebeck/AmpliconArchitect/archive/master.zip /home/programs
+ADD https://github.com/AmpliconSuite/AmpliconArchitect/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
-ADD https://github.com/jluebeck/AmpliconClassifier/archive/main.zip /home/programs
+ADD https://github.com/AmpliconSuite/AmpliconClassifier/archive/main.zip /home/programs
 RUN cd /home/programs && unzip main.zip
-ADD https://github.com/jluebeck/PrepareAA/archive/master.zip /home/programs
+ADD https://github.com/AmpliconSuite/AmpliconSuite-pipeline/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
 ADD https://github.com/parklab/NGSCheckMate/archive/master.zip /home/programs
 RUN cd /home/programs && unzip master.zip
