@@ -266,7 +266,7 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
 
 
 def run_AA(amplified_interval_bed, AA_outdir, sname, args):
-    AA_interpreter = args.AA_interpreter
+    AA_interpreter = args.aa_python_interpreter
     sorted_bam = args.sorted_bam
     downsample = args.downsample
     ref = args.ref
@@ -277,7 +277,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     sv_vcf_no_filter = args.sv_vcf_no_filter
 
     AA_version = \
-    Popen([args.AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
+    Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
         1].rstrip()
     try:
         AA_version = AA_version.decode('utf-8')
