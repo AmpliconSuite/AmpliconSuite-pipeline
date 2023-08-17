@@ -77,7 +77,7 @@ parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to id
                                         action='store_true')
 parser.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
                     action='store_true')
-parser.add_argument("--cnv_bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
+parser.add_argument("--cnv_bed", "--bed", help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
                     " be: chr start end name cngain", default="")
 parser.add_argument("--run_as_user", help="Run the docker image as the user launching this script instead of as root. Alternatively, instead of setting this flag"
                     " one can also rebuild the docker image using docker build . -t jluebeck/prepareaa:latest --build-arg set_uid=$UID --build-arg set_gid=$(id -g) ",
@@ -199,6 +199,7 @@ if args.normal_bam:
     argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
 
 if args.sv_vcf:
+    args.sv_vcf = os.path.realpath(args.sv_vcf)
     vcf_dir, vcf_name = os.path.split(args.sv_vcf)
     argstring += " --sv_vcf /home/vcf_dir/" + vcf_name
     if args.sv_vcf_no_filter:
