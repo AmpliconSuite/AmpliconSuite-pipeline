@@ -245,7 +245,7 @@ Note that when this mode is used all AA results must have been generated with re
 
 - `--use_old_samtools`: Set this flag if your SAMtools version is < 1.0.
 
-- `--no_filter`: Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions.
+- `--no_filter`: Do not invoke `amplified_intervals.py` to filter amplified seed regions based on CN, size and ignorefile regions. Skipping filtering is not recommended and will harm reliability of results.
 
 - `--no_QC`: Skip QC on the BAM file.
 

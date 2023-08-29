@@ -884,6 +884,11 @@ if __name__ == '__main__':
             amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
                                                              outdir, sname, args.cngain, args.cnsize_min)
 
+        elif args.no_filter and runCNV:
+            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
+                args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
+                                                           args.cngain, args.output_directory)
+        
         else:
             logging.info("Skipping filtering of bed file.")
             amplified_interval_bed = args.cnv_bed

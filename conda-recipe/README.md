@@ -4,7 +4,7 @@ This version of the conda recipe is for a standalone build and install process. 
 bioconda to fetch the actual bioconda recipe, you can do the following 
 
 ```bash
-conda build AmpliconSuite-pipeline/conda-recipe/ 
+conda build AmpliconSuite-pipeline/conda-recipe/  # add '--python=3.8 --numpy=1.22.4` if needed for older systems
 conda create -n "ampsuite" python>=3.8.0
 conda activate ampsuite
 conda install -n ampsuite -c local -c mosek ampliconsuite mosek
