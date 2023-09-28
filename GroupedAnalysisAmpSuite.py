@@ -12,7 +12,7 @@ import sys
 import time
 import threading
 
-PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/PrepareAA.py"
+PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/AmpliconSuite-pipeline.py"
 
 
 def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):

@@ -140,6 +140,19 @@ This tool will output a table describing many important details of the focal amp
 
 On its own, AA does not automatically produce a prediction of ecDNA or BFB status. It provides the files though that can be used to make that determination.
 For more details about deciphering the AA outputs on your own, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#outputs).
+
+"*What are the limitations in interpreting the outputs?*"
+
+**Some of the primary limitations to consider with AA go as follows:**
+
+- False negatives: In a panel of 67 FISH-validated amplicons in cancer lines using low-coverage WGS, AA achieved ~87% sensitivity with regards to ecDNA detection (Kim H, et al., Nature Genetics 2020).
+- False positives: It is very hard to establish all regions of an arbitrary genome that appear to have bioinformatically circular repeats. We attempt to solve this by providing the similarity score filtering option in AmpliconClassifier, but users should still be wary and thorough with vetting their results.
+If they see identical focal amplifications in unrelated samples, this is a red flag.
+- Thresholds are unstable: We use by default a threshold of CN=4.5 and size >10kbp when detecting ecDNA. Borderline events near these cutoffs may not be stable in terms of detection.
+- ecDNA and BFB are difficult to distinguish bioinformaticall from short read data: While breakage-fusion-bridge cycles are theoretically simple to identify, the presence of additional SVs in, and around the focally amplified region obscures that signature.
+Consequently, these events may appear like ecDNA. Furthermore, it has been posited that [BFBs may produce ecDNAs as an intermediate product](https://link.springer.com/article/10.1007/s00412-022-00773-4), meaning that genomically overlapping BFB and ecDNA amplifications may exist, further confounding detection.
+
+
 #
 
 ### Visualizing the output
@@ -205,7 +218,7 @@ At the moment, we do not support adding additional tracks of data into the plot 
 ### FAQ
 - **Can AA detect subclonal ecDNA?**
     - AA is not inherently a subclone-aware method, and will not attempt to compute clone fractions. AA relies on copy number amplifications being strong enough, even among subclonal events, that they can be identified in bulk.
-As a result, users should be aware that low copy number amplifications in tumor subclones may be missed by the tool. Unless every single cell of a tumor is sequenced, there is no way to identify every possible genomic event in that tumor.
+As a result, users should be aware that low copy number amplifications in tumor subclones may be missed by the tool. **Attempting to apply a subclonal CN caller for seeding with AA may result in false positives, long runtimes, and potentially uninterpretable outputs**. Unless every single cell of a tumor is sequenced, there is no way to identify every possible genomic event in that tumor.
 
     - Users should keep in mind that ultra-rare events below a certain abundance in the tumor may not be currently having a significant effect on the tumor's biology until a selective pressure is applied and they possibly become positively selected for.
 If users want to identify those ulta-rare events that may become relevant in the context of future tumor evolution/therapeutic resistance, different tools or technologies should be applied to answer that specific question. 

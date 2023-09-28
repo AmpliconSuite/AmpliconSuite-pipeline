@@ -888,7 +888,8 @@ if __name__ == '__main__':
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, args.output_directory)
-        
+                logging.info("Skipping amplified_intervals.py step due to --no_filter")
+
         else:
             logging.info("Skipping filtering of bed file.")
             amplified_interval_bed = args.cnv_bed
