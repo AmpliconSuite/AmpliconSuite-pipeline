@@ -68,29 +68,29 @@ if [ -z "$HOME" ]; then
   echo "error! \$HOME variable must be set to use installer!"
 fi
 
-if ! command -v samtools &> /dev/null; then
-    echo "error! samtools is not installed or not on the system path!"
-    exit 1
-else
-    samtools --version
-fi
-
-if ! command -v bwa &> /dev/null; then
-    echo "error! bwa is not installed or not on the system path!"
-    exit 1
-else
-    echo "bwa is installed and on the system path"
-fi
-
-if ! command -v Rscript &>/dev/null; then
-  echo "error! Rscript is not installed or not on the system path!"
-  exit 1
-else
-  Rscript --version
-fi
-
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
+  if ! command -v samtools &> /dev/null; then
+    echo "error! samtools is not installed or not on the system path!"
+    exit 1
+  else
+      samtools --version
+  fi
+
+  if ! command -v bwa &> /dev/null; then
+      echo "error! bwa is not installed or not on the system path!"
+      exit 1
+  else
+      echo "bwa is installed and on the system path"
+  fi
+
+  if ! command -v Rscript &>/dev/null; then
+    echo "error! Rscript is not installed or not on the system path!"
+    exit 1
+  else
+    Rscript --version
+  fi
+
   # check if AmpliconSuite-pipeline is here!
   if ! test -f AmpliconSuite-pipeline.py; then
     echo "For complete install you must first clone the AmpliconSuite-pipeline Github repo, do"
