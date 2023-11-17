@@ -1,6 +1,6 @@
 ### Standalone AmpliconSuite-pipeline Conda recipe
 
-This version of the conda recipe is for a standalone build and install process. If you want to build this without using
+This version of the conda recipe is for a standalone build and install process, primarily to debug the building when one of the modules is updated. If you want to build this without using
 bioconda to fetch the actual bioconda recipe, you can do the following 
 
 ```bash

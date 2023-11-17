@@ -147,7 +147,6 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
                 carm = carm_interval.data
                 arm2cns[carm].append((c, s, e, cn))
                 arm2lens[carm] = carm_interval.end - carm_interval.begin
-
             else:
                 arm2cns["other"].append((c, s, e, cn))
                 logging.debug("Did not match " + c + ":" + str(s) + "-" + str(e) + " to a known chromosome arm!")

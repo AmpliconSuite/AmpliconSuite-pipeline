@@ -273,6 +273,11 @@ Note that when this mode is used all AA results must have been generated with re
 - Information about the amplicon classification files produced at the end of the workflow are available [here](https://github.com/AmpliconSuite/AmpliconClassifier#3-output).
 - Information on interpreting the AA cycles file is available [here](https://github.com/jluebeck/AmpliconArchitect#interpreting-the-aa-cycles-files).
 
+## Testing your installation
+To ensure your local installation of, we provide a small test dataset (~3Gb), which users can download from SRA. After 
+obtaining either the BAM or FASTQ files for GBM39_FF-8 provided [on SRA](https://trace.ncbi.nlm.nih.gov/Traces/?run=SRR4009231), users 
+can run the method and compare their results against the files in the `test_outputs/` directory.
+
 ## FAQ
 Please check out our [guide document](documentation/GUIDE.md).
 
