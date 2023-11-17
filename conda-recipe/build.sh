@@ -15,6 +15,7 @@ mkdir -p $PREFIX/bin
 # setup.py will handle this in the next release
 cp AmpliconSuite-pipeline.py ${PREFIX}/bin/AmpliconSuite-pipeline.py
 cp GroupedAnalysisAmpSuite.py ${PREFIX}/bin/GroupedAnalysisAmpSuite.py
+cp amplicon_classifier.py ${PREFIX}/bin/amplicon_classifier.py
 cp feature_similarity.py ${PREFIX}/bin/feature_similarity.py
 cp make_results_table.py ${PREFIX}/bin/make_results_table.py
 

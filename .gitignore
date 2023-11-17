@@ -79,3 +79,4 @@ GRCh37/
 GRCh38/
 docker/run_paa_docker.sh
 *.sif
+=*

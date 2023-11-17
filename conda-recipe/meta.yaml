@@ -17,7 +17,6 @@ source:
       folder: ampliconarchitectlib
     - url: https://github.com/AmpliconSuite/AmpliconClassifier/archive/v{{ AC_version }}.tar.gz
       sha256: d1f35e17827947f657892b08c93c9694e9b33947e30d45e8e515084a5c96638d
-      folder: ampliconclassifierlib
 
 build:
     noarch: python
