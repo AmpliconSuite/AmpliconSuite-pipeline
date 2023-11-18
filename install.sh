@@ -151,7 +151,7 @@ if [ -z "$AA_DATA_REPO" ]; then
   echo export AA_DATA_REPO=${data_repo_path} >> ~/.bashrc
   export AA_DATA_REPO=${data_repo_path}
 else
-  echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}. To change this remove AA_DATA_REPO from your ~/.bashrc file and run the installer again!" >&2
+  echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}. If you ever want to change this remove AA_DATA_REPO from your ~/.bashrc file and run the installer again!" >&2
 
 fi
 

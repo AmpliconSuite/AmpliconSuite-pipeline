@@ -104,7 +104,7 @@ parser.add_argument('--metadata', help="Path to a JSON of sample metadata to bui
 
 # parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--sorted_bam", "--bam",
+group.add_argument("--bam", "--sorted_bam",
                    help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
 group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 group.add_argument("--completed_AA_runs", help="Path to a directory containing one or more completed AA runs which "

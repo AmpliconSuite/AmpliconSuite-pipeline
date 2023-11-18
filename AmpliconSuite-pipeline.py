@@ -568,7 +568,7 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--version", action='version',
                         version='AmpliconSuite-pipeline version {version} \n'.format(version=__version__))
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--sorted_bam", "--bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported "
+    group.add_argument("--bam", "--sorted_bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
     group.add_argument("--fastqs", metavar='TWO FILES', help="Fastq files (r1.fq r2.fq)", nargs=2)
     group.add_argument("--completed_AA_runs", metavar='PATH',

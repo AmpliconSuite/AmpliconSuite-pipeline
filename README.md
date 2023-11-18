@@ -84,7 +84,7 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     rm [reference_build.tar.gz]
     ```
 
-3. Obtain the Mosek optimization tool license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+3. Obtain the Mosek license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
 
 Lastly, as a completely optional step, if you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
 
@@ -114,7 +114,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     source ./install.sh --finalize_only
     ```
 
-3. License for Mosek optimization tool:
+3. License for Mosek dependency:
     * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/`). The license is free for academic use.
     * Place the file in `$HOME/mosek/` (i.e, the `mosek/` folder that now exists in your home directory).
     * If you are not able to place the license in the default location, you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
