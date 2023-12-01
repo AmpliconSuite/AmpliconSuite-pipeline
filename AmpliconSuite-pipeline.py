@@ -14,7 +14,7 @@ import time
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -320,7 +320,6 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     logging.info(cmd)
     call(cmd, shell=True)
 
-    # run AC on input file
     with open(input_file) as ifile:
         sample_info_dict["number_of_AA_amplicons"] = len(ifile.readlines())
 
@@ -680,12 +679,14 @@ if __name__ == '__main__':
 
     except KeyError:
         try:
-            import ampliconclassifierlib
-            AC_SRC = os.path.realpath(os.path.dirname(ampliconclassifierlib.__file__))
+            import ampclasslib
+            ac_path = check_output("which amplicon_classifier.py", shell=True).decode("utf-8")
+            AC_SRC = ac_path.rsplit("/amplicon_classifier.py")[0]
 
-        except ModuleNotFoundError:
+        except Exception as e:
+            logging.error(e)
             logging.error(
-                "AC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
+                "\nAC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
             sys.exit(1)
 
     if (args.fastqs or args.completed_AA_runs) and not args.ref:

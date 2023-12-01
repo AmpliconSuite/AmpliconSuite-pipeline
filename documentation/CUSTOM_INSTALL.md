@@ -7,7 +7,7 @@ If that or none of the other installation options are possible (e.g. you need to
 
 `git clone https://github.com/jluebeck/AmpliconSuite-pipeline.git`
 
-2. Individually install other prerequisites from the section below following the install instrucitons on each.
+2. Individually install other prerequisites from the section below following the install instructions on each.
 3. Set the location where you would like to store the `$AA_DATA_REPO`
 ```bash
         mkdir data_repo && cd data_repo
@@ -29,6 +29,10 @@ Unless you are using a containerized version, and depending on what input data y
 - (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
   - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads. Instructions for setting up the AA data repo are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).
 - (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
+  - To install, clone the codebase then 
+  - `cd AmpliconClassifier`
+  - `echo export AC_SRC=$PWD >> ~/.bashrc`
+  - `source ~/.bashrc`
 - (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
