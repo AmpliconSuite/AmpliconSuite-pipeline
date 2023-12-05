@@ -267,7 +267,7 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
 
 def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     AA_interpreter = args.aa_python_interpreter
-    sorted_bam = args.sorted_bam
+    sorted_bam = args.bam
     downsample = args.downsample
     ref = args.ref
     runmode = args.AA_runmode
@@ -698,7 +698,7 @@ if __name__ == '__main__':
 
     # if not these args are set, assume cnvkit.py is on the path.
     if not (args.cnv_bed or args.cnvkit_dir or args.completed_run_metadata or args.align_only) and (args.fastqs or
-                                                                                                    args.sorted_bam):
+                                                                                                    args.bam):
         try:
             args.cnvkit_dir = str(check_output(["which cnvkit.py"], shell=True).decode("utf-8").rstrip())
 
@@ -760,7 +760,7 @@ if __name__ == '__main__':
             refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
 
     faidict = {}
-    if args.sorted_bam:
+    if args.bam:
         if args.ref and refFnames[args.ref]:
             faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
 
@@ -775,7 +775,7 @@ if __name__ == '__main__':
                 if v:
                     faidict[k] = AA_REPO + k + "/" + v + ".fai"
 
-        determined_ref = check_reference.check_ref(args.sorted_bam, faidict, args.samtools_path)
+        determined_ref = check_reference.check_ref(args.bam, faidict, args.samtools_path)
         if not determined_ref and not args.ref:
             logging.error("Could not determine ref build. Please make sure AA data repo is populated.")
             sys.exit(1)
@@ -820,23 +820,23 @@ if __name__ == '__main__':
         # Run BWA
         fastqs = " ".join(args.fastqs)
         logging.info("Will perform alignment on " + fastqs)
-        args.sorted_bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
+        args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
 
     if not args.completed_AA_runs:
-        bamBaiNoExt = args.sorted_bam[:-3] + "bai"
-        cramCraiNoExt = args.sorted_bam[:-4] + "crai"
-        baiExists = os.path.isfile(args.sorted_bam + ".bai") or os.path.isfile(bamBaiNoExt)
-        craiExists = os.path.isfile(args.sorted_bam + ".crai") or os.path.isfile(cramCraiNoExt)
+        bamBaiNoExt = args.bam[:-3] + "bai"
+        cramCraiNoExt = args.bam[:-4] + "crai"
+        baiExists = os.path.isfile(args.bam + ".bai") or os.path.isfile(bamBaiNoExt)
+        craiExists = os.path.isfile(args.bam + ".crai") or os.path.isfile(cramCraiNoExt)
         if not baiExists and not craiExists:
-            logging.info(args.sorted_bam + " index not found, calling samtools index")
-            call([args.samtools_path, "index", args.sorted_bam])
+            logging.info(args.bam + " index not found, calling samtools index")
+            call([args.samtools_path, "index", args.bam])
             logging.info("Finished indexing")
 
-        bambase = os.path.splitext(os.path.basename(args.sorted_bam))[0]
+        bambase = os.path.splitext(os.path.basename(args.bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
             logging.debug("samtools path is set to: " + args.samtools_path)
-            prop_paired_proportion = check_reference.check_properly_paired(args.sorted_bam, args.samtools_path)
+            prop_paired_proportion = check_reference.check_properly_paired(args.bam, args.samtools_path)
 
         tb = time.time()
         timing_logfile.write("Alignment, indexing and QC:\t" + "{:.2f}".format(tb - ta) + "\n")
@@ -857,7 +857,7 @@ if __name__ == '__main__':
             if not os.path.exists(cnvkit_output_directory):
                 os.mkdir(cnvkit_output_directory)
 
-            run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.sorted_bam,
+            run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.bam,
                        seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, ref_fasta=ref_fasta)
             if args.ploidy or args.purity:
                 rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
@@ -882,7 +882,7 @@ if __name__ == '__main__':
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, args.output_directory)
 
-            amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.sorted_bam,
+            amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.bam,
                                                              outdir, sname, args.cngain, args.cnsize_min)
 
         elif args.no_filter and runCNV:

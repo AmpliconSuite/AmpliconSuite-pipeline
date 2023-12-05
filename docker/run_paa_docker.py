@@ -174,11 +174,11 @@ argstring = "-t " + str(args.nthreads) + " --cngain " + str(args.cngain) + " --c
 if args.ref:
     argstring += " --ref " + args.ref
 
-if args.sorted_bam:
-    args.sorted_bam = os.path.realpath(args.sorted_bam)
-    bamdir, bamname = os.path.split(args.sorted_bam)
+if args.bam:
+    args.bam = os.path.realpath(args.bam)
+    bamdir, bamname = os.path.split(args.bam)
     norm_bamdir = bamdir
-    argstring += " --sorted_bam /home/bam_dir/" + bamname
+    argstring += " --bam /home/bam_dir/" + bamname
 
 elif args.fastqs:
     args.fastqs[0], args.fastqs[1] = os.path.realpath(
