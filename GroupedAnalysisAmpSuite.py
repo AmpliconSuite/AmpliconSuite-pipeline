@@ -41,18 +41,23 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
 
 
 def group_seeds(individual_seed_dct, odir):
-    samplist = list(individual_seed_dct.keys())
-    outname = odir + "_".join(samplist[:2])
-    if len(samplist) > 2:
-        outname += "_etc_n" + str(len(samplist))
+    all_ind_seeds = set(individual_seed_dct.values())
+    if len(all_ind_seeds) > 1:
+        samplist = list(individual_seed_dct.keys())
+        outname = odir + "_".join(samplist[:2])
+        if len(samplist) > 2:
+            outname += "_etc_n" + str(len(samplist))
 
-    outname+="_merged_AA_CNV_SEEDS.bed"
+        outname += "_merged_AA_CNV_SEEDS.bed"
+        bedlist = " ".join(all_ind_seeds)
+        print("Merging seeds")
+        cmd = "sort -k1,1 -k2,2n {} | bedtools merge -i - > {}".format(bedlist, outname)
+        print(cmd)
+        call(cmd, shell=True)
 
-    bedlist = " ".join(individual_seed_dct.values())
-    print("Merging seeds")
-    cmd = "sort -k1,1 -k2,2n {} | bedtools merge -i - > {}".format(bedlist, outname)
-    print(cmd)
-    call(cmd, shell=True)
+    else:
+        outname = all_ind_seeds.pop()
+
     gs_dict = {x: outname for x in samplist}
     return gs_dict
 
