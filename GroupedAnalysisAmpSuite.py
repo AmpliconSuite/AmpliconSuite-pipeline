@@ -166,7 +166,7 @@ def read_group_data(input_file):
                 continue
 
             for ind, v in enumerate(fields):
-                if v.upper() == "NA" or v.upper() == "NONE":
+                if v.upper() == "NA" or v.upper() == "NONE" or v.upper() == "":
                     fields[ind] = None
 
             if fields[2].lower() == "tumor":
@@ -179,7 +179,6 @@ def read_group_data(input_file):
                 sys.stderr.write("Input formatting error! Column 3 must either be 'tumor' or 'normal'.\nSee README for "
                                  "group input formatting instructions.\n\n")
                 sys.exit(1)
-
 
     return tumor_lines, normal_lines
 
@@ -292,6 +291,9 @@ if __name__ == '__main__':
     arg_dict = get_argdict(args)
     tumor_lines, normal_lines = read_group_data(args.input)
     print("Found {} tumor samples and {} normals\n".format(str(len(tumor_lines)), str(len(normal_lines))))
+    if len(tumor_lines) == 0:
+        print("No tumor samples were provided. Exiting.")
+        sys.exit(1)
 
     # Stage 1: iterate over and launch each that needs CN calling. collect CN seeds files
     base_argstring = make_base_argstring(arg_dict, stop_at_seeds=True)
@@ -312,6 +314,8 @@ if __name__ == '__main__':
     if not args.no_AA:
         if args.skip_AA_on_normal_bam:
             normal_lines = []
+        else:
+            grouped_seeds[normal_lines[0][0]] = grouped_seeds[tumor_lines[0][0]]
 
         all_lines = normal_lines + tumor_lines
         cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory)
