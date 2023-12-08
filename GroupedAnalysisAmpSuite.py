@@ -41,9 +41,9 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
 
 
 def group_seeds(individual_seed_dct, odir):
+    samplist = list(individual_seed_dct.keys())
     all_ind_seeds = set(individual_seed_dct.values())
     if len(all_ind_seeds) > 1:
-        samplist = list(individual_seed_dct.keys())
         outname = odir + "_".join(samplist[:2])
         if len(samplist) > 2:
             outname += "_etc_n" + str(len(samplist))
