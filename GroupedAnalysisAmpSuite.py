@@ -31,8 +31,9 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
 
         # if it was a seeds file, PAA won't modify, so move it into the right location
         if sname in cnv_bed_dict and cnv_bed_dict[sname].endswith("AA_CNV_SEEDS.bed"):
-            cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
-            call(cmd, shell=True)
+            if not os.path.dirname(os.path.realpath(cnv_bed_dict[sname])) == os.path.realpath(odir):
+                cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
+                call(cmd, shell=True)
 
         # store the name of the path of the seeds file
         individual_seed_dct[sname] = '{}/{}_AA_CNV_SEEDS.bed'.format(odir, sname)
