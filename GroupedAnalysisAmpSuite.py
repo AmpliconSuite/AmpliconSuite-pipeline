@@ -316,6 +316,9 @@ if __name__ == '__main__':
             normal_lines = []
         else:
             grouped_seeds[normal_lines[0][0]] = grouped_seeds[tumor_lines[0][0]]
+            odir = "{}{}/".format(args.output_directory, normal_lines[0][0])
+            if not os.path.exists(odir):
+                os.makedirs(odir)
 
         all_lines = normal_lines + tumor_lines
         cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory)
