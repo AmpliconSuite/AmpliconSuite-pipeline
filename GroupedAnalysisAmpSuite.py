@@ -31,8 +31,9 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
 
         # if it was a seeds file, PAA won't modify, so move it into the right location
         if sname in cnv_bed_dict and cnv_bed_dict[sname].endswith("AA_CNV_SEEDS.bed"):
-            cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
-            call(cmd, shell=True)
+            if not os.path.dirname(os.path.realpath(cnv_bed_dict[sname])) == os.path.realpath(odir):
+                cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
+                call(cmd, shell=True)
 
         # store the name of the path of the seeds file
         individual_seed_dct[sname] = '{}/{}_AA_CNV_SEEDS.bed'.format(odir, sname)
@@ -42,17 +43,22 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
 
 def group_seeds(individual_seed_dct, odir):
     samplist = list(individual_seed_dct.keys())
-    outname = odir + "_".join(samplist[:2])
-    if len(samplist) > 2:
-        outname += "_etc_n" + str(len(samplist))
+    all_ind_seeds = set(individual_seed_dct.values())
+    if len(all_ind_seeds) > 1:
+        outname = odir + "_".join(samplist[:2])
+        if len(samplist) > 2:
+            outname += "_etc_n" + str(len(samplist))
 
-    outname+="_merged_AA_CNV_SEEDS.bed"
+        outname += "_merged_AA_CNV_SEEDS.bed"
+        bedlist = " ".join(all_ind_seeds)
+        print("Merging seeds")
+        cmd = "sort -k1,1 -k2,2n {} | bedtools merge -i - > {}".format(bedlist, outname)
+        print(cmd)
+        call(cmd, shell=True)
 
-    bedlist = " ".join(individual_seed_dct.values())
-    print("Merging seeds")
-    cmd = "sort -k1,1 -k2,2n {} | bedtools merge -i - > {}".format(bedlist, outname)
-    print(cmd)
-    call(cmd, shell=True)
+    else:
+        outname = all_ind_seeds.pop()
+
     gs_dict = {x: outname for x in samplist}
     return gs_dict
 
@@ -166,7 +172,7 @@ def read_group_data(input_file):
                 continue
 
             for ind, v in enumerate(fields):
-                if v.upper() == "NA" or v.upper() == "NONE":
+                if v.upper() == "NA" or v.upper() == "NONE" or v.upper() == "":
                     fields[ind] = None
 
             if fields[2].lower() == "tumor":
@@ -179,7 +185,6 @@ def read_group_data(input_file):
                 sys.stderr.write("Input formatting error! Column 3 must either be 'tumor' or 'normal'.\nSee README for "
                                  "group input formatting instructions.\n\n")
                 sys.exit(1)
-
 
     return tumor_lines, normal_lines
 
@@ -292,6 +297,9 @@ if __name__ == '__main__':
     arg_dict = get_argdict(args)
     tumor_lines, normal_lines = read_group_data(args.input)
     print("Found {} tumor samples and {} normals\n".format(str(len(tumor_lines)), str(len(normal_lines))))
+    if len(tumor_lines) == 0:
+        print("No tumor samples were provided. Exiting.")
+        sys.exit(1)
 
     # Stage 1: iterate over and launch each that needs CN calling. collect CN seeds files
     base_argstring = make_base_argstring(arg_dict, stop_at_seeds=True)
@@ -312,6 +320,11 @@ if __name__ == '__main__':
     if not args.no_AA:
         if args.skip_AA_on_normal_bam:
             normal_lines = []
+        else:
+            grouped_seeds[normal_lines[0][0]] = grouped_seeds[tumor_lines[0][0]]
+            odir = "{}{}/".format(args.output_directory, normal_lines[0][0])
+            if not os.path.exists(odir):
+                os.makedirs(odir)
 
         all_lines = normal_lines + tumor_lines
         cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory)
