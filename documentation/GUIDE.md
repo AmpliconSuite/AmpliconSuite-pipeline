@@ -22,10 +22,7 @@ An open-access publication detailing AA's methodology is available in [Nature Co
 #
 
 ### Installing AA
-Please refer to the [AA README](https://github.com/virajbdeshpande/AmpliconArchitect#installation) for complete 
-installation instructions.
-
-You may also want to install the additional programs for classifying outputs ([AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)) and visualization ([CycleViz](https://github.com/jluebeck/CycleViz)).
+Please check out the documentation [here](https://github.com/AmpliconSuite/AmpliconArchitect?tab=readme-ov-file#recommended-way-to-run-aa-ampliconsuite-pipeline)
 #
 
 ### Preparing the inputs
