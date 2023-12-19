@@ -12,6 +12,8 @@ If that or none of the other installation options are possible (e.g. you need to
 ```bash
         mkdir data_repo && cd data_repo
         # copy or download files into data_repo directory
+        # See the list of available AA repo files:
+        # https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/
         wget [url for data repo [hg19/GRCh37/GRCh38/mm10].tar.gz]
         tar -xzf [hg19/GRCh37/GRCh38/mm10].tar.gz
 
@@ -19,6 +21,7 @@ If that or none of the other installation options are possible (e.g. you need to
         touch coverage.stats && chmod a+r coverage.stats
         source ~/.bashrc
 ```
+
 4. Run `install.sh --finalize_only` script from AmpliconSuite-pipeline.
 
 ## Prerequisites for standalone installation:

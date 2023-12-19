@@ -10,11 +10,13 @@ import os
 import socket
 from subprocess import *
 import sys
+import tarfile
 import time
+import urllib.request
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "1.1.3"
+__version__ = "1.2.0"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
@@ -506,16 +508,51 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
     return False
 
 
+def download_file(url, destination_folder):
+    filename = os.path.join(destination_folder, url.split("/")[-1])
+    try:
+        response = urllib.request.urlopen(url)
+        file_size = int(response.headers.get('Content-Length', 0))
+        response.close()
+        file_size = round(file_size / (1024**3), 2)
+        if file_size > 0.1:
+            print("\nDownloading " + url + " ... (" + str(file_size) + "GB)")
+        else:
+            print("\nDownloading " + url + " ...")
+
+        urllib.request.urlretrieve(url, filename)
+        print("File downloaded and saved to: " + str(filename))
+    except Exception as e:
+        print("Failed to download file. Error: " + str(e))
+
+
+def extract_tar_gz(file_path, destination_folder):
+    if not file_path.endswith('.tar.gz'):
+        sys.stderr.write("Cannot extract file " + file_path)
+        sys.exit(1)
+
+    with tarfile.open(file_path, 'r:gz') as tar:
+        tar.extractall(destination_folder)
+
+    os.remove(file_path)
+
+
 # MAIN #
 if __name__ == '__main__':
     # Parses the command line arguments
     parser = argparse.ArgumentParser(
         description="A pipeline wrapper for AmpliconArchitect, invoking alignment CNV calling and CNV filtering prior. "
                     "Can launch AA, as well as downstream amplicon classification.")
+    parser.add_argument("-v", "--version", action='version',
+                        version='AmpliconSuite-pipeline version {version} \n'.format(version=__version__))
+    parser.add_argument("--download_repo", help="Download the selected data repo to the $AA_DATA_REPO "
+                        "directory and exit. '_indexed' suffix indicates BWA index is included, which is useful if "
+                        "performing alignment with AmpliconSuite-pipeline, but has a larger filesize.", choices=["hg19",
+                        "GRCh37", "GRCh38", "mm10", "GRCh38_viral", "hg19_indexed", "GRCh37_indexed", "GRCh38_indexed",
+                        "mm10_indexed", "GRCh38_viral_indexed"], nargs='+')
     parser.add_argument("-o", "--output_directory", metavar='PATH', help="output directory names (will create if not already created)")
-    parser.add_argument("-s", "--sample_name", metavar='STR', help="sample name", required=True)
-    parser.add_argument("-t", "--nthreads", metavar='INT', help="Number of threads to use in BWA and CNV calling",
-                        required=True)
+    parser.add_argument("-s", "--sample_name", metavar='STR', help="(Required) Sample name")
+    parser.add_argument("-t", "--nthreads", metavar='INT', help="(Required) Number of threads to use in BWA and CNV calling")
     parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
     parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
                         action='store_true')
@@ -564,9 +601,7 @@ if __name__ == '__main__':
     parser.add_argument("--sample_metadata", metavar='FILE', help="JSON file of sample metadata to build on")
     parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.",
                         default='')
-    parser.add_argument("-v", "--version", action='version',
-                        version='AmpliconSuite-pipeline version {version} \n'.format(version=__version__))
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group()
     group.add_argument("--bam", "--sorted_bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported "
                                                      "reference.)")
     group.add_argument("--fastqs", metavar='TWO FILES', help="Fastq files (r1.fq r2.fq)", nargs=2)
@@ -589,6 +624,41 @@ if __name__ == '__main__':
     launchtime = str(datetime.now())
     args = parser.parse_args()
 
+    # Check if AA_REPO set, print error and quit if not
+    try:
+        AA_REPO = os.environ['AA_DATA_REPO'] + "/"
+
+    except KeyError:
+        sys.stderr.write("AA_DATA_REPO bash variable not found. Please see installation instructions and run ./install.sh before using.\n")
+        sys.exit(1)
+
+    # Download any requested data repo files
+    if args.download_repo:
+        # launch data repo download and exit
+        data_repo_base_url = "https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/"
+        for ref in args.download_repo:
+            print(ref)
+            ref_base_url = data_repo_base_url + ref
+            md5file = ref_base_url + "_md5sum.txt"
+            ref_file = ref_base_url + ".tar.gz"
+            if os.path.exists(AA_REPO + ref):
+                print("An AA data repo directory already exists for " + ref + " and it will be replaced!")
+            download_file(md5file, AA_REPO)
+            download_file(ref_file, AA_REPO)
+            print("Extracting...\n")
+            extract_tar_gz(AA_REPO + ref + ".tar.gz", AA_REPO)
+
+        print("Finished")
+        sys.exit(0)
+
+    # Preflight checks for running AS-pipeline
+    if not args.sample_name:
+        parser.error("--sample_name (-s) is a required argument.")
+    if not args.nthreads:
+        parser.error("--nthreads (-t) is a required argument.")
+    if not any([args.bam, args.fastqs, args.completed_AA_runs]):
+        parser.error("One of --bam | --fastqs | --completed_AA_runs is required!")
+
     # set an output directory if user did not specify
     if not args.output_directory:
         args.output_directory = os.getcwd()
@@ -600,7 +670,7 @@ if __name__ == '__main__':
     outdir = args.output_directory
     sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
     
-    # set samtools for use, 20230428
+    # set samtools version for use
     if not args.samtools_path.endswith("/samtools"):
         if args.samtools_path and not args.samtools_path.endswith("/"):
             args.samtools_path += "/"
@@ -648,14 +718,6 @@ if __name__ == '__main__':
     if args.AA_src:
         os.environ['AA_SRC'] = args.AA_src
 
-    # Check if AA_REPO set, print error and quit if not
-    try:
-        AA_REPO = os.environ['AA_DATA_REPO'] + "/"
-
-    except KeyError:
-        logging.error("AA_DATA_REPO bash variable not found. AmpliconArchitect may not be properly installed.\n")
-        sys.exit(1)
-
     if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
         logging.info("coverage.stats file not found in " + AA_REPO + "\nCreating a new coverage.stats file.")
         cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(AA_REPO, AA_REPO)
@@ -690,7 +752,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if (args.fastqs or args.completed_AA_runs) and not args.ref:
-        logging.error("Must specify --ref when providing unaligned fastq files.\n")
+        logging.error("Must specify --ref when providing unaligned fastq files or completed AA runs.\n")
         sys.exit(1)
 
     if args.completed_run_metadata.lower() == "none":
@@ -765,8 +827,7 @@ if __name__ == '__main__':
             faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
 
         elif args.ref and refFnames[args.ref] is None:
-            em = "Data repo files for ref " + args.ref + " not found. Please download from " \
-                 "https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/\n"
+            em = "Data repo files for ref " + args.ref + " not found. Please download using the '--download_repo " + args.ref + "' option\n"
             logging.error(em)
             sys.exit(1)
 

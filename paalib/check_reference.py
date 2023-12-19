@@ -121,12 +121,12 @@ def check_ref(bamf, ref_to_fai_dict, samtools):
     em2 = """This may happen if 1) The value provided to optional argument '--ref' does not match the 
           reference the BAM is aligned to, or 2) The corresponding AA data repo folder for this reference 
           is not present, or 3) The BAM uses a different chromosome naming convention (e.g. accession 
-          numbers instead of chromosome names). Consider inspecting the header of the BAM file and the AA  
-          data repo directory.\n"""
+          numbers instead of chromosome names). Consider inspecting the header of the BAM file and the AA data repo 
+          directory. Additional data repo reference genomes can be acquired by running with --download_repo [ref]\n"""
 
     logging.error(em1)
     logging.error(em2)
-    sys.stderr.write(em1)
-    sys.stderr.write(em2)
+    # sys.stderr.write(em1)
+    # sys.stderr.write(em2)
 
     return None

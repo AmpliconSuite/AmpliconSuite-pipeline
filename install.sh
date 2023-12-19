@@ -99,51 +99,60 @@ if ! ${finalize_only}; then
     exit 1
   fi
 
-  # pull source code for AA
-  TARGET=AmpliconArchitect
-  TARGET_DIR=${install_dir}/${TARGET}
-  if [ -d "TARGET_DIR" ]; then
-    echo "Directory '${TARGET_DIR}' already exists."
-  else
-    git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
-  fi
-
-  # pull source code for AC
-  TARGET=AmpliconClassifier
-  TARGET_DIR=${install_dir}/${TARGET}
-  if [ -d "TARGET_DIR" ]; then
-    echo "Directory '${TARGET_DIR}' already exists."
-  else
-    git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
+  # check if pip is installed:
+  python3 -m pip -V
+  status=$?
+  if [ $status -eq 1 ]; then
+    echo "python3 pip must be installed to use this install script!"
+    exit 1
   fi
 
   # install python deps
   python3 -m pip install "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
 
   # install Rscript deps
-  Rscript -e "source('http://callr.org/install#DNAcopy')"
+  #Rscript -e "source('http://callr.org/install#DNAcopy')"
+  Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
+  Rscript -e 'BiocManager::install("DNAcopy")'
 
+  # Get AA src code
   if [ -z "$AA_SRC" ]; then
-    echo export AA_SRC=${install_dir}/AmpliconArchitect/src/ >> ~/.bashrc
-    export AA_SRC=${install_dir}/AmpliconArchitect/src/
+    # pull source code for AA
+    TARGET=AmpliconArchitect
+    TARGET_DIR=${install_dir}/${TARGET}
+    if [ -d "$TARGET_DIR" ]; then
+      echo "Directory '${TARGET_DIR}' already exists."
+    else
+      git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
+    fi
+    echo export AA_SRC=${TARGET_DIR}/src/ >> ~/.bashrc
+    export AA_SRC=${TARGET_DIR}/src/
   else
-    echo "WARNING: AA_SRC bash variable is already set! If you do not want to continue using your old AA installation, remove AA_SRC from your ~/.bashrc file and run the installer again!" >&2
-    echo "Proceeding with AA `python3 $AA_SRC/AmpliconArchitect.py -v`"
+    echo -e "\nWARNING: AA_SRC bash variable is already set! If you do not want to continue using your old AA installation, remove AA_SRC from your ~/.bashrc file, run 'source ~/.bashrc', then run install.sh again!" >&2
+    echo -e "\nProceeding with previously installed `python3 $AA_SRC/AmpliconArchitect.py -v`"
   fi
 
+  # Get AC src code
   if [ -z "$AC_SRC" ]; then
-    echo export AC_SRC=${install_dir}/AmpliconClassifier >> ~/.bashrc
-    export AC_SRC=${install_dir}/AmpliconClassifier
+    # pull source code for AC
+    TARGET=AmpliconClassifier
+    TARGET_DIR=${install_dir}/${TARGET}
+    if [ -d "$TARGET_DIR" ]; then
+      echo "Directory '${TARGET_DIR}' already exists."
+    else
+      git clone https://github.com/jluebeck/$TARGET.git ${install_dir}/${TARGET}
+    fi
+    echo export AC_SRC=${TARGET_DIR} >> ~/.bashrc
+    export AC_SRC=${TARGET_DIR}
   else
-    echo "WARNING: AC_SRC bash variable is already set! If you do not want to continue using your old AC installation, remove AC_SRC from your ~/.bashrc file and run the installer again!" >&2
-    echo "Proceeding with AC `python3 $AC_SRC/amplicon_classifier.py -v`"
+    echo -e "\nWARNING: AC_SRC bash variable is already set! If you do not want to continue using your old AC installation, remove AC_SRC from your ~/.bashrc file, run 'source ~/.bashrc', then run install.sh again!" >&2
+    echo -e "\nProceeding with previously installed AmpliconClassifier `python3 $AC_SRC/amplicon_classifier.py -v`"
   fi
-
 fi
 
 if [ -z "$AA_DATA_REPO" ]; then
   data_repo_path=${data_repo_loc}/data_repo
-  echo "Creating new data repo in ${data_repo_path}"
+  echo -e "\nCreating new data repo in ${data_repo_path}"
   # make a directory for the AA data repo and create an empty file for coverage summaries to be stored when running AA
   mkdir -p ${data_repo_path}
   touch ${data_repo_path}/coverage.stats
@@ -151,7 +160,7 @@ if [ -z "$AA_DATA_REPO" ]; then
   echo export AA_DATA_REPO=${data_repo_path} >> ~/.bashrc
   export AA_DATA_REPO=${data_repo_path}
 else
-  echo "AA_DATA_REPO variable already set to ${AA_DATA_REPO}. If you ever want to change this remove AA_DATA_REPO from your ~/.bashrc file and run the installer again!" >&2
+  echo -e "\nAA_DATA_REPO variable already set to ${AA_DATA_REPO}. If you ever want to change this remove AA_DATA_REPO from your ~/.bashrc file and run the installer again!" >&2
 
 fi
 
@@ -159,18 +168,18 @@ fi
 mkdir -p ${HOME}/mosek/
 
 if test -f "${HOME}/mosek/mosek.lic"; then
-    echo "Mosek license already in place: ${HOME}/mosek/mosek.lic"
+    echo -e "\nMosek license already in place: ${HOME}/mosek/mosek.lic"
 elif test -f "${MOSEKLM_LICENSE_FILE}/mosek.lic"; then
-    echo "Mosek license already in place: ${MOSEKLM_LICENSE_FILE}/mosek.lic"
+    echo -e "\nMosek license already in place: ${MOSEKLM_LICENSE_FILE}/mosek.lic"
 else
-    echo "Now obtain license file mosek.lic (https://www.mosek.com/products/academic-licenses/). Move the file to ${HOME}/mosek after downloading. The license is free for academic use."
+    echo -e "\nNow obtain license file mosek.lic (https://www.mosek.com/products/academic-licenses/). Move the file to ${HOME}/mosek after downloading. The license is free for academic use."
 fi
 
 if ! "${finalize_only}"; then
-  echo "Module versions are..."
+  echo -e "\nModule versions are..."
   echo "AmpliconSuite-pipeline: `python3 ${install_dir}/AmpliconSuite-pipeline.py -v`"
   echo "AA: `python3 $AA_SRC/AmpliconArchitect.py -v`"
   echo "AC: `python3 $AC_SRC/amplicon_classifier.py -v`"
 fi
 
-echo "Finished configuring"
+echo -e "\nFinished configuring"

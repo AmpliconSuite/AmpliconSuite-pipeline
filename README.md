@@ -26,36 +26,36 @@ Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their
 
 ## Installation
 
-### Option A: Installation-free methods
-The most convenient option, however it is not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
+### Option A: Installation-free platforms
+The most convenient option, but not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
 
-#### GenePattern Web Interface:
-AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://genepattern.ucsd.edu/gp). Simply search the module list for "AmpliconSuite." 
-This module was constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). 
+#### [GenePattern](https://cloud.genepattern.org):
+AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://cloud.genepattern.org). Search the module list for `AmpliconSuite`. 
+Constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). 
 
-#### Nextflow:
+#### [Nextflow](https://nf-co.re/circdna):
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
-### Option B: Install with Conda or Mamba
+### Option B: Conda or Mamba
 ```bash 
-conda create -n ampsuite
-conda activate ampsuite
+conda create -n ampsuite && conda activate ampsuite
 conda install -c bioconda -c mosek ampliconsuite mosek
-wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
-source install.sh --finalize_only  # this will confirm the data repo path and mosek license directory
+
+# then run the installer script to finalize the locations of the data repo and mosek license 
+wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
+source install.sh --finalize_only  # -h to see options
 ```
 
 If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function more robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
 # alternate instructions using Mamba (solves dependencies more effectively on some setups)
-mamba create -n ampsuite python=3.10
-mamba activate ampsuite
+mamba create -n ampsuite python=3.10 && mamba activate ampsuite
 mamba install -c conda-forge -c bioconda -c mosek ampliconsuite mosek
-wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/bioconda/install.sh
+wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
 source install.sh --finalize_only
 ```
 
-**then proceeed to step 2 of Option C (below) ...**
+**... proceed to step 2 of Option C**
 
 ### Option C: Standalone installation using the installer script
 Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`.
@@ -74,21 +74,14 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     source ./install.sh 
     ```
 
-2. **Start here if you installed with Conda or Mamba**. Populate the AA data repo with required annotations for the reference genomes of interest. 
-    - See the list of available AA annotations [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Copy the URL of the one(s) you need.
-    ```bash
-    cd $AA_DATA_REPO
-    # go to https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/
-    # copy the url of the data repo you need.
-    # "_indexed" indicates the bwa index is included - only useful if starting from .fastqs.
-    wget [url of reference_build]
-    tar -xzf [reference_build].tar.gz
-    rm [reference_build.tar.gz]
-    ```
+2. **Start here if you installed with conda/mamba**: Populate the AA data repo with required annotations for the reference genomes of interest.
+Giving `[ref]_indexed` will download a version that includes the BWA index.
+>`AmpliconSuite-pipeline.py --download_repo [GRCh38|hg19|mm10|...]`
 
-3. Obtain the Mosek license (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+3. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
 
-Lastly, as a completely optional step, if you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
+
+4. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
 
 
 
@@ -106,7 +99,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
      * Pull the docker image: `docker pull jluebeck/prepareaa`
     
      * (Optional): Add user to the docker group:
-         `sudo usermod -a -G docker $USER` (log out and back in after performing)
+         `sudo usermod -a -G docker $USER` (log out and back in after performing).
    
 2. Obtain the execution script and configure the data repo location
     ```bash
@@ -117,12 +110,12 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     ```
 
 3. License for Mosek dependency:
-    * Obtain license file `mosek.lic` (`https://www.mosek.com/products/academic-licenses/`). The license is free for academic use.
-    * Place the file in `$HOME/mosek/` (i.e, the `mosek/` folder that now exists in your home directory).
+    * [Obtain Mosek license file](https://www.mosek.com/products/academic-licenses/) `mosek.lic`. The license is free for academic use.
+    * Place the file in `$HOME/mosek/` (the `mosek/` folder that now exists in your home directory).
     * If you are not able to place the license in the default location, you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
 
    
-4. Download AA data repositories and set environment variable AA_DATA_REPO:
+4. (Recommended) Pre-download AA data repositories and set environment variable AA_DATA_REPO:
    - Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to locate data repo(s) of your choice and make note of the URL you want.
       ```bash
       cd $AA_DATA_REPO
@@ -130,7 +123,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
       tar zxf [reference_build].tar.gz
       rm [reference_build].tar.gz
       ```
-   - If you do not do this process the container runscript attempt to download the files itself before launching the container.
+   - If you do not do this process, the container runscript will attempt to download the files itself before launching the container.
 
 #### Launching the execution script for the container:
 
@@ -144,7 +137,7 @@ An example command might look like:
 
 `AmpliconSuite-pipeline/singularity/run_paa_singularity.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
-### Option E: Standalone installation without installer script
+### Option E: Installation without installer script
 Try this if you are going to use `python2`. Please see [the instructions here](documentation/CUSTOM_INSTALL.md).
 
 
@@ -156,14 +149,17 @@ The main driver script for the standalone pipeline is called `AmpliconSuite-pipe
 >`AmpliconSuite-pipeline.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
 
 
-`--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
-`--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
+* `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
+* `--run_AC` will invoke AmpliconClassifier on the AmpliconArchitect outputs.
+* `--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
+* CNVkit requires R version 3.5 or greater. This is not standard on older Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
+
+
 
 #### Example 2: Starting from .bam, using CNVkit for seed generation
 
->`AmpliconSuite-pipeline.py -s sample_name -t n_threads [--cnvkit_dir /path/to/cnvkit.py] --bam sample.bam [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name -t n_threads --bam sample.bam [--run_AA] [--run_AC]`
 
-`--cnvkit_dir` is only needed if cnvkit.py is not on the system path (typically if it was a custom install).
 
 #### Example 3: Starting from .bam and your own whole-genome CNV calls, or an existing AA_CNV_SEEDS.bed
 * If using your own CNV calls:
@@ -179,7 +175,6 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 
 * You can also use the CNVkit `sample_name.cns` file instead of .bed for this argument.
 
-* CNVkit requires R version 3.5 or greater. This is not standard on older Linux systems. Specify `--rscript_path /path/to/Rscript` with your locally installed current R version if needed. 
 
 #### Example 4: Analyzing a collection of related samples (same origin)
 
@@ -202,12 +197,21 @@ Note that when this mode is used all AA results must have been generated with re
 
 ## Command line arguments to AmpliconSuite-pipeline
 
+#### Downloading data repo files:
+- `--download_repo {ref1, ref2, ...}`: This will populate your `$AA_DATA_REPO` directory with files for your reference genome of choice. 
+  - Options for this argument are
+  `[hg19, GRCh37, GRCh38, mm10, GRCh38_viral, hg19_indexed, GRCh37_indexed, GRCh38_indexed, mm10_indexed, GRCh38_viral_indexed]`. 
+  - `*_indexed` refs include the BWA index, only useful if starting from fastqs.
+
+Otherwise, you will instead need these arguments below:
+
 #### Required
-- `-o | --output_directory {outdir}`: (Optional) Directory where results will be stored. Defaults to current directory.
 
-- `-s | --sample_name {sname}`: (Required) A name for the sample being run.
+- `-o | --output_directory {outdir}`: Directory where results will be stored. Defaults to current directory.
 
-- `-t | --nthreads {int}`: (Required) Number of threads to use for BWA and CNVkit. Recommend 12 or more threads to be used.
+- `-s | --sample_name {sname}`: A name for the sample being run.
+
+- `-t | --nthreads {int}`: Number of threads to use for BWA and CNVkit. Recommend 12 or more threads to be used.
 
 - One of the following input files:
 
@@ -287,18 +291,15 @@ Please check out our [guide document](documentation/GUIDE.md).
 We will soon release an online platform for storing and sharing your AmpliconSuite-pipeline outputs.
 
 To package a collection of AA outputs for AmpliconRepository, you will need to do the following steps.
-1. (Recommended) Before running, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file for each sample, and fill out the JSON file. Provide this to `PrepareAA.py` using `--sample_metadata {sample_metadata.json}`
-2. Run the `make_results_table.py` script from AmpliconClassifier on your AC outputs.
- * `cd [directory of classification files]`
- * `$AC_SRC/make_results_table.py -i samples.input --summary_map samples_summary_map.txt --classification_file samples_amplicon_classification_profiles.tsv --ref [hg19/hg38/...] {--sample_metada_file/--sample_metadata_list}`
-   * The .input and \_summary_map.txt files are created by `make_input.sh`.
-3. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
-4. If you have not already, create an account at [GenePattern](https://genepattern.ucsd.edu/gp).
-5. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
- * Go to https://genepattern.ucsd.edu/gp, and sign in.
- * In the top-left search bar, search for `AmpliconSuiteAggregator`
-6. Run the aggregator and download the aggregated `.tar.gz` result file.
-7. Upload to AmpliconRepository (coming soon).
+1. (Recommended) Before running AmpliconSuite-pipeline, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file and fill out the JSON file for each sample. Provide this to `AmpliconSuite-pipeline.py` using `--sample_metadata {sample_metadata.json}`
+2. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
+  * If you used the docker or singularity option, step 2 is already done.
+  * Be sure to exclude bam & fastqs when you zip up your files (e.g. `tar -czf --exclude='*.bam'`)
+3. If you have not already, create an account at [GenePattern](http://cloud.genepattern.org/).
+4. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
+
+5. Run the aggregator and download the aggregated `.tar.gz` result file.
+6. Sign up on [AmpliconRepository.org](https://ampliconrepository.org) and upload your aggregated file.
 
 
 ## Citing
