@@ -94,8 +94,8 @@ One common type of analysis is the detection of focal amplifications in samples 
 **To maximize the utility of AA on samples from the same source, you should consider merging your AA seed files from related samples.**
 We will work on automating this process in the future, but these are the instructions users should follow for now.
 
-#### Option A: `GroupedAnalysis.py` (recommended)
-This can be done using the script `GroupedAnalysis.py`. This assumes you are starting from .bam files. Simply place your samples into a three column file, formatted like so 
+#### Option A: `GroupedAnalysisAmpSuite.py` (recommended)
+This can be done using the script `GroupedAnalysisAmpSuite.py`. This assumes you are starting from .bam files. Simply place your samples into a three column file, formatted like so 
 >`sample_name` `path/to/sample.bam`  `'Tumor' or 'Normal'`
 
 Users can provide two additional columns
@@ -117,15 +117,22 @@ The resulting merged file should still end with the suffix `_AA_CNV_SEEDS.bed`, 
 You can then run `PrepareAA.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
 #
 
+### Resource and timing requirements for running AmpliconSuite-pipeline
+![image](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/assets/14268531/7f785727-b937-4866-9b42-9ae84c6faee6)
+
+As suggested by the diagram above, you may acheive the best efficiency on your HPC system by breaking up the running of AmpliconSuite-pipeline into stages using the resources necessary for that stage. You can then re-launch the pipeline with different resource allocations using the files generated during the previous steps.
+
+#
+
 ### Running AA
-We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by AmpliconSuite-pipeline `amplified_intervals.py`).
+Some power-users and other developers may want to run AA on their own, without using the recommended AmpliconSuite-pipeline mode. We assume the user now has a coordinate-sorted BAM file, and a CNV seed BED file (i.e., a BED file of seeds output by AmpliconSuite-pipeline `amplified_intervals.py`).
 To check if your BAM file is coordinate-sorted, you can take a peek at the BAM file header by doing 
 `samtools view -H your_bamfile.bam | head `. 
 Please make sure you know which reference genome it is aligned to so that you can properly specify the `--ref` argument to AA.
 
 For more on running AA, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#running-ampliconarchitect) or jump down to the [worked example](#worked-example).
 
-Note that AmpliconSuite-pipeline can run AA on its own by setting `--run_AA`, and AA will automatically be called at the end of the preparation process without any additional work by the user.
+Note that AmpliconSuite-pipeline can run AA on its own by setting `--run_AA`, and AA will automatically be called at the end of the preparation process without any additional work by the user. Many AA-specific arguments are exposed in AmpliconSuite-pipeline.py
 #
 
 ### Interpreting the output
@@ -282,8 +289,8 @@ If users want to identify those ulta-rare events that may become relevant in the
 
 
 - **How do I tell if an amplification is due to ecDNA or segmental tandem duplication?**
-    - For low CN < 4.5, it's not really possible to tell. However, keep the following in mind - when segmental tandem duplications occur, the same breakpoints must be reused every time it is repeated. When a "cyclic" structure accumulates
-    in very high CN, this would involve the exact reuse of the same breakpoints many, many times in the case of segmental tandem dups. The simpler hypothesis as CN increases, is that it is mediated through an extrachromosomal DNA mechanism. 
+    - For low CN < 4.5, it's difficult to tell with short reads. However, keep the following in mind - when segmental tandem duplications occur, the same breakpoints must be reused every time it is repeated. When a "cyclic" structure accumulates
+    in high CN, this would involve the exact reuse of the same breakpoints many, many times in the case of segmental tandem dups. The simpler hypothesis as CN increases, is that it is mediated through an extrachromosomal DNA mechanism. 
    
  
 - **Can AA determine the difference between HSR and ecDNA? Can it find integration points?**
