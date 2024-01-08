@@ -76,7 +76,8 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
 
 2. **Start here if you installed with conda/mamba**: Populate the AA data repo with required annotations for the reference genomes of interest.
 Giving `[ref]_indexed` will download a version that includes the BWA index.
->`AmpliconSuite-pipeline.py --download_repo [GRCh38|hg19|mm10|...]`
+
+`AmpliconSuite-pipeline.py --download_repo [GRCh38|hg19|mm10|...]`
 
 3. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
 
