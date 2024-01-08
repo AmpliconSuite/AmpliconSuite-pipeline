@@ -1,4 +1,4 @@
-# AmpliconSuite-pipeline
+![AmpliconSuite-pipeline logo](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/images/AmpliconSuite-pipeline.png)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
 [![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/prepareaa?logo=docker)](https://hub.docker.com/r/jluebeck/prepareaa)
 [![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/prepareaa?logo=docker)]((https://hub.docker.com/r/jluebeck/prepareaa))
