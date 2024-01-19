@@ -247,7 +247,7 @@ If users want to identify those ulta-rare events that may become relevant in the
 
 - **Do I need to use downsampling? Will I detect more SVs with less downsampling?**
   - The threshold for amplified SV detection used by AA scales with effective coverage after downsampling, so lower effective coverage (e.g. downsample 10) will have a lower threshold than higher effective coverage (e.g. downsample 40). For low copy-number focal amplifications (CN < 10), higher effective coverage may perform better
-(consider setting a downsample parameter of 30 or 40).  
+(consider setting a downsample parameter of 30 or 40). If your sample has a very low properly paired read rate (see AmpliconSuite-pipeline log file), particularly if it appears that there are many sequencing artifacts in the sample, setting a downsample value of 1 has helped in many instances. While counterintuitive, the lower effective coverage reduces the chance overlapping discordant read pairs from sequencing artifacts get called as a false-positive SV.
     
 
 - **AA has been running for more than 72 hours. What's wrong?**
