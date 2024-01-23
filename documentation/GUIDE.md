@@ -35,7 +35,7 @@ AA uses external CNV calls to determine which regions it should examine - thes a
 However, AA independently calls copy number inside the seed regions it is tasked with, and thus after selecting the regions, 
 **the CN estimates are not propogated into AA's own estimations.**
 
-##### <ins>To help standardize the process of running AA, we have created a wrapper tool, called [AmpliconSuite-pipeline](https://github.com/jluebeck/PrepareAA) </ins> 
+##### <ins>To help standardize the process of running AA, we have created a wrapper tool, called [AmpliconSuite-pipeline](https://github.com/AmpliconSuite/AmpliconSuite-pipeline) </ins> 
 
 AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
@@ -78,14 +78,12 @@ Focal amplifications are somewhat aribtrarily defined as regions of the genome w
 
 We recommend picking regions which have an estimated CN >= 4.5 and size > 50 kbp, which do not appear amplified due to being parts of repeat elements, and which are not amplified due to karyotypic abnormality. 
 
-PrepareAA.py calls on multiple filters to ensure that CNV seeds are appropriately selected. Attempting to bypass this filtering and implement some alternative or less rigorous strategy is typically detrimental to getting high-quality focal amplification calls.
+AmpliconSuite-pipeline.py calls on multiple filters to ensure that CNV seeds are appropriately selected. Attempting to bypass this filtering and implement some alternative or less rigorous strategy is typically detrimental to getting high-quality focal amplification calls.
 
 CNV estimates can be imperfect in low-complexity or repetitive regions or appear consistently high when there is karyotypic abnormality. Thus, we have developed modules called `cnv_prefilter.py` and `amplified_intervals.py` to address those issues. They are used by default.
 
 If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these regions, but it should still be avoided to give them to AA as input.
 
-If you have CNV segments which are > 10 Mbp, we suggest you run the `seed_trimmer.py` script in the AmpliconSuite-pipeline/scripts directory (and documented in AmpliconSuite-pipeline's repo). This will pre-filter some regions of low mappability, conserved CNV gain, etc. 
-The output of this script can then be fed to `amplified_intervals.py`. Invoking AA via AmpliconSuite-pipeline will yield the best results.
 #
 
 ### Constructing unified seed sets from multiple related samples
@@ -103,7 +101,7 @@ Users can provide two additional columns
 
 These are positional for columns 4 and 5, respectively. If one is ommitted, the `NA` should be placed.
 
-`GroupedAnalysis.py` takes most of the same arguments as `PrepareAA.py`, but by default `--run_AA` and `--run_AC` will be set.
+`GroupedAnalysis.py` takes most of the same arguments as `AmpliconSuite-pipeline.py`, but by default `--run_AA` and `--run_AC` will be set.
 
 #### Option B: Manual creation of unified seeds
 First run AmpliconSuite-pipeline on each sample **without** setting `--run_AA`. The result for each sample the `[sample]_AA_CNV_SEEDS.bed` file. Next, using `bedtools` or similar, take the relevant seeds files from related samples and merge those bed files. A tutorial for merging bed files can be found [here](http://quinlanlab.org/tutorials/bedtools/bedtools.html) 
@@ -114,7 +112,7 @@ E.g. `sed -i "s/$/\t999999/" initial_merged_AA_CNV_SEEDS.bed > final_merged_AA_C
 
 The resulting merged file should still end with the suffix `_AA_CNV_SEEDS.bed`, since this suffix has a special meaning in AmpliconSuite-pipeline, and filtering will be skipped (these samples are already filtered.)
 
-You can then run `PrepareAA.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
+You can then run `AmpliconSuite-pipeline.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
 #
 
 ### Resource and timing requirements for running AmpliconSuite-pipeline
@@ -140,7 +138,7 @@ Note that AmpliconSuite-pipeline can run AA on its own by setting `--run_AA`, an
 
 **We have recently developed classification methods which take AA output and predict the mechanism(s) of a focal amplification's genesis**.
 This method is called **[AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier)**. 
-This tool will output a table describing many important details of the focal amplifications AA discovered. AmpliconClassifier (AC) can be run by setting `--run_AC` when launching PrepareAA
+This tool will output a table describing many important details of the focal amplifications AA discovered. AmpliconClassifier (AC) can be run by setting `--run_AC` when launching AmpliconSuite-pipeline
 
 On its own, AA does not automatically produce a prediction of ecDNA or BFB status. It provides the files though that can be used to make that determination.
 For more details about deciphering the AA outputs on your own, please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#outputs).
@@ -160,7 +158,7 @@ Consequently, these events may appear like ecDNA. Furthermore, it has been posit
 #
 
 ### Visualizing the output
-AA will generate a visualization of the amplicon with edges/CN on its own. The coloring of the edges represents the [orientation of the read pairs](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf).
+AA will generate a visualization of the amplicon with edges/CN on its own. The coloring of the edges represents the [orientation of the read pairs](https://github.com/AmpliconSuite/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf).
 
 One common task though is, "*I have identified a likely ecDNA in my sample using AA, and would like to visualize it as a cycle*." 
 
@@ -183,16 +181,16 @@ None of the above should print an empty string or "no such file" error.
 
 - **Launch AmpliconSuite-pipeline**:
 
-In this specific case, we'll assume you don't have a CNV bed yet, and we'll assume you've installed CNVKit. Please do see the [AmpliconSuite-pipeline README](https://github.com/jluebeck/PrepareAA) though to check which flags you need to set in your case.
+In this specific case, we'll assume you don't have a CNV bed yet, and we'll assume you've installed CNVKit. Please do see the [AmpliconSuite-pipeline README](https://github.com/AmpliconSuite/AmpliconSuite-pipeline) though to check which flags you need to set in your case.
 ```
-PrepareAA.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --sorted_bam sample.bam --run_AA --run_AC
+AmpliconSuite-pipeline.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --sorted_bam sample.bam --run_AA --run_AC
 ```
 
 You can still do this even if you already have CNV calls from your own caller, or if you only have the fastq files. Just check the README for the commands to use.
 
 - **Classifying results from multiple runs**:
 
-We can run a classification of multiple AA outputs to determine if ecDNA or other focal amps are present. You will have to install [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier). 
+We can run a classification of multiple AA outputs to determine if ecDNA or other focal amps are present. You will have to install [AmpliconClassifier](https://github.com/AmpliconSuite/AmpliconClassifier). 
 ```bash
 # first make the .input file from multiple runs
 make_input.sh /path/to/your/AA_outputs example_collection
@@ -242,7 +240,7 @@ If users want to identify those ulta-rare events that may become relevant in the
 
 
 - **What coverage is needed for AA?**
-    - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA.
+    - Because the CN of focal amplifications is higher than the background reference, a BAM with 10x coverage will effectively have 50x coverage in a region with CN 10 (assuming 10x coverage for CN=2). Thus, even very low coverage BAM files can be used with AA. Coverage as low as 0.5x still yields robust focal amplification predictions if the amplification is strong and sample purity is high.
   
 
 - **Do I need to use downsampling? Will I detect more SVs with less downsampling?**
@@ -253,7 +251,7 @@ If users want to identify those ulta-rare events that may become relevant in the
 - **AA has been running for more than 72 hours. What's wrong?**
     - Please ensure that you selected your CNV seeds appropriately. If you use a CN cutoff any lower than 4.5, and size < 10 kbp,
      there can be a great many false positive focal amplifications. Secondly, and very importantly, please ensure you used AmpliconSuite-pipeline to select the CNV seeds appropriately (as opposed to running `AmpliconArchitect.py` on raw, unfiltered copy number data). 
-    - If AA is running for > 1 week, please check that you are using the latest version of the data repo maintained by jluebeck, and consider changing `--cnsize_min 100000 --cngain 5`, and moving up from there with your cutoffs.
+    - If AA is running for > 1 week, please check that you are using the latest version of the tool & update your AA data repo if it is out of date, and consider changing `--cnsize_min 100000 --cngain 5`, and moving up from there with your cutoffs.
      
 
 - **Should copy-number calls provided to AA be corrected for purity and ploidy?**
@@ -263,7 +261,10 @@ If users want to identify those ulta-rare events that may become relevant in the
   The goal is not to determine an absolutely correct copy number, but to identify focally amplified regions relative to the rest of the genome.
     - Adding corrections for purity or ploidy to the copy numbers used for seed determination may cause entire chromosome arms to appear above the copy-number cutoff for a focal amplificaiton. We recommend users set a higher CN-cutoff (e.g. `--cngain 8`) if using these kinds of corrected calls.
     - We also suggest that analyzing samples with purity below 30% should be avoided where possible. Only very-strongly amplified focal amplifications will be found. If corrected for purity, any distortions to copy number signal may also become amplified, creating many false-positive seeds.
-  
+
+
+- **Are there special considerations for FFPE samples?**
+    - Recommend trying a few of your FFPE samples with default settings. If you see what looks like a "lawn" of brown edges or a lawn of magenta and teal edges, these are artifactual SVs. In that case, we recommend setting `--insert_sdevs 9.0 --downsample 1`. While somewhat counterintuitive, the benefit of downsampling to 1x is that sequencing artifacts are less likely to stack on top of each other causing AA to predict an artifactual SV.
 
 - **In the amplicon visualizations, what are the different edge colors?**
     - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf). Pink and teal are 'inversion-like', brown is 'duplication-like' (jumps backwards in the reference genome), and red is 'deletion-like' (skips forward in the reference genome). Blue corresponds to a 'source edge', which is an SV that has one end mapped in the amplicon and one end at an unknown destination.
