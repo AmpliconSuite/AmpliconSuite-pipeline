@@ -264,7 +264,7 @@ If users want to identify those ulta-rare events that may become relevant in the
 
 
 - **Are there special considerations for FFPE samples?**
-    - Recommend trying a few of your FFPE samples with default settings. If you see what looks like a "lawn" of brown edges or a lawn of magenta and teal edges, these are artifactual SVs. In that case, we recommend setting `--insert_sdevs 9.0 --downsample 1`. While somewhat counterintuitive, the benefit of downsampling to 1x is that sequencing artifacts are less likely to stack on top of each other causing AA to predict an artifactual SV.
+    - Recommend trying a few of your FFPE samples with default settings. If you see what looks like a "lawn" of brown edges or a lawn of magenta and teal edges, these are artifactual SVs. In that case, we recommend setting `--AA_insert_sdevs 9.0 --downsample 1`. While somewhat counterintuitive, the benefit of downsampling to 1x is that sequencing artifacts are less likely to stack on top of each other causing AA to predict an artifactual SV.
 
 - **In the amplicon visualizations, what are the different edge colors?**
     - They represent the orientation of the breakpoint. Please see the [relevant section of the AA README](https://github.com/virajbdeshpande/AmpliconArchitect#4-the-sv-view-out_ampliconidpngpdf). Pink and teal are 'inversion-like', brown is 'duplication-like' (jumps backwards in the reference genome), and red is 'deletion-like' (skips forward in the reference genome). Blue corresponds to a 'source edge', which is an SV that has one end mapped in the amplicon and one end at an unknown destination.
