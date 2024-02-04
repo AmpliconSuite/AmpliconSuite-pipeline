@@ -16,7 +16,7 @@ import urllib.request
 
 from paalib import check_reference, cnv_prefilter
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)

@@ -137,7 +137,7 @@ def make_base_argstring(arg_dict, stop_at_seeds=False):
     base_argstring = ""
     for k, v in arg_dict.items():
         if v is True:
-            if k not in ["no_AA", "no_union"]:
+            if k not in ["no_AA", "no_union", "skip_AA_on_normal_bam"]:
                 arg = " --" + k
                 base_argstring+=arg
 
@@ -214,9 +214,6 @@ if __name__ == '__main__':
                                                  "instances of PAA", type=int, required=True)
     parser.add_argument("--no_AA", help="Only produce the seeds for the group. Do not run AA/AC",
                         action='store_true')
-    # parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
-    # parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
-    #                     action='store_true')
     parser.add_argument("--no_union", help="Do not create a unified collection of seeds for the group (keep seeds "
                                            "separate between samples", action='store_true')
     parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
@@ -234,12 +231,6 @@ if __name__ == '__main__':
                         help="By default PrepareAA will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
                              "'python3' or 'python2'", type=str, default='python')
-    # parser.add_argument("--freebayes_dir",
-    #                     help="Path to directory where freebayes executable exists (not the path to the executable "
-    #                          "itself). Only needed if using Canvas and freebayes is not installed on system path.")
-    # parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
-    #                     "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
-    #                     )
     parser.add_argument("--AA_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
     parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                                              "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
@@ -250,11 +241,6 @@ if __name__ == '__main__':
     parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
                                                   "increase for sequencing runs with high variance after insert size "
                                                   "selection step. (default 3.0)", type=float, default=None)
-    # parser.add_argument("--normal_bam", help="Path to matched normal bam for CNVKit (optional)")
-    # parser.add_argument("--ploidy", type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside "
-    #                                                  "of CNVKit.", default=None)
-    # parser.add_argument("--purity", type=float, help="Tumor purity estimate for CNVKit (optional). This is not used "
-    #                                                  "outside of CNVKit.", default=None)
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                       "default segmentation method (cbs).",
                         choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
@@ -264,24 +250,8 @@ if __name__ == '__main__':
     parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
     parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
     # parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
-
-    # group = parser.add_mutually_exclusive_group(required=True)
-    # group.add_argument("--sorted_bam", "--bam", help="Coordinate sorted BAM file (aligned to an AA-supported "
-    #                                                  "reference.)")
-    # group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
-    # group.add_argument("--completed_AA_runs",
-    #                    help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
-
-    # group2 = parser.add_mutually_exclusive_group()
-    # group2.add_argument("--cnv_bed", "--bed",
-    #                     help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
-    #                          " be: chr start end name cngain")
     parser.add_argument("--cnvkit_dir", help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set. "
                                              "Not needed if --bed is given.")
-    # group2.add_argument("--completed_run_metadata",
-    #                     help="Run metadata JSON to retroactively assign to collection of samples", default="")
-    # group2.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
-    #                     action='store_true')
 
     args = parser.parse_args()
 
@@ -320,7 +290,7 @@ if __name__ == '__main__':
     if not args.no_AA:
         if args.skip_AA_on_normal_bam:
             normal_lines = []
-        else:
+        elif normal_lines:
             grouped_seeds[normal_lines[0][0]] = grouped_seeds[tumor_lines[0][0]]
             odir = "{}{}/".format(args.output_directory, normal_lines[0][0])
             if not os.path.exists(odir):
