@@ -87,8 +87,8 @@ def check_properly_paired(bamf, samtools):
 
     elif ppp < 95:
         logging.warning("WARNING: BAM FILE PROPERLY PAIRED RATE IS BELOW 95%.\nQuality of data may be insufficient for AA "
-              "analysis. Poorly controlled insert size distribution during sample prep can cause high fractions of read"
-              " pairs to be marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!"
+              "analysis. Poorly controlled insert size distribution during library prep can cause high fractions of read"
+              " pairs marked as discordant during alignment. Artifactual short SVs and long runtimes may occur!"
               "\n")
 
     return ppp
