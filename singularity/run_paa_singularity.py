@@ -117,7 +117,7 @@ if args.sif and not args.sif.endswith("ampliconsuite-pipeline.sif"):
     if not args.sif.endswith("/"): args.sif+="/"
     args.sif+="ampliconsuite-pipeline.sif"
 
-else:
+elif not args.sif:
     args.sif = "ampliconsuite-pipeline.sif"
 
 if args.ref == "hg38": args.ref = "GRCh38"
