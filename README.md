@@ -39,7 +39,7 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 ### Option B: Conda or Mamba
 ```bash 
 conda create -n ampsuite && conda activate ampsuite
-conda install -c bioconda -c mosek ampliconsuite mosek
+conda install -c bioconda -c mosek -c conda-forge ampliconsuite mosek
 
 # then run the installer script to finalize the locations of the data repo and mosek license 
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
