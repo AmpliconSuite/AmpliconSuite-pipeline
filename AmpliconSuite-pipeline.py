@@ -280,7 +280,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
 
     AA_version = \
     Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
-        1].rstrip()
+        0].rstrip()
     try:
         AA_version = AA_version.decode('utf-8')
     except UnicodeError:
@@ -352,14 +352,14 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     sample_info_dict["number_of_AA_features"] = feat_count
 
 
-def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_file, cnv_bed=None):
+def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_file, ref, cnv_bed=None):
     # make the AC output table
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
     summary_map_file = class_output + "_summary_map.txt"
     classification_file = class_output + "_amplicon_classification_profiles.tsv"
-    cmd = "{} {}/make_results_table.py -i {} --classification_file {} --summary_map {}".format(
-        PY3_PATH, AC_src, input_file, classification_file, summary_map_file)
+    cmd = "{} {}/make_results_table.py -i {} --classification_file {} --summary_map {} --ref {}".format(
+        PY3_PATH, AC_src, input_file, classification_file, summary_map_file, ref)
 
     if cnv_bed:
         cmd += " --cnv_bed " + cnv_bed
@@ -369,6 +369,7 @@ def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_f
 
     if sample_metadata_file:
         cmd += " --sample_metadata_file " + sample_metadata_file
+
 
     logging.info(cmd)
     call(cmd, shell=True)
@@ -425,7 +426,7 @@ def save_run_metadata(outdir, sname, args, launchtime, commandstring):
     metadata_dict["hostname"] = socket.gethostname()
     metadata_dict["ref_genome"] = args.ref
     aapint = args.aa_python_interpreter if args.aa_python_interpreter else "python"
-    aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE).communicate()[1].rstrip()
+    aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
     try:
         aa_python_v = aa_python_v.decode('utf-8')
     except UnicodeError:
@@ -594,8 +595,8 @@ if __name__ == '__main__':
     parser.add_argument("--cnvkit_segmentation", metavar='STR', help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                         "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor', 'hmm-germline', 'none'],
                         default='cbs')
-    parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
-                        action='store_true')
+    parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to remove low confidence candidate seed"
+                                            " regions overlapping repetitive parts of the genome", action='store_true')
     parser.add_argument("--no_QC", help="Skip QC on the BAM file. Do not adjust AA insert_sdevs for "
                                         "poor-quality insert size distribution", action='store_true')
     parser.add_argument("--sample_metadata", metavar='FILE', help="JSON file of sample metadata to build on")
@@ -879,6 +880,11 @@ if __name__ == '__main__':
     aln_stage_stderr = None
     if args.fastqs:
         # Run BWA
+        if args.fastqs[0] == args.fastqs[1]:
+            logging.error("\n" + str(args.fastqs))
+            logging.error("You must provide two different fastq files for paired-end reads!\n")
+            sys.exit(1)
+
         fastqs = " ".join(args.fastqs)
         logging.info("Will perform alignment on " + fastqs)
         args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
@@ -993,7 +999,7 @@ if __name__ == '__main__':
 
         if args.run_AA and args.run_AC:
             make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename,
-                          sample_info_dict["sample_cnv_bed"])
+                          sample_info_dict["sample_cnv_bed"], args.ref)
 
     else:
         ta = time.time()
@@ -1013,7 +1019,7 @@ if __name__ == '__main__':
         with open(sample_metadata_filename, 'w') as fp:
             json.dump(sample_info_dict, fp, indent=2)
 
-        make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata, sample_metadata_filename)
+        make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata, sample_metadata_filename, args.ref)
 
     if not args.run_AA:
         AA_outdir = None

@@ -29,14 +29,17 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
             print(cmd + "\n")
             call(cmd, stdout=outfile, stderr=outfile, shell=True)
 
-        # if it was a seeds file, PAA won't modify, so move it into the right location
+        # if it was a seeds file, PAA won't modify, so copy it into the right location
         if sname in cnv_bed_dict and cnv_bed_dict[sname].endswith("AA_CNV_SEEDS.bed"):
             if not os.path.dirname(os.path.realpath(cnv_bed_dict[sname])) == os.path.realpath(odir):
                 cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
                 call(cmd, shell=True)
 
-        # store the name of the path of the seeds file
-        individual_seed_dct[sname] = '{}/{}_AA_CNV_SEEDS.bed'.format(odir, sname)
+            individual_seed_dct[sname] = cnv_bed_dict[sname]
+
+        else:
+            # store the name of the path of the seeds file
+            individual_seed_dct[sname] = '{}/{}_AA_CNV_SEEDS.bed'.format(odir, sname)
 
     return individual_seed_dct
 
@@ -245,8 +248,8 @@ if __name__ == '__main__':
                                                       "default segmentation method (cbs).",
                         choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
                                  'hmm-germline', 'none'], default='cbs')
-    parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to identify amplified seeds",
-                        action='store_true')
+    parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to remove low confidence candidate seed"
+                                            " regions overlapping repetitive parts of the genome", action='store_true')
     parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
     parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
     # parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
