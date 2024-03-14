@@ -999,7 +999,7 @@ if __name__ == '__main__':
 
         if args.run_AA and args.run_AC:
             make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename,
-                          sample_info_dict["sample_cnv_bed"], args.ref)
+                          args.ref, cnv_bed=sample_info_dict["sample_cnv_bed"])
 
     else:
         ta = time.time()
