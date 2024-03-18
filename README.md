@@ -336,26 +336,38 @@ The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) 
 > `AmpliconSuite-pipeline/scripts/plausible_paths.py -g sample_amplicon1_graph.txt [--scaling_factor (CN estimate value)] [--remove_short_jumps] [--keep_all_LC] [--max_length (value in kbp)]`
 
 ### - `breakpoints_to_bed.py`
-Requires `intervaltree` python package pre-installed. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
+Requires `intervaltree` python package. Write discordant edges (breakpoint junctions) from an AA graph into a pseudo-bed file.
+The `.input` file is automatically produced by AC, but is formatted like so
+
+`samplename /path/to/sample_amplicon1_cycles.txt /path/to/sample_amplicon1_graph.txt`
+
+Usage:
+>`scripts/breakpoints_to_bed.py -i (AC.input) [--regions chrA:start-stop chrB:start-stop ...]`
 
 ### - `convert_cns_to_bed.py`
 Many users will choose to run CNVkit outside AmpliconSuite-pipeline and then want to use the CNVkit calls in AA. We recommend using the `.cns` file as a source for the seeds. 
 Note the `.call.cns` file is different and contains more aggressively merged CNV calls, which we do not recommend as a source of seeds. As the `.cns` file specifies a log2 ratio,
-we provide the following script to reformat the `.cns` file from CNVkit into a `.bed` file useable with AmpliconSuite-pipeline. 
+we provide the following script to reformat the `.cns` file from CNVkit into a `.bed` file. 
+
+This script should not be needed by most users, as the `*_cnvkit_output/` directory will already contain a 
+`.bed` of genome-wide CNV calls produced by CNVkit. 
 
 Usage:
 >`scripts/convert_cns_to_bed.py sample.cns`
 
-This will output a bed file which can be fed into AmpliconSuite-pipeline. 
 
 ### - `cycles_to_bed.py`
-Requires `intervaltree` python package pre-installed. Write an AA cycles file as a series of bed files, one for each decomposition. Writes two types of bed files, an `unordered_cycle` file, where segments are merged and sorted, and order and orientation of segments is lost, and also writes
+Requires `intervaltree` python package. Write an AA cycles file as a series of bed files, one for each decomposition. Writes two types of bed files, an `unordered_cycle` file, where segments are merged and sorted, and order and orientation of segments is lost, and also writes
 an ordered file where the order and orientation of the genome segments comprising the cycle is maintained.
 
+Usage:
+
+>`scripts/cycles_to_bed.py -c sample_amplicon1_cycles.txt`
+
 ### - `graph_cleaner.py`
-Requires `intervaltree` python package pre-installed. Sequencing artifacts can lead to numerous spurious short breakpoint edges. This script attempts to remove edges which conform to artifactual profiles. 
-Namely, very short everted (inside-out read pair) orientation edges. These will appear as numerous short brown 'spikes' in the AA amplicon image.
-This script removes them from the graph file.
+Requires `intervaltree` python package. Poorly controlled insert size can lead to numerous spurious short breakpoint edges. This script attempts to remove SV edges which conform to small artificial indels. 
+Namely, very short everted (inside-out read pair) orientation edges. These will appear as numerous short brown 'spikes' in the AA amplicon image. This script removes them from the graph file. The filtering of these artifacts is done automatically by AA in modern releases, so this script is for legacy purposes.
+
 
 Usage:
 
@@ -369,7 +381,7 @@ or
 This will output an AA graph file(s) `/path/to/my_sample_ampliconX_cleaned_graph.txt`.
 
 ### - `graph_to_bed.py`
-Requires `intervaltree` python package pre-installed. Create a bed file of the graph segments and a bedpe file of the disordant graph edges. Can also filter to only get segments with CN above `--min_cn`. 
+Requires `intervaltree` python package. Create a bed file of the graph segments and a bedpe file of the disordant graph edges. Can also filter to only get segments with CN above `--min_cn`. 
 Setting `--unmerged` will not merge adjacent graph segments and will print the graph segment CN in the last column.
 
 Usage:
@@ -377,20 +389,27 @@ Usage:
 >`scripts/graph_to_bed.py -g sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
 
 
-### - `bfb_foldback_detection.py [deprecated]`
-**This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier).**
+[//]: # (### - `bfb_foldback_detection.py [deprecated]`)
 
-Requires `intervaltree` python package pre-installed. Script can be used to detect possible BFB-like signatures from AA graph files (documentation below).
+[//]: # (**This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier]&#40;https://github.com/jluebeck/AmpliconClassifier&#41;.**)
 
-To use the `bfb_foldback_detection.py` script on AA output, please create a two column file with the name of the graph file in column 1 and the path to the graph file in column 2. The rest of the command-line arguments are as follows.
+[//]: # ()
+[//]: # (Requires `intervaltree` python package pre-installed. Script can be used to detect possible BFB-like signatures from AA graph files &#40;documentation below&#41;.)
+
+[//]: # ()
+[//]: # (To use the `bfb_foldback_detection.py` script on AA output, please create a two column file with the name of the graph file in column 1 and the path to the graph file in column 2. The rest of the command-line arguments are as follows.)
 
 
-##### Required arguments for running on AA results
--  `--exclude [path to $AA_DATA_REPO/[ref]/[mappability excludable file]`
+[//]: # (##### Required arguments for running on AA results)
 
-- `-o [output filename prefix]`
+[//]: # (-  `--exclude [path to $AA_DATA_REPO/[ref]/[mappability excludable file]`)
 
-- `--ref [hg19, GRCh37, GRCh38]`
+[//]: # ()
+[//]: # (- `-o [output filename prefix]`)
 
-- `--AA_graph_list [two-column file listing AA graphs]`
+[//]: # ()
+[//]: # (- `--ref [hg19, GRCh37, GRCh38]`)
+
+[//]: # ()
+[//]: # (- `--AA_graph_list [two-column file listing AA graphs]`)
 

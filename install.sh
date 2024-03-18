@@ -8,7 +8,7 @@ install_dir=$(realpath "$(dirname "$0")")
 
 # Help function
 function show_help {
-  echo "Usage: script.sh [--finalize_only] --data_repo_loc <data_repo_loc>"
+  echo "Usage: install.sh [--finalize_only] --data_repo_loc <data_repo_loc>"
   echo "Options:"
   echo "  --finalize_only          Do not install AA or AC. Only finalize data repo and mosek license location"
   echo "  --data_repo_loc <path>   Custom set data repository location (defaults to creating a directory in \$HOME}"
