@@ -538,6 +538,10 @@ def extract_tar_gz(file_path, destination_folder):
     os.remove(file_path)
 
 
+def contains_spaces(file_path):
+    return any(char == ' ' for char in file_path)
+
+
 # MAIN #
 if __name__ == '__main__':
     # Parses the command line arguments
@@ -824,6 +828,10 @@ if __name__ == '__main__':
 
     faidict = {}
     if args.bam:
+        if contains_spaces(args.bam):
+            logging.error("BAM filepath cannot contain spaces!")
+            sys.exit(1)
+
         if args.ref and refFnames[args.ref]:
             faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
 
@@ -883,6 +891,10 @@ if __name__ == '__main__':
         if args.fastqs[0] == args.fastqs[1]:
             logging.error("\n" + str(args.fastqs))
             logging.error("You must provide two different fastq files for paired-end reads!\n")
+            sys.exit(1)
+
+        elif contains_spaces(args.fastqs[0]) or contains_spaces(args.fastqs[1]):
+            logging.error("FASTQ filepaths cannot contain spaces!")
             sys.exit(1)
 
         fastqs = " ".join(args.fastqs)
