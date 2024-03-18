@@ -174,7 +174,6 @@ Here are some commands for running AA. We'll assume you're starting with a coord
 
 ```
 echo $AA_DATA_REPO
-echo $AA_SRC
 ls $HOME/mosek/
 ```
 None of the above should print an empty string or "no such file" error.
