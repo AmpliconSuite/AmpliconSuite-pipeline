@@ -517,10 +517,10 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
     return False
 
 
-def get_samtools_version():
+def get_samtools_version(samtools):
     try:
         # Run the command to get the version information
-        result = Popen(['samtools'], stderr=PIPE, stdout=PIPE)
+        result = Popen([samtools], stderr=PIPE, stdout=PIPE)
         _, output = result.communicate()
 
         # Decode the output if it's in bytes (Python 3)
