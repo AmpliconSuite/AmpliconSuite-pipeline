@@ -12,7 +12,6 @@ from subprocess import *
 import sys
 import tarfile
 import time
-import urllib.request
 
 from paalib import check_reference, cnv_prefilter
 
@@ -510,6 +509,7 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 
 
 def download_file(url, destination_folder):
+    import urllib.request  # here because python2 not work with it
     filename = os.path.join(destination_folder, url.split("/")[-1])
     try:
         response = urllib.request.urlopen(url)
