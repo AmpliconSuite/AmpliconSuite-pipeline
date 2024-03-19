@@ -41,8 +41,8 @@ def metadata_helper(metadata_args):
 
 # Parses the command line arguments
 parser = argparse.ArgumentParser(
-    description="A simple pipeline wrapper for AmpliconArchitect, invoking alignment, variant calling, "
-    "and CNV calling prior to AA. The CNV calling is necesary for running AA")
+    description="A simple pipeline wrapper for AmpliconArchitect and AmpliconClassifier, invoking alignment "
+                "and CNV calling prior to AA.")
 parser.add_argument("--sif", help="location of the ampliconsuite-pipeline.sif file.Only required if .sif file not in "
                                   "cache", type=str)
 parser.add_argument("-o", "--output_directory",

@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 import logging
 import os
+import re
 import socket
 from subprocess import *
 import sys
@@ -14,15 +15,15 @@ import tarfile
 import time
 
 from paalib import check_reference, cnv_prefilter
+from paalib._version import __ampliconsuitepipeline_version__
 
-__version__ = "1.2.2"
 
 PY3_PATH = "python3"  # updated by command-line arg if specified
 metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
 sample_info_dict = {}  # stores the sample metadata
 
 
-def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, usingDeprecatedSamtools=False):
+def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_version):
     outname = outdir + sname
     logging.info("Output prefix: " + outname)
     exts = [".sa", ".amb", ".ann", ".pac", ".bwt"]
@@ -38,7 +39,7 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, usingDeprecate
         call(cmd, shell=True)
 
     print("\nPerforming alignment and sorting")
-    if usingDeprecatedSamtools:
+    if samtools_version[0] < 1:
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
     else:
@@ -48,22 +49,29 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, usingDeprecate
     logging.info(cmd)
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
-    logging.info("\nPerforming duplicate removal & indexing")
-    cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), "{}.cs.rmdup.bam".format(outname)]
-    # cmd_list = [samtools, "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname), {}.cs.rmdup.bam".format(outname)]
+    logging.info("\nPerforming duplicate marking & indexing")
+
+    if samtools_version < (1, 6):
+        final_bam_name = "{}.cs.rmdup.bam".format(outname)
+        cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), final_bam_name]
+
+    else:
+        final_bam_name = "{}.cs.mkdup.bam".format(outname)
+        cmd_list = [samtools, "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname), final_bam_name]
 
     logging.info(" ".join(cmd_list))
     call(cmd_list)
     logging.info("\nRunning samtools index")
-    cmd_list = [samtools, "index", "{}.cs.rmdup.bam".format(outname)]
+    cmd_list = [samtools, "index", final_bam_name]
     logging.info(" ".join(cmd_list))
     call(cmd_list)
     logging.info("Removing temp BAM")
     cmd = "rm {}.cs.bam".format(outname)
     call(cmd, shell=True)
-    return outname + ".cs.rmdup.bam", outname + "_aln_stage.stderr"
+    return final_bam_name, outname + "_aln_stage.stderr"
 
 
+# This is not currently used by AmpliconSuite-pipeline.
 def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None):
     # Freebayes cmd-line args
     # -f is fasta
@@ -89,6 +97,53 @@ def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None)
         call(cmd, shell=True)
         # gzip the new VCF
         call("gzip -f " + vcf_file, shell=True)
+
+
+# This is not currently used by AmpliconSuite-pipeline.
+def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
+    logging.info("\nMerging VCFs and zipping")
+    # collect the vcf files to merge
+    merged_vcf_file = outdir + sname + "_merged.vcf"
+    relevant_vcfs = [x for x in vcf_list if any([i in x for i in chr_names])]
+    chrom_vcf_d = {}
+    for f in relevant_vcfs:
+        curr_chrom = f.rsplit(".vcf.gz")[0].rsplit("_")[-2:]
+        chrom_vcf_d[curr_chrom[0] + curr_chrom[1]] = f
+
+    # chr_nums = [x.lstrip("chr") for x in chr_names]
+    pre_chr_str_names = [str(x) for x in range(1, 23)] + ["X", "Y"]
+
+    # sort the elements
+    # include the header from the first one
+    if args.ref != "GRCh37" and args.ref != "GRCm38":
+        sorted_chr_names = ["chr" + str(x) for x in pre_chr_str_names]
+        cmd = "zcat " + chrom_vcf_d["chrM"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
+
+    else:
+        sorted_chr_names = [str(x) for x in pre_chr_str_names]
+        cmd = "zcat " + chrom_vcf_d["MT"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
+
+    logging.info(cmd)
+    call(cmd, shell=True)
+
+    # zcat the rest, grepping out all header lines starting with "#"
+    logging.debug(sorted_chr_names)
+    for i in sorted_chr_names:
+        if i == "chrM" or i == "MT":
+            continue
+
+        cmd_p = "zcat " + chrom_vcf_d[i + "p"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
+        cmd_q = "zcat " + chrom_vcf_d[i + "q"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
+        logging.info(cmd_p)
+        call(cmd_p, shell=True)
+        logging.info(cmd_q)
+        call(cmd_q, shell=True)
+
+    cmd = "gzip -f " + merged_vcf_file
+    logging.info(cmd)
+    call(cmd, shell=True)
+
+    return merged_vcf_file + ".gz"
 
 
 def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None, ref_fasta=None, vcf=None):
@@ -158,52 +213,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
         cmd = "rm " + stripRefG + " " + stripRefG + ".fai"
         logging.info(cmd)
         call(cmd, shell=True)
-
-
-def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
-    logging.info("\nMerging VCFs and zipping")
-    # collect the vcf files to merge
-    merged_vcf_file = outdir + sname + "_merged.vcf"
-    relevant_vcfs = [x for x in vcf_list if any([i in x for i in chr_names])]
-    chrom_vcf_d = {}
-    for f in relevant_vcfs:
-        curr_chrom = f.rsplit(".vcf.gz")[0].rsplit("_")[-2:]
-        chrom_vcf_d[curr_chrom[0] + curr_chrom[1]] = f
-
-    # chr_nums = [x.lstrip("chr") for x in chr_names]
-    pre_chr_str_names = [str(x) for x in range(1, 23)] + ["X", "Y"]
-
-    # sort the elements
-    # include the header from the first one
-    if args.ref != "GRCh37" and args.ref != "GRCm38":
-        sorted_chr_names = ["chr" + str(x) for x in pre_chr_str_names]
-        cmd = "zcat " + chrom_vcf_d["chrM"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
-
-    else:
-        sorted_chr_names = [str(x) for x in pre_chr_str_names]
-        cmd = "zcat " + chrom_vcf_d["MT"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
-
-    logging.info(cmd)
-    call(cmd, shell=True)
-
-    # zcat the rest, grepping out all header lines starting with "#"
-    logging.debug(sorted_chr_names)
-    for i in sorted_chr_names:
-        if i == "chrM" or i == "MT":
-            continue
-
-        cmd_p = "zcat " + chrom_vcf_d[i + "p"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
-        cmd_q = "zcat " + chrom_vcf_d[i + "q"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
-        logging.info(cmd_p)
-        call(cmd_p, shell=True)
-        logging.info(cmd_q)
-        call(cmd_q, shell=True)
-
-    cmd = "gzip -f " + merged_vcf_file
-    logging.info(cmd)
-    call(cmd, shell=True)
-
-    return merged_vcf_file + ".gz"
 
 
 # Read the CNVkit .cns files
@@ -432,9 +441,9 @@ def save_run_metadata(outdir, sname, args, launchtime, commandstring):
         pass
 
     metadata_dict["AA_python_version"] = aa_python_v
-
-    metadata_dict["PAA_command"] = commandstring
-    metadata_dict["PAA_version"] = __version__
+    metadata_dict["AmpliconSuite-pipeline_command"] = commandstring
+    metadata_dict["AmpliconSuite-pipeline_version"] = __ampliconsuitepipeline_version__
+    metadata_dict["Samtools version"] = "{}.{}".format(samtools_version[0], samtools_version[1])
 
     for x in ["bwa_cmd", "cnvkit_cmd", "amplified_intervals_cmd", "AA_cmd", "AC_cmd", "cnvkit_version", "AA_version",
               "AC_version"]:
@@ -508,6 +517,32 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
     return False
 
 
+def get_samtools_version():
+    try:
+        # Run the command to get the version information
+        result = Popen(['samtools'], stderr=PIPE, stdout=PIPE)
+        _, output = result.communicate()
+
+        # Decode the output if it's in bytes (Python 3)
+        if isinstance(output, bytes):
+            output = output.decode('utf-8')
+
+        # Parse the version information to extract major and minor versions
+        version_pattern = r'Version: (\d+)\.(\d+)'
+        match = re.search(version_pattern, output)
+        if match:
+            major_version = int(match.group(1))
+            minor_version = int(match.group(2))
+            return major_version, minor_version
+        else:
+            # Return None if version information couldn't be parsed
+            return None, None
+    except OSError as e:
+        # Handle the case when Samtools is not found
+        print("Error: Samtools not found. Please make sure it is installed and in your PATH.")
+        return None, None
+
+
 def download_file(url, destination_folder):
     import urllib.request  # here because python2 not work with it
     filename = os.path.join(destination_folder, url.split("/")[-1])
@@ -549,7 +584,7 @@ if __name__ == '__main__':
         description="A pipeline wrapper for AmpliconArchitect, invoking alignment CNV calling and CNV filtering prior. "
                     "Can launch AA, as well as downstream amplicon classification.")
     parser.add_argument("-v", "--version", action='version',
-                        version='AmpliconSuite-pipeline version {version} \n'.format(version=__version__))
+                        version='AmpliconSuite-pipeline version {version} \n'.format(version=__ampliconsuitepipeline_version__))
     parser.add_argument("--download_repo", help="Download the selected data repo to the $AA_DATA_REPO "
                         "directory and exit. '_indexed' suffix indicates BWA index is included, which is useful if "
                         "performing alignment with AmpliconSuite-pipeline, but has a larger filesize.", choices=["hg19",
@@ -569,15 +604,13 @@ if __name__ == '__main__':
                         default=50000)
     parser.add_argument("--downsample", metavar='FLOAT', type=float, help="AA downsample argument (see AA documentation)",
                         default=10)
-    parser.add_argument("--use_old_samtools", help="Indicate you are using an old build of samtools prior to version 1.0",
-                        action='store_true', default=False)
     parser.add_argument("--rscript_path", metavar='PATH', help="Specify custom path to Rscript for CNVKit, "
                         "which requires R version >=3.5")
     parser.add_argument("--python3_path", metavar='PATH', help="If needed, specify a custom path to python3.")
     parser.add_argument("--aa_python_interpreter",
                         help="By default AmpliconSuite-pipeline will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
-                             "'python3' or 'python2'", metavar='PATH', type=str, default='python')
+                             "'python3' or 'python2' (default 'python')", metavar='PATH', type=str, default='python')
     parser.add_argument("--sv_vcf",
                         help="Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
                         metavar='FILE', action='store', type=str)
@@ -681,6 +714,13 @@ if __name__ == '__main__':
             args.samtools_path += "/"
         args.samtools_path += "samtools"
 
+    samtools_version = get_samtools_version(args.samtools_path)
+    if samtools_version:
+        logging.info("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
+    else:
+        logging.error("Failed to retrieve Samtools version.")
+        sys.exit(1)
+
     # Make and clear necessary directories.
     # make the output directory location if it does not exist
     if not os.path.exists(args.output_directory):
@@ -692,7 +732,7 @@ if __name__ == '__main__':
                         level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler())
     logging.info("Launched on " + launchtime)
-    logging.info("AmpiconSuite-pipeline version " + __version__ + "\n")
+    logging.info("AmpiconSuite-pipeline version " + __ampliconsuitepipeline_version__ + "\n")
 
     commandstring = ""
     for arg in sys.argv:
@@ -899,7 +939,7 @@ if __name__ == '__main__':
 
         fastqs = " ".join(args.fastqs)
         logging.info("Will perform alignment on " + fastqs)
-        args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, args.use_old_samtools)
+        args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, samtools_version)
 
     if not args.completed_AA_runs:
         bamBaiNoExt = args.bam[:-3] + "bai"

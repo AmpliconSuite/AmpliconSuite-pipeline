@@ -3,8 +3,6 @@
 # author: Jens Luebeck (jluebeck [at] ucsd.edu)
 
 import argparse
-from datetime import datetime
-import json
 import os
 import random
 from subprocess import *
@@ -12,8 +10,23 @@ import sys
 import time
 import threading
 
-PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/AmpliconSuite-pipeline.py"
+from paalib._version import __ampliconsuitepipeline_version__
 
+PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/AmpliconSuite-pipeline.py"
+PY3_PATH = "python3"  # updated by command-line arg if specified
+
+try:
+    AC_SRC = os.environ['AC_SRC']
+except KeyError:
+    try:
+        import ampclasslib
+        ac_path = check_output("which amplicon_classifier.py", shell=True).decode("utf-8")
+        AC_SRC = ac_path.rsplit("/amplicon_classifier.py")[0]
+    except Exception as e:
+        sys.stderr.write(str(e) + "\n")
+        sys.stderr.write(
+            "\nAC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
+        sys.exit(1)
 
 def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
     individual_seed_dct = {}
@@ -202,38 +215,53 @@ def get_argdict(args):
     return arg_dict
 
 
+def concatenate_files(file_paths, output_file):
+    try:
+        with open(output_file, 'w') as outfile:
+            for file_path in file_paths:
+                if not os.path.isfile(file_path):
+                    sys.stderr.write("Warning: {} does not exist!\n".format(file_path))
+                    sys.stderr.write("Feature similarity scoring may not be complete. Please check for AA or AC error.\n")
+                else:
+                    with open(file_path, 'r') as infile:
+                        outfile.write(infile.read())
+
+    except IOError as e:
+        print("Error:", e)
+        sys.exit(1)
+
+
 # MAIN #
 if __name__ == '__main__':
     # Parses the command line arguments
     parser = argparse.ArgumentParser(
         description="A pipeline wrapper for AmpliconArchitect, invoking alignment CNV calling and CNV filtering prior. "
-                    "Can launch AA, as well as downstream amplicon classification.")
+                    "Can launch AA, as well as downstream amplicon classification on groups of related samples.")
+    parser.add_argument("-v", "--version", action='version',
+                        version='GroupedAnalysisAmpSuite version {version} \n'.format(version=__ampliconsuitepipeline_version__))
     parser.add_argument("-i", "--input", help="Input file providing the multi-sample information. See README for "
                                               "information on how to format the input file.", required=True)
-    parser.add_argument("-o", "--output_directory", help="output directory names (will create if not already created)",
-                        required=True)
-    # parser.add_argument("-s", "--sample_name", help="sample name", required=True)
+    parser.add_argument("-o", "--output_directory", help="output directory name (will create if not already created)."
+                                                         " Sample outputs will be created as subdirectories inside -o", required=True)
     parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA, CNV calling and concurrent "
                                                  "instances of PAA", type=int, required=True)
     parser.add_argument("--no_AA", help="Only produce the seeds for the group. Do not run AA/AC",
                         action='store_true')
     parser.add_argument("--no_union", help="Do not create a unified collection of seeds for the group (keep seeds "
                                            "separate between samples", action='store_true')
-    parser.add_argument("--ref", help="Reference genome version.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
-                                                                            "GRCm38", "GRCh38_viral"])
+    parser.add_argument("--ref", help="Reference genome version of all samples.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
+                        "GRCm38", "GRCh38_viral"], required=True)
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
     parser.add_argument("--downsample", type=float, help="AA downsample argument (see AA documentation)", default=10)
-    parser.add_argument("--use_old_samtools", help="Indicate you are using an old build of samtools (prior to version "
-                                                   "1.0)", action='store_true', default=False)
     parser.add_argument("--rscript_path", help="Specify custom path to Rscript, if needed when using CNVKit "
                                                "(which requires R version >3.4)")
     parser.add_argument("--python3_path", help="If needed, specify a custom path to python3.")
     parser.add_argument("--aa_python_interpreter",
                         help="By default PrepareAA will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
-                             "'python3' or 'python2'", type=str, default='python')
+                             "'python3' or 'python2' (default 'python')", type=str, default='python')
     parser.add_argument("--AA_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
     parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                                              "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
@@ -252,20 +280,25 @@ if __name__ == '__main__':
                                             " regions overlapping repetitive parts of the genome", action='store_true')
     parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
     parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
-    # parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
     parser.add_argument("--cnvkit_dir", help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set. "
                                              "Not needed if --bed is given.")
 
     args = parser.parse_args()
 
     if args.output_directory and not args.output_directory.endswith('/'):
-        args.output_directory+='/'
+        args.output_directory += '/'
 
     if not os.path.exists(args.output_directory):
         os.makedirs(args.output_directory)
 
     if not args.aa_python_interpreter:
         args.aa_python_interpreter = 'python'
+
+    if args.python3_path:
+        if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
+            args.python3_path += "/python3"
+
+        PY3_PATH = args.python3_path
 
     arg_dict = get_argdict(args)
     tumor_lines, normal_lines = read_group_data(args.input)
@@ -318,4 +351,22 @@ if __name__ == '__main__':
         for t in threadL:
             t.join()
 
-        print("All jobs completed")
+        print("All AA & AC jobs completed")
+
+        # Stage 4: run feature similarity on outputs.
+        # make feature_input file (concatenate from each job)
+        feat_files = []
+        for i in range(len(all_lines)):
+            sname = all_lines[i][0]
+            feat_graph_file = ("{}{}/{}_classification/{}_features_to_graph.txt"
+                               .format(args.output_directory, sname, sname, sname))
+            feat_files.append(feat_graph_file)
+
+        combined_feat_graph_file = args.output_directory + "combined_features_to_graph.txt"
+        concatenate_files(feat_files, combined_feat_graph_file)
+        cmd = ("{} {}/feature_similarity.py -f {} --ref {}"
+               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref))
+        print(cmd)
+        call(cmd, shell=True)
+
+        print("Feature similarity calculations completed\n")
