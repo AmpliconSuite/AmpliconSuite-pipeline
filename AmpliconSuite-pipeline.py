@@ -49,22 +49,18 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
     logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
+
     logging.info("Performing duplicate marking & indexing")
-
-    if samtools_version < (1, 6):
-        final_bam_name = "{}.cs.rmdup.bam".format(outname)
-        cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), final_bam_name]
-
-    else:
-        final_bam_name = "{}.cs.mkdup.bam".format(outname)
-        cmd_list = [samtools, "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname), final_bam_name]
-
+    final_bam_name = "{}.cs.rmdup.bam".format(outname)
+    cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), final_bam_name]
     logging.info(" ".join(cmd_list) + "\n")
     call(cmd_list)
+
     logging.info("Running samtools index")
     cmd_list = [samtools, "index", final_bam_name]
     logging.info(" ".join(cmd_list) + "\n")
     call(cmd_list)
+
     logging.info("Removing temp BAM\n")
     cmd = "rm {}.cs.bam".format(outname)
     call(cmd, shell=True)
@@ -737,6 +733,7 @@ if __name__ == '__main__':
         else:
             commandstring += "{} ".format(arg)
 
+    logging.info("AmpliconSuite-pipeline command:")
     logging.info(commandstring + "\n")
 
     if "/" in args.sample_name:
@@ -857,6 +854,10 @@ if __name__ == '__main__':
             args.python3_path += "/python3"
 
         PY3_PATH = args.python3_path
+
+    if args.aa_python_interpreter and not any(args.aa_python_interpreter.endswith(x) for x in ['python', 'python2', 'python3']):
+        logging.error("--aa_python_interpreter must be a path of a valid python interpreter")
+        sys.exit(1)
 
     refFnames = {x: None for x in ["hg19", "GRCh37", "GRCh38", "GRCh38_viral", "mm10"]}
     # Paths of all the repo files needed

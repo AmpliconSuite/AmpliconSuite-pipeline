@@ -76,10 +76,10 @@ def match_ref(bamSeqLenD, ref_len_d):
 def check_properly_paired(bamf, samtools):
     cmd = samtools + " flagstat {} | grep 'properly paired'".format(bamf)
     t = str(subprocess.check_output(cmd, shell=True).decode("utf-8"))
-    logging.info("\n" + bamf + ": " + t.rstrip())
+    logging.info(bamf + ": " + t.rstrip() + "\n")
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
     if t.startswith("0 + 0"):
-        logging.error("\nERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found. The most common "
+        logging.error("ERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found. The most common "
                          "reason for this behavior is that the reference genome contained alt contigs that were not "
                          "indicated to the aligner. You must re-align to use AA (and many other bioinformatic tools) on"
                          " this data.\n\n")
