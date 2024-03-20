@@ -38,7 +38,7 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
         cmd = "bwa index " + ref_fasta
         call(cmd, shell=True)
 
-    logging.info("\nPerforming alignment and sorting")
+    logging.info("Performing alignment and sorting\n")
     if samtools_version[0] < 1:
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
@@ -46,10 +46,10 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
 
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
-    logging.info("\nPerforming duplicate marking & indexing")
+    logging.info("Performing duplicate marking & indexing")
 
     if samtools_version < (1, 6):
         final_bam_name = "{}.cs.rmdup.bam".format(outname)
@@ -59,13 +59,13 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
         final_bam_name = "{}.cs.mkdup.bam".format(outname)
         cmd_list = [samtools, "markdup", "-s", "-@ {}".format(nthreads), "{}.cs.bam".format(outname), final_bam_name]
 
-    logging.info(" ".join(cmd_list))
+    logging.info(" ".join(cmd_list) + "\n")
     call(cmd_list)
-    logging.info("\nRunning samtools index")
+    logging.info("Running samtools index")
     cmd_list = [samtools, "index", final_bam_name]
-    logging.info(" ".join(cmd_list))
+    logging.info(" ".join(cmd_list) + "\n")
     call(cmd_list)
-    logging.info("Removing temp BAM")
+    logging.info("Removing temp BAM\n")
     cmd = "rm {}.cs.bam".format(outname)
     call(cmd, shell=True)
     return final_bam_name, outname + "_aln_stage.stderr"
@@ -101,7 +101,7 @@ def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None)
 
 # This is not currently used by AmpliconSuite-pipeline.
 def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
-    logging.info("\nMerging VCFs and zipping")
+    logging.info("Merging VCFs and zipping...\n")
     # collect the vcf files to merge
     merged_vcf_file = outdir + sname + "_merged.vcf"
     relevant_vcfs = [x for x in vcf_list if any([i in x for i in chr_names])]
@@ -123,7 +123,7 @@ def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
         sorted_chr_names = [str(x) for x in pre_chr_str_names]
         cmd = "zcat " + chrom_vcf_d["MT"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
 
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     call(cmd, shell=True)
 
     # zcat the rest, grepping out all header lines starting with "#"
@@ -164,10 +164,10 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
 
     ckRef = AA_REPO + args.ref + "/" + args.ref + "_cnvkit_filtered_ref.cnn"
     if normal and args.ref == "GRCh38_viral":
-        logging.warning("\nCNVkit does not properly support matched tumor-normal with viral genomes. Ignoring matched-"
-                        "normal and running in tumor-only mode.")
+        logging.warning("CNVkit does not properly support matched tumor-normal with viral genomes. Ignoring matched-"
+                        "normal and running in tumor-only mode.\n")
         
-    logging.info("\nRunning CNVKit batch")
+    logging.info("Running CNVKit batch\n")
     if normal and not args.ref == "GRCh38_viral":
         # create a version of the stripped reference
         scripts_dir = os.path.dirname(os.path.abspath(__file__)) + "/scripts/"
@@ -181,7 +181,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     else:
         cmd = "{} {} batch -m wgs -r {} -p {} -d {} {}".format(PY3_PATH, ckpy_path, ckRef, nthreads, outdir, bamfile)
 
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["cnvkit_cmd"] = cmd + " ; "
     rscript_str = ""
@@ -191,18 +191,18 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
-    logging.info("\nRunning CNVKit segment")
+    logging.info("Running CNVKit segment")
     # TODO: possibly include support for adding VCF calls.
     cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
                                                          cnsFile)
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     exit_code = call(cmd, shell=True)
     if exit_code != 0:
         logging.error("CNVKit encountered a non-zero exit status. Exiting...\n")
         sys.exit(1)
 
     metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
-    logging.info("\nCleaning up temporary CNVkit files")
+    logging.info("Cleaning up temporary CNVkit files")
     cmd = "rm -f {}/*tmp.bed {}/*.cnn {}/*target.bed {}/*.bintest.cns".format(outdir, outdir, outdir, outdir)
     logging.info(cmd)
     call(cmd, shell=True)
@@ -259,13 +259,13 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
 
 def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, output_directory, sname, cngain,
                             cnsize_min):
-    logging.info("\nRunning amplified_intervals")
+    logging.info("Running amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
     cmd = "{} {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(
         AA_interpreter, AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min),
         AA_seeds_filename)
 
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     exit_code = call(cmd, shell=True)
     if exit_code != 0:
         logging.error("amplified_intervals.py returned a non-zero exit code. Exiting...\n")
@@ -307,7 +307,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
         if sv_vcf_no_filter:
             cmd += " --sv_vcf_no_filter"
 
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     aa_exit_code = call(cmd, shell=True)
     if aa_exit_code != 0:
         logging.error("AmpliconArchitect returned a non-zero exit code. Exiting...\n")
@@ -317,7 +317,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
 
 
 def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
-    logging.info("\nRunning AC")
+    logging.info("Running AC")
     # make input file
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
@@ -335,7 +335,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {} --report_complexity".format(PY3_PATH, AC_src, input_file,
                                                                                          ref, class_output)
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["AC_cmd"] = cmd
 
@@ -378,8 +378,7 @@ def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_f
     if sample_metadata_file:
         cmd += " --sample_metadata_file " + sample_metadata_file
 
-
-    logging.info(cmd)
+    logging.info(cmd + "\n")
     call(cmd, shell=True)
 
 
@@ -933,7 +932,7 @@ if __name__ == '__main__':
     if args.fastqs:
         # Run BWA
         if args.fastqs[0] == args.fastqs[1]:
-            logging.error("\n" + str(args.fastqs))
+            logging.error(str(args.fastqs))
             logging.error("You must provide two different fastq files for paired-end reads!\n")
             sys.exit(1)
 
