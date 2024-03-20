@@ -754,7 +754,7 @@ if __name__ == '__main__':
 
     samtools_version = get_samtools_version(args.samtools_path)
     if samtools_version:
-        logging.info("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
+        logging.debug("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
     else:
         logging.error("Failed to retrieve Samtools version.")
         sys.exit(1)
