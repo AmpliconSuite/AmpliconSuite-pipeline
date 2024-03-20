@@ -364,8 +364,8 @@ if __name__ == '__main__':
 
         combined_feat_graph_file = args.output_directory + "combined_features_to_graph.txt"
         concatenate_files(feat_files, combined_feat_graph_file)
-        cmd = ("{} {}/feature_similarity.py -f {} --ref {}"
-               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref))
+        cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}combined_samples"
+               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, ))
         print(cmd)
         call(cmd, shell=True)
 
