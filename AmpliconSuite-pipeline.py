@@ -539,7 +539,7 @@ def get_samtools_version(samtools):
             return None, None
     except OSError as e:
         # Handle the case when Samtools is not found
-        print("Error: Samtools not found. Please make sure it is installed and in your PATH.")
+        logging.error("Error: Samtools not found. Please make sure it is installed and in your PATH.")
         return None, None
 
 
@@ -714,13 +714,6 @@ if __name__ == '__main__':
             args.samtools_path += "/"
         args.samtools_path += "samtools"
 
-    samtools_version = get_samtools_version(args.samtools_path)
-    if samtools_version:
-        logging.info("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
-    else:
-        logging.error("Failed to retrieve Samtools version.")
-        sys.exit(1)
-
     # Make and clear necessary directories.
     # make the output directory location if it does not exist
     if not os.path.exists(args.output_directory):
@@ -762,6 +755,13 @@ if __name__ == '__main__':
 
     timing_logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')
     timing_logfile.write("#stage:\twalltime(seconds)\n")
+
+    samtools_version = get_samtools_version(args.samtools_path)
+    if samtools_version:
+        logging.info("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
+    else:
+        logging.error("Failed to retrieve Samtools version.")
+        sys.exit(1)
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
     if args.AA_src:
