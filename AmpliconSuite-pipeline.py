@@ -38,7 +38,7 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
         cmd = "bwa index " + ref_fasta
         call(cmd, shell=True)
 
-    print("\nPerforming alignment and sorting")
+    logging.info("\nPerforming alignment and sorting")
     if samtools_version[0] < 1:
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
@@ -730,7 +730,11 @@ if __name__ == '__main__':
     paa_logfile = args.output_directory + sname + '.log'
     logging.basicConfig(filename=paa_logfile, format='[%(name)s:%(levelname)s]\t%(message)s',
                         level=logging.INFO)
-    logging.getLogger().addHandler(logging.StreamHandler())
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('[%(name)s:%(levelname)s]\t%(message)s')
+    console_handler.setFormatter(formatter)
+    logging.getLogger().addHandler(console_handler)
     logging.info("Launched on " + launchtime)
     logging.info("AmpiconSuite-pipeline version " + __ampliconsuitepipeline_version__ + "\n")
 
