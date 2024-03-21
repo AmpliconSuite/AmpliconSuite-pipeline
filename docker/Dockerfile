@@ -17,7 +17,7 @@ RUN mkdir -p /home/programs
 RUN apt-get update && apt-get install -y
 RUN apt-get install -y --fix-missing \
 bcftools=1.10.2-2 \
-bedtools=2.30.0 \
+bedtools=2.25.0-1 \
 bwa=0.7.17-4 \
 fontconfig=2.13.1-2ubuntu3 \
 gfortran=4:9.3.0-1ubuntu2 \
