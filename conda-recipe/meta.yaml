@@ -41,12 +41,14 @@ requirements:
         - pysam
         - samtools
         - scipy
+        - bedtools
     host:
         - python >=3
 
 test:
     commands:
     - AmpliconSuite-pipeline.py -v
+    - GroupedAnalysisAmpSuite.py -v
     - amplicon_classifier.py -v
     - feature_similarity.py -h
     - make_results_table.py -h

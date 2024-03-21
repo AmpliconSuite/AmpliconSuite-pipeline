@@ -77,6 +77,13 @@ if ! ${finalize_only}; then
       samtools --version
   fi
 
+  if ! command -v bedtools &> /dev/null; then
+    echo "error! bedtools is not installed or not on the system path!"
+    exit 1
+  else
+      bedtools --version
+  fi
+
   if ! command -v bwa &> /dev/null; then
       echo "error! bwa is not installed or not on the system path!"
       exit 1
