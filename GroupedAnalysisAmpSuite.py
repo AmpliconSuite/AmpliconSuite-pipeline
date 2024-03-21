@@ -178,6 +178,7 @@ def read_group_data(input_file):
     """
     tumor_lines = []
     normal_lines = []
+    seen_names = set ()
     with open(input_file) as infile:
         for line in infile:
             if line.startswith("#"):
@@ -186,6 +187,11 @@ def read_group_data(input_file):
             fields = line.rstrip().rsplit()
             if not fields:
                 continue
+            elif len(fields) < 3:
+                sys.stderr.write("Input formatting error on line below! Too few fields.\n")
+                sys.stderr.write(line + "\n")
+                sys.stderr.write("See README for group input formatting instructions.\n")
+                sys.exit(1)
 
             for ind, v in enumerate(fields):
                 if v.upper() == "NA" or v.upper() == "NONE" or v.upper() == "":
@@ -201,6 +207,12 @@ def read_group_data(input_file):
                 sys.stderr.write("Input formatting error! Column 3 must either be 'tumor' or 'normal'.\nSee README for "
                                  "group input formatting instructions.\n\n")
                 sys.exit(1)
+
+            if fields[0] in seen_names:
+                sys.stderr.write("Duplicate sample name {} in .input file! Sample names must be unique.\n".format(fields[0]))
+                sys.exit(1)
+
+            seen_names.add(fields[0])
 
     return tumor_lines, normal_lines
 
@@ -367,6 +379,8 @@ if __name__ == '__main__':
         cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}combined_samples"
                .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, ))
         print(cmd)
-        call(cmd, shell=True)
-
-        print("Feature similarity calculations completed\n")
+        a = call(cmd, shell=True)
+        if a == 0:
+            print("Feature similarity calculations completed\n")
+        else:
+            print("Unexpected error when computing feature similarity!")
