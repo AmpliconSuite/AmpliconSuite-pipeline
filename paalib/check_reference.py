@@ -48,10 +48,16 @@ def get_bam_header(bamf, samtools):
 def extract_seq_info(bam_header):
     bamSeqLenD = defaultdict(int)
     linelist = bam_header.rsplit("\n")
+    altFound = False
     for line in (x for x in linelist if x.startswith("@SQ")):
         fields = line.rstrip().rsplit()[1:]
         ld = {i.rsplit(":")[0]: i.rsplit(":")[1] for i in fields if ":" in i}
         bamSeqLenD[ld["SN"]] = int(ld["LN"])
+        if ld["SN"].endswith("_alt"):
+            altFound = True
+
+    if altFound:
+        logging.warning("WARNING: Alt contigs detected in bam header. If BAM alignment was not alt-aware, AA results may be incorrect!\n")
 
     return bamSeqLenD
 
