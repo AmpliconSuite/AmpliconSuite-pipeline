@@ -22,12 +22,12 @@ ls $AA_DATA_REPO >> /home/output/docker_home_manifest.log
 #python $NCM_HOME/ncm.py -h >> /home/output/docker_home_manifest.log
 
 # works for py2 and py3
-RUN_COMMAND="python programs/AmpliconSuite-pipeline-master/PrepareAA.py ${argstring} &> /home/output/PAA_stdout.log"
+RUN_COMMAND="python programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log"
 echo "###############################"
 echo "RUNNING DOCKER STAGE..."
 echo "${RUN_COMMAND}"
 
-python programs/AmpliconSuite-pipeline-master/PrepareAA.py $argstring &> /home/output/PAA_stdout.log
+python programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/PAA_stdout.log
 echo "###############################"
 
 echo "FINISHED DOCKER STAGE"

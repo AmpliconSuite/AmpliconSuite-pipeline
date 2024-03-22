@@ -30,6 +30,7 @@ echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select t
 DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends \
 bcftools=1.10.2-2 \
 bedtools \
+build-essential \
 bwa=0.7.17-4 \
 fontconfig=2.13.1-2ubuntu3 \
 gfortran=4:9.3.0-1ubuntu2 \
@@ -51,7 +52,8 @@ pip3 install --no-cache-dir -r /home/requirements/requirements.txt --extra-index
 pip3 show intervaltree
 
 apt-get install -y r-base-core --no-install-recommends
-Rscript -e "source('http://callr.org/install#DNAcopy')"
+Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
+Rscript -e 'BiocManager::install("DNAcopy")'
 
 cnvkit.py version
 cp `which cnvkit.py` /home/programs/cnvkit.py

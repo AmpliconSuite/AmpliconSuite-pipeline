@@ -10,10 +10,10 @@ echo "" >> /home/output/docker_home_manifest.log
 ls $AA_DATA_REPO >> /home/output/docker_home_manifest.log
 
 # works for py2 and py3
-RUN_COMMAND="python /home/programs/AmpliconSuite-pipeline-master/PrepareAA.py ${argstring} &> /home/output/PAA_stdout.log"
+RUN_COMMAND="python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log"
 
 echo "${RUN_COMMAND}"
-python /home/programs/AmpliconSuite-pipeline-master/PrepareAA.py ${argstring} &> /home/output/PAA_stdout.log
+python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log
 echo -e "\n"
 echo -e "\n"
 

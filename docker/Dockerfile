@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y
 RUN apt-get install -y --fix-missing --no-install-recommends \
 bcftools=1.10.2-2 \
 bedtools \
+build-essential \
 bwa=0.7.17-4 \
 fontconfig=2.13.1-2ubuntu3 \
 gfortran=4:9.3.0-1ubuntu2 \
@@ -45,7 +46,9 @@ RUN pip3 install --no-cache-dir -r /home/requirements/requirements.txt --extra-i
 
 ## CNVkit & dependencies
 RUN apt-get install -y --no-install-recommends r-base-core
-RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
+#RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
+RUN Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
+RUN Rscript -e 'BiocManager::install("DNAcopy")'
 RUN cnvkit.py version
 
 # Config environment
