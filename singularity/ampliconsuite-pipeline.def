@@ -43,6 +43,8 @@ unzip=6.0-25ubuntu1 \
 wget=1.20.3-1ubuntu2 \
 zlib1g-dev
 
+fc-cache -f
+
 ln -s /usr/bin/python3 /usr/bin/python
 python --version
 
