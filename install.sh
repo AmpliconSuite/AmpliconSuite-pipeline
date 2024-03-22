@@ -115,7 +115,7 @@ if ! ${finalize_only}; then
   fi
 
   # install python deps
-  python3 -m pip install "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy
+  python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pysam scipy --extra-index-url https://download.pytorch.org/whl/cpu
 
   # install Rscript deps
   #Rscript -e "source('http://callr.org/install#DNAcopy')"

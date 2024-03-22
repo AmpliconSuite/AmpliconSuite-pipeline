@@ -13,11 +13,14 @@ COPY requirements/* /home/requirements/
 #Copy AA and mosek to image
 RUN mkdir -p /home/programs
 
+# Accept EULA for ttf-mscorefonts-installer package
+RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+
 #Download libraries for AA
 RUN apt-get update && apt-get install -y
-RUN apt-get install -y --fix-missing \
+RUN apt-get install -y --fix-missing --no-install-recommends \
 bcftools=1.10.2-2 \
-bedtools=2.25.0-1 \
+bedtools \
 bwa=0.7.17-4 \
 fontconfig=2.13.1-2ubuntu3 \
 gfortran=4:9.3.0-1ubuntu2 \
@@ -36,12 +39,12 @@ RUN fc-cache -f
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN python --version
 
-RUN apt-get install -y python3-pip
+RUN apt-get install -y --no-install-recommends python3-pip
 RUN pip3 install --upgrade pip
-RUN pip3 install -r /home/requirements/requirements.txt
+RUN pip3 install --no-cache-dir -r /home/requirements/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 ## CNVkit & dependencies
-RUN apt-get install -y r-base-core
+RUN apt-get install -y --no-install-recommends r-base-core
 RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
 RUN cnvkit.py version
 
@@ -77,3 +80,4 @@ RUN if [ -z "$set_uid" ] || [ -z "$set_gid" ] || [ "$set_uid" = 0 ] || [ "$set_g
 RUN chmod a+rw /home
 USER aa_user
 WORKDIR /home
+

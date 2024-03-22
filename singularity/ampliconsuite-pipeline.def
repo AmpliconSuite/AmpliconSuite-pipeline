@@ -8,6 +8,10 @@ requirements/requirements.txt home/requirements/requirements.txt
 run_paa_script.sh /home/
 
 %post
+# set timezone to UTC
+ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
+
 # stuff in the container
 mkdir -p /home/requirements
 mkdir -p /home/programs
@@ -21,9 +25,11 @@ chmod a+rwx /tmp/.config/matplotlib
 
 apt-get update && apt-get install -y
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
+echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+
+DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends \
 bcftools=1.10.2-2 \
-bedtools=2.25.0-1 \
+bedtools \
 bwa=0.7.17-4 \
 fontconfig=2.13.1-2ubuntu3 \
 gfortran=4:9.3.0-1ubuntu2 \
@@ -31,6 +37,7 @@ libbz2-dev=1.0.8-2 \
 liblzma-dev \
 python3-dev=3.8.2-0ubuntu2 \
 samtools=1.10-3 \
+ttf-mscorefonts-installer=3.7ubuntu6 \
 unzip=6.0-25ubuntu1 \
 wget=1.20.3-1ubuntu2 \
 zlib1g-dev
@@ -38,12 +45,12 @@ zlib1g-dev
 ln -s /usr/bin/python3 /usr/bin/python
 python --version
 
-apt-get install -y python3-pip
+apt-get install -y python3-pip --no-install-recommends
 pip3 install --upgrade pip
-pip3 install -r /home/requirements/requirements.txt
+pip3 install --no-cache-dir -r /home/requirements/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 pip3 show intervaltree
 
-apt-get install -y r-base-core
+apt-get install -y r-base-core --no-install-recommends
 Rscript -e "source('http://callr.org/install#DNAcopy')"
 
 cnvkit.py version
