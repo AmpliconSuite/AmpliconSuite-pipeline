@@ -9,3 +9,8 @@ conda create -n "ampsuite" python>=3.8.0
 conda activate ampsuite
 conda install -n ampsuite -c local -c mosek ampliconsuite mosek
 ```
+When you're finished clear it with
+
+```bash
+conda uninstall -n ampsuitetest -c local -c mosek ampliconsuite mosek
+```
