@@ -279,7 +279,7 @@ Otherwise, you will instead need these arguments below:
 
 
 ## Interpreting classification outputs
-- Information about the amplicon classification files produced at the end of the workflow are available [here](https://github.com/AmpliconSuite/AmpliconClassifier#3-output).
+- Information about the amplicon classification files produced at the end of the workflow are available [here](https://github.com/AmpliconSuite/AmpliconClassifier?tab=readme-ov-file#3-outputs).
 - Information on interpreting the AA cycles file is available [here](https://github.com/jluebeck/AmpliconArchitect#interpreting-the-aa-cycles-files).
 
 ## Testing your installation
