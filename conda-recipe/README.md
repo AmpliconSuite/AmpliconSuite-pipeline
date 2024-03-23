@@ -12,5 +12,5 @@ conda install -n ampsuite -c local -c mosek ampliconsuite mosek
 When you're finished clear it with
 
 ```bash
-conda uninstall -n ampsuitetest -c local -c mosek ampliconsuite mosek
+conda uninstall -n ampsuite -c local -c mosek ampliconsuite mosek
 ```
