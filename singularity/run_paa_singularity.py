@@ -9,6 +9,7 @@ import subprocess
 from subprocess import call
 import sys
 from packaging import version
+import glob
 
 # check singularity version
 def test_singularity_version():
