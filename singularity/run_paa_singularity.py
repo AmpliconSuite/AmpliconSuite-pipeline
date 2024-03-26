@@ -8,12 +8,15 @@ import os
 import subprocess
 from subprocess import call
 import sys
+from packaging import version
+import glob
 
 # check singularity version
 def test_singularity_version():
     singularity_version = subprocess.check_output(['singularity', '--version']).decode().strip().lower().rsplit("version")[1]
-    major, minor, patch = map(int, singularity_version.split('.')[0:3])
-    assert (major, minor, patch) >= (3, 6, 0),'Singularity version {singularity_version} is not supported. Please upgrade to version 3.6.0 or higher.'
+    version_local = version.parse(".".join(singularity_version.split('.')[0:3]))
+    version_require = version.parse("3.6.0")
+    assert version_local >= version_require,'Singularity version {singularity_version} is not supported. Please upgrade to version 3.6.0 or higher.'
 
 
 def metadata_helper(metadata_args):
@@ -113,12 +116,12 @@ group.add_argument("--completed_AA_runs", help="Path to a directory containing o
 args = parser.parse_args()
 test_singularity_version()
 
-if args.sif and not args.sif.endswith("ampliconsuite-pipeline.sif"):
-    if not args.sif.endswith("/"): args.sif+="/"
-    args.sif+="ampliconsuite-pipeline.sif"
+if args.sif and not args.sif.endswith(".sif"):
+    args.sif = glob.glob(os.path.join(args.sif, "*.sif"))
+
 
 elif not args.sif:
-    args.sif = "ampliconsuite-pipeline.sif"
+    args.sif = glob.glob("*.sif")
 
 if args.ref == "hg38": args.ref = "GRCh38"
 if args.ref == "GRCm38": args.ref = "mm10"
