@@ -39,6 +39,18 @@ def fasta_reader(fasta_file, chroms_to_get):
     return fasta_dict
 
 
+def reduce_fasta(ref, chrom, outname=""):
+    chrList = getRelChrs(chrom)
+    seqD = fasta_reader(ref, chrList)
+    base = os.path.basename(ref)
+    refGOutName = os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
+    print("Writing stripped FASTA\n")
+    with open(outname + refGOutName, 'w') as outfile:
+        for i in chrList:
+            outfile.write(">" + i + "\n")
+            outfile.write(seqD[i] + "\n")
+
+
 if __name__ == '__main__':
     # Parses the command line arguments
     parser = argparse.ArgumentParser(description="Reduce FASTA to entries in list")
@@ -50,14 +62,5 @@ if __name__ == '__main__':
     if not args.outname:
         args.outname = ""
 
-    chrList = getRelChrs(args.chrom)
-    seqD = fasta_reader(args.ref, chrList)
-    base = os.path.basename(args.ref)
-    refGOutName = os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
-    print("Writing stripped FASTA\n")
-    with open(args.outname + refGOutName, 'w') as outfile:
-        for i in chrList:
-            outfile.write(">" + i + "\n")
-            outfile.write(seqD[i] + "\n")
-
+    reduce_fasta(args.ref, args.chrom, args.outname)
     sys.exit()

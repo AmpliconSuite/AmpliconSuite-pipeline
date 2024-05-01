@@ -197,7 +197,7 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
 
     merged_filt_ivald = merge_intervals(filt_ivald, cn_cut=cngain, require_same_cn=True, ref=ref)
     final_filt_entries = ivald_to_ilist(merged_filt_ivald)
-    bname = outdir + "/" + bedfile.rsplit("/")[-1].rsplit(".bed")[0] + "_pre_filtered.bed"
+    bname = outdir + "/" + bedfile.rsplit("/")[-1].rsplit(".bed")[0] + "_unfiltered_gains.bed"
     with open(bname, 'w') as outfile:
         for entry in final_filt_entries:
             outfile.write("\t".join([str(x) for x in entry]) + "\n")

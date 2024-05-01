@@ -14,7 +14,7 @@ import sys
 import tarfile
 import time
 
-from paalib import check_reference, cnv_prefilter
+from paalib import check_reference, cnv_prefilter, reduce_fasta
 from paalib._version import __ampliconsuitepipeline_version__
 
 
@@ -166,9 +166,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     logging.info("Running CNVKit batch\n")
     if normal and not args.ref == "GRCh38_viral":
         # create a version of the stripped reference
-        scripts_dir = os.path.dirname(os.path.abspath(__file__)) + "/scripts/"
-        strip_cmd = "python {}reduce_fasta.py -r {} -c {} -o {}".format(scripts_dir, ref_fasta, ref_genome_size_file, outdir)
-        call(strip_cmd, shell=True)
+        reduce_fasta.reduce_fasta(ref_fasta, ref_genome_size_file, outdir)
         base = os.path.basename(ref_fasta) # args.ref is the name, ref is the fasta
         stripRefG = outdir + os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
         logging.debug("Stripped reference: " + stripRefG)
@@ -824,11 +822,16 @@ if __name__ == '__main__':
 
     if args.run_AA:
         if not os.path.exists(os.environ["HOME"] + "/mosek/mosek.lic") and not "MOSEKLM_LICENSE_FILE" in os.environ:
-            logging.error("--run_AA set, but MOSEK license not found!")
+            logging.error("--run_AA set, but MOSEK license not found in $HOME/mosek/")
             sys.exit(1)
 
-        elif "MOSEKLM_LICENSE_FILE" in os.environ and not os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
-                logging.error("--run_AA set, but MOSEK license not found!")
+        elif "MOSEKLM_LICENSE_FILE" in os.environ:
+            if os.environ["MOSEKLM_LICENSE_FILE"].endswith("mosek.lic"):
+                logging.error("MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'")
+                sys.exit(1)
+
+            elif not os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
+                logging.error("--run_AA set, but MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
                 sys.exit(1)
 
     runCNV = None
@@ -975,6 +978,7 @@ if __name__ == '__main__':
         centromere_dict = get_ref_centromeres(args.ref)
         chr_sizes = get_ref_sizes(ref_genome_size_file)
         # coordinate CNV calling
+        cnvkit_output_directory = None
         if runCNV == "CNVkit":
             cnvkit_output_directory = args.output_directory + sname + "_cnvkit_output/"
             if not os.path.exists(cnvkit_output_directory):
@@ -1001,17 +1005,19 @@ if __name__ == '__main__':
         sample_info_dict["sample_cnv_bed"] = args.cnv_bed
 
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
-            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
+            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
+                pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
-                                                           args.cngain, args.output_directory)
+                                                           args.cngain, pfilt_odir)
 
             amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.bam,
                                                              outdir, sname, args.cngain, args.cnsize_min)
 
         elif args.no_filter and runCNV:
-            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed"):
+            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
+                pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
-                                                           args.cngain, args.output_directory)
+                                                           args.cngain, pfilt_odir)
                 logging.info("Skipping amplified_intervals.py step due to --no_filter")
 
         else:

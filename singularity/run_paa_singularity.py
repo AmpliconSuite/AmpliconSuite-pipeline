@@ -162,6 +162,7 @@ else:
 
 
 if not os.path.exists(os.environ['HOME'] + "/mosek/mosek.lic"):
+    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'])
     sys.stderr.write(
         "Mosek license (mosek.lic) file not found in $HOME/mosek/. Please see README for instructions.\n")
     sys.exit(1)

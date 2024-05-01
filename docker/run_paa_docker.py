@@ -149,6 +149,9 @@ else:
 try:
     # deprecated install of mosek license
     MOSEKLM_LICENSE_FILE = os.environ['MOSEKLM_LICENSE_FILE']
+    if MOSEKLM_LICENSE_FILE.endswith("mosek.lic"):
+        sys.stderr.write(
+            "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'\n")
     if not os.path.exists(MOSEKLM_LICENSE_FILE + "/mosek.lic"):
         raise KeyError
 
