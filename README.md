@@ -38,7 +38,7 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 
 ### Option B: Conda or Mamba
 ```bash 
-conda create -n ampsuite python=3.10 && conda activate ampsuite
+conda create -n ampsuite && conda activate ampsuite
 conda install -c bioconda -c conda-forge ampliconsuite 
 conda install -c mosek mosek
 
@@ -47,7 +47,7 @@ wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/mast
 source install.sh --finalize_only  # -h to see options
 ```
 
-If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function more robustly for installing AmpliconSuite. These steps also function on macOS.
+If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
 # alternate instructions using Mamba (solves dependencies more effectively on some setups)
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
