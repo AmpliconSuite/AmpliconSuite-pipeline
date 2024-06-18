@@ -40,13 +40,20 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
             cmd = '{} {}{}'.format(aa_py, PAA_PATH, argstring)
             print(sname)
             print(cmd + "\n")
-            call(cmd, stdout=outfile, stderr=outfile, shell=True)
+            ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
+            if ecode != 0:
+                sys.stderr.write("Unexpected error during individual CNV call generation!\n")
+                sys.exit(1)
+
 
         # if it was a seeds file, PAA won't modify, so copy it into the right location
         if sname in cnv_bed_dict and cnv_bed_dict[sname].endswith("AA_CNV_SEEDS.bed"):
             if not os.path.dirname(os.path.realpath(cnv_bed_dict[sname])) == os.path.realpath(odir):
                 cmd = "cp {} {}/".format(cnv_bed_dict[sname], odir)
-                call(cmd, shell=True)
+                ecode = call(cmd, shell=True)
+                if ecode != 0:
+                    sys.stderr.write("Unexpected error while copying AA_CNV_SEEDS.bed file!\n")
+                    sys.exit(1)
 
             individual_seed_dct[sname] = cnv_bed_dict[sname]
 
@@ -70,7 +77,10 @@ def group_seeds(individual_seed_dct, odir):
         print("Merging seeds")
         cmd = "sort -k1,1 -k2,2n {} | bedtools merge -i - > {}".format(bedlist, outname)
         print(cmd)
-        call(cmd, shell=True)
+        ecode = call(cmd, shell=True)
+        if ecode != 0:
+            sys.stderr.write("Unexpected error while merging seeds!\n")
+            sys.exit(1)
 
     else:
         outname = all_ind_seeds.pop()
@@ -80,18 +90,22 @@ def group_seeds(individual_seed_dct, odir):
 
 
 def launch_AA_AC(jobq, aa_py, PAA_PATH, parent_odir):
-    try:
-        sname, arg_string = jobq.pop()
+    while jobq:
+        try:
+            sname, arg_string = jobq.pop()
 
-    except IndexError:
-        return
+        except IndexError:
+            return
 
-    odir = parent_odir + sname
-    with open("{}/{}_AA_AC_out.txt".format(odir, sname), 'w') as outfile:
-        time.sleep(random.uniform(0, 0.75))
-        cmd = "{} {}{}".format(aa_py, PAA_PATH, arg_string)
-        print("\nLaunching AA+AC job for " + sname + "\n" + cmd)
-        call(cmd, stdout=outfile, stderr=outfile, shell=True)
+        odir = parent_odir + sname
+        with open("{}/{}_AA_AC_out.txt".format(odir, sname), 'w') as outfile:
+            time.sleep(random.uniform(0, 0.75))
+            cmd = "{} {}{}".format(aa_py, PAA_PATH, arg_string)
+            print("\nLaunching AA+AC job for " + sname + "\n" + cmd)
+            ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
+            if ecode != 0:
+                sys.stderr.write("Unexpected error while running AA+AC job!\n")
+                sys.exit(1)
 
 
 def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
@@ -255,8 +269,8 @@ if __name__ == '__main__':
                                               "information on how to format the input file.", required=True)
     parser.add_argument("-o", "--output_directory", help="output directory name (will create if not already created)."
                                                          " Sample outputs will be created as subdirectories inside -o", required=True)
-    parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA, CNV calling and concurrent "
-                                                 "instances of PAA", type=int, required=True)
+    parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA, CNV calling steps (samples run in serial), "
+                                                 "and the number of concurrent instances of AmpliconSuite to launch at once", type=int, required=True)
     parser.add_argument("--no_AA", help="Only produce the seeds for the group. Do not run AA/AC",
                         action='store_true')
     parser.add_argument("--no_union", help="Do not create a unified collection of seeds for the group (keep seeds "
@@ -379,8 +393,9 @@ if __name__ == '__main__':
         cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}combined_samples"
                .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, ))
         print(cmd)
-        a = call(cmd, shell=True)
-        if a == 0:
+        ecode = call(cmd, shell=True)
+        if ecode == 0:
             print("Feature similarity calculations completed\n")
         else:
-            print("Unexpected error when computing feature similarity!")
+            sys.stderr.write("Unexpected error when computing feature similarity!\n")
+            sys.exit(1)

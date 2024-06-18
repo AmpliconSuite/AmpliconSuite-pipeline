@@ -4,10 +4,10 @@
 
 cd /home/output
 
-id > /home/output/docker_home_manifest.log
-ls -lisaht /home >> /home/output/docker_home_manifest.log
-echo "" >> /home/output/docker_home_manifest.log
-ls $AA_DATA_REPO >> /home/output/docker_home_manifest.log
+id > /home/output/singularity_home_manifest.log
+ls -lisaht /home >> /home/output/singularity_home_manifest.log
+echo "" >> /home/output/singularity_home_manifest.log
+ls $AA_DATA_REPO >> /home/output/singularity_home_manifest.log
 
 # works for py2 and py3
 RUN_COMMAND="python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log"

@@ -12,8 +12,8 @@ import sys
 # check singularity version
 def test_singularity_version():
     singularity_version = subprocess.check_output(['singularity', '--version']).decode().strip().lower().rsplit("version")[1]
-    major, minor, patch = map(int, singularity_version.split('.')[0:3])
-    assert (major, minor, patch) >= (3, 6, 0),'Singularity version {singularity_version} is not supported. Please upgrade to version 3.6.0 or higher.'
+    major, minor = map(int, singularity_version.split('.')[0:2])
+    assert (major, minor) >= (3, 6),'Singularity version {} is not supported. Please upgrade to version 3.6 or higher.'.format(singularity_version)
 
 
 def metadata_helper(metadata_args):
@@ -43,8 +43,7 @@ def metadata_helper(metadata_args):
 parser = argparse.ArgumentParser(
     description="A simple pipeline wrapper for AmpliconArchitect and AmpliconClassifier, invoking alignment "
                 "and CNV calling prior to AA.")
-parser.add_argument("--sif", help="location of the ampliconsuite-pipeline.sif file.Only required if .sif file not in "
-                                  "cache", type=str)
+parser.add_argument("--sif", help="Path of the ampliconsuite-pipeline.sif file.", type=str, required=True)
 parser.add_argument("-o", "--output_directory",
                     help="output directory names (will create if not already created)")
 parser.add_argument("-s", "--sample_name", help="sample name", required=True)
@@ -113,12 +112,9 @@ group.add_argument("--completed_AA_runs", help="Path to a directory containing o
 args = parser.parse_args()
 test_singularity_version()
 
-if args.sif and not args.sif.endswith("ampliconsuite-pipeline.sif"):
-    if not args.sif.endswith("/"): args.sif+="/"
-    args.sif+="ampliconsuite-pipeline.sif"
-
-elif not args.sif:
-    args.sif = "ampliconsuite-pipeline.sif"
+if args.sif and not args.sif.endswith(".sif"):
+    sys.stderr.write("Path of .sif file must go to .sif file!")
+    sys.exit(1)
 
 if args.ref == "hg38": args.ref = "GRCh38"
 if args.ref == "GRCm38": args.ref = "mm10"

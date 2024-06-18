@@ -47,7 +47,9 @@ wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/mast
 source install.sh --finalize_only  # -h to see options
 ```
 
-If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
+Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+
+- If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
 # alternate instructions using Mamba (solves dependencies more effectively on some setups)
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
@@ -56,10 +58,10 @@ wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/mast
 source install.sh --finalize_only
 ```
 
-**... proceed to step 2 of Option C**
+
 
 ### Option C: Standalone installation using the installer script
-Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`.
+Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`.
 1. Pull source code and run install script (**skip if installed via Conda**):
     ```bash
     # first install some dependencies (BWA, R, samtools) if you don't already have them
@@ -75,17 +77,10 @@ Can be used on most modern Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). 
     source ./install.sh 
     ```
 
-2. **Start here if you installed with conda/mamba**: Populate the AA data repo with required annotations for the reference genomes of interest.
-This can be done on the CLI using the example command below. Specifying `[ref]_indexed` will download a version that includes the BWA index.
-
-    `AmpliconSuite-pipeline.py --download_repo [GRCh38|hg19|mm10|...]`
-
-    Data repo files can also be downloaded manually [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) and placed in the $AA_DATA_REPO directory.
-
-3. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+2. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
 
 
-4. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
+3. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
 
 
 
@@ -120,14 +115,8 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 
    
 4. (Recommended) Pre-download AA data repositories and set environment variable AA_DATA_REPO:
-   - Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to locate data repo(s) of your choice and make note of the URL you want.
-      ```bash
-      cd $AA_DATA_REPO
-      wget [url of reference_build]
-      tar zxf [reference_build].tar.gz
-      rm [reference_build].tar.gz
-      ```
-   - If you do not do this process, the container runscript will attempt to download the files itself before launching the container.
+   - See the instructions in the section below on obtaining required reference annotations. 
+   - If you do not do this process, the container runscript will attempt to download the files into the container before running. This can add to your compute time, especially if you are running many samples.
 
 #### Launching the execution script for the container:
 
@@ -139,11 +128,25 @@ These scripts use most of the same arguments are the main driver script `Amplico
 
 An example command might look like:
 
-`AmpliconSuite-pipeline/singularity/run_paa_singularity.py -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
+`AmpliconSuite-pipeline/singularity/run_paa_singularity.py --sif /path/to/ampliconsuite-pipeline.sif -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
 ### Option E: Installation without installer script
 Try this if you are going to use `python2`. Please see [the instructions here](documentation/CUSTOM_INSTALL.md).
 
+## Downloading required reference annotations (AA data repo)
+Before running AmpliconSuite-pipeline, populate the data repo with required annotations for the reference genomes of interest.
+This can be done using the example command below. Specifying `[ref]_indexed` will download a version that includes the BWA index, which is useful for alignment.
+
+`AmpliconSuite-pipeline.py --download_repo [GRCh38|hg19|mm10|... or GRCh38_indexed|hg19_indexed...]`
+
+- Data repo files can also be downloaded manually and placed in the `$AA_DATA_REPO` directory.
+   - Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to see available data repos and copy the URL of the one you want, then
+      ```bash
+      cd $AA_DATA_REPO
+      wget [url of reference_build]
+      tar zxf [reference_build].tar.gz
+      rm [reference_build].tar.gz
+      ```
 
 ## Running AmpliconSuite-pipeline
 The main driver script for the standalone pipeline is called `AmpliconSuite-pipeline.py`. 
@@ -180,9 +183,9 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 * You can also use the CNVkit `sample_name.cns` file instead of .bed for this argument.
 
 
-#### Example 4: Analyzing a collection of related samples (same origin)
+#### Example 4: Analyzing a collection of related samples (replicates or multi-region sampling)
 
-Have multiple samples from the same patient, cell line, etc.? These should be run as a group to ensure that the same regions are studied across samples.
+If you have multiple samples from the same patient, cell line, etc., these should be run as a group to ensure that the same regions are studied across those samples.
 Please see the `GroupedAnalysisAmpSuite.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysispy) for instructions.
 
 #### Example 5: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection

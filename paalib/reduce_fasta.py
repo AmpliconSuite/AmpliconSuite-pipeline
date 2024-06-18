@@ -2,6 +2,7 @@
 
 import argparse
 from itertools import groupby
+import logging
 import os
 import sys
 
@@ -25,7 +26,7 @@ def getRelChrs(CHROMS):
 
 def fasta_reader(fasta_file, chroms_to_get):
     fasta_dict = {}
-    print("Reading FASTA: {}".format(fasta_file))
+    logging.info("Reading FASTA: {}".format(fasta_file))
     with open(fasta_file) as infile:
         faiter = (x[1] for x in groupby(infile, lambda line: line[0] == ">"))
         for header in faiter:
@@ -44,7 +45,7 @@ def reduce_fasta(ref, chrom, outname=""):
     seqD = fasta_reader(ref, chrList)
     base = os.path.basename(ref)
     refGOutName = os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
-    print("Writing stripped FASTA\n")
+    logging.info("Writing stripped FASTA\n")
     with open(outname + refGOutName, 'w') as outfile:
         for i in chrList:
             outfile.write(">" + i + "\n")
@@ -62,5 +63,6 @@ if __name__ == '__main__':
     if not args.outname:
         args.outname = ""
 
+    logging.basicConfig(format='[%(name)s:%(levelname)s]\t%(message)s', level=logging.INFO)
     reduce_fasta(args.ref, args.chrom, args.outname)
     sys.exit()

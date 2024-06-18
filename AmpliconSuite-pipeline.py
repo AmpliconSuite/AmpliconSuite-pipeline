@@ -14,7 +14,7 @@ import sys
 import tarfile
 import time
 
-from paalib import check_reference, cnv_prefilter, reduce_fasta
+from paalib import check_reference, reduce_fasta
 from paalib._version import __ampliconsuitepipeline_version__
 
 
@@ -327,8 +327,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     with open(input_file) as ifile:
         sample_info_dict["number_of_AA_amplicons"] = len(ifile.readlines())
 
-    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {} --report_complexity".format(PY3_PATH, AC_src, input_file,
-                                                                                         ref, class_output)
+    cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {}".format(PY3_PATH, AC_src, input_file, ref, class_output)
     logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["AC_cmd"] = cmd
@@ -1006,6 +1005,7 @@ if __name__ == '__main__':
 
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
+                import cnv_prefilter
                 pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, pfilt_odir)
@@ -1015,6 +1015,7 @@ if __name__ == '__main__':
 
         elif args.no_filter and runCNV:
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
+                import cnv_prefilter
                 pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, pfilt_odir)
