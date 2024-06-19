@@ -85,10 +85,11 @@ def check_properly_paired(bamf, samtools):
     logging.info(bamf + ": " + t.rstrip() + "\n")
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
     if t.startswith("0 + 0"):
-        logging.error("ERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found. The most common "
-                         "reason for this behavior is that the reference genome contained alt contigs that were not "
-                         "indicated to the aligner. You must re-align to use AA (and many other bioinformatic tools) on"
-                         " this data.\n\n")
+        logging.error("ERROR: IMPROPERLY GENERATED BAM FILE! No properly-paired reads were found by samtools. "
+                         "AmpliconSuite-pipeline requires paired-end sequencing data. If this is PE WGS, then the most common "
+                         "reason for no idenfitied properly paired reads is that the reference genome used in alignment"
+                         "contained alt contigs that were not indicated to the aligner. You must re-align the reads to use "
+                         "AA (and many other bioinformatic tools) on this data.\n\n")
         sys.exit(1)
 
     elif ppp < 95:

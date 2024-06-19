@@ -1005,7 +1005,7 @@ if __name__ == '__main__':
 
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
-                import cnv_prefilter
+                from paalib import cnv_prefilter
                 pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, pfilt_odir)
@@ -1015,7 +1015,7 @@ if __name__ == '__main__':
 
         elif args.no_filter and runCNV:
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
-                import cnv_prefilter
+                from paalib import cnv_prefilter
                 pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, pfilt_odir)
