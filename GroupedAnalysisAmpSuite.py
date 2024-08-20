@@ -134,7 +134,7 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, paren
     else:
         normalbam = normal_lines[0]
         if len(normal_lines) > 1:
-            print("More than one normal sample specified. Only the first will be used: " + normalbam[0])
+            print("More than one normal sample specified. Only the first will be used for matched tumor-normal CNV calling: " + normalbam[0])
 
     cmd_dict = dict()
     cnv_bed_dict = dict()
@@ -328,7 +328,7 @@ if __name__ == '__main__':
 
     arg_dict = get_argdict(args)
     tumor_lines, normal_lines = read_group_data(args.input)
-    print("Found {} tumor samples and {} normals\n".format(str(len(tumor_lines)), str(len(normal_lines))))
+    print("\nRead {} tumor samples and {} normal samples\n".format(str(len(tumor_lines)), str(len(normal_lines))))
     if len(tumor_lines) == 0:
         print("No tumor samples were provided. Exiting.")
         sys.exit(1)
@@ -352,9 +352,10 @@ if __name__ == '__main__':
     if not args.no_AA:
         if args.skip_AA_on_normal_bam:
             normal_lines = []
-        elif normal_lines:
-            grouped_seeds[normal_lines[0][0]] = grouped_seeds[tumor_lines[0][0]]
-            odir = "{}{}/".format(args.output_directory, normal_lines[0][0])
+
+        for nl in range(len(normal_lines)):
+            grouped_seeds[normal_lines[nl][0]] = grouped_seeds[tumor_lines[0][0]]
+            odir = "{}{}/".format(args.output_directory, normal_lines[nl][0])
             if not os.path.exists(odir):
                 os.makedirs(odir)
 
