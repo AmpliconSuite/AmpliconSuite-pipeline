@@ -81,8 +81,21 @@ def match_ref(bamSeqLenD, ref_len_d):
 # check properly paired rate on bam file
 def check_properly_paired(bamf, samtools):
     cmd = samtools + " flagstat {} | grep 'properly paired'".format(bamf)
-    t = str(subprocess.check_output(cmd, shell=True).decode("utf-8"))
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    exit_code = process.returncode
+
+    # Convert stdout to a string (in Python 3 it is already a string, but in Python 2 it is bytes)
+    t = stdout.decode("utf-8") if isinstance(stdout, bytes) else stdout
+
     logging.info(bamf + ": " + t.rstrip() + "\n")
+    if int(exit_code) != 0:
+        em = stderr.decode("utf-8") if isinstance(stderr, bytes) else stderr
+        logging.error(em)
+        logging.error("Samtools flagstat returned a non-zero exit code or reported no information on properly paired reads! "
+                      "This indicates a significant problem with your bam file.")
+        sys.exit(1)
+
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
     if t.startswith("0 + 0"):
         logging.error("ERROR: UNSUITABLE BAM FILE! No properly-paired reads were found by samtools. "
