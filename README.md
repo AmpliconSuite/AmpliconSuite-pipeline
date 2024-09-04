@@ -186,7 +186,7 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 #### Example 4: Analyzing a collection of related samples (replicates or multi-region sampling)
 
 If you have multiple samples from the same patient, cell line, etc., these should be run as a group to ensure that the same regions are studied across those samples.
-Please see the `GroupedAnalysisAmpSuite.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysispy) for instructions.
+Please see the `GroupedAnalysisAmpSuite.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysisampsuitepy) for instructions.
 
 #### Example 5: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
 Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
