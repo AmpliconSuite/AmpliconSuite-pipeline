@@ -714,7 +714,7 @@ if __name__ == '__main__':
     # initiate logging
     paa_logfile = args.output_directory + sname + '.log'
     logging.basicConfig(filename=paa_logfile, format='[%(name)s:%(levelname)s]\t%(message)s',
-                        level=logging.INFO)
+                        level=logging.INFO, filemode='w')
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     formatter = logging.Formatter('[%(name)s:%(levelname)s]\t%(message)s')
