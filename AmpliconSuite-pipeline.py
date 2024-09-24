@@ -281,8 +281,11 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     sv_vcf_no_filter = args.sv_vcf_no_filter
 
     AA_version = \
-    Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
-        0].rstrip()
+    Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
+    if not AA_version:
+        AA_version = \
+            Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[1].rstrip()
+
     try:
         AA_version = AA_version.decode('utf-8')
     except UnicodeError:
