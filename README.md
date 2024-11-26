@@ -281,6 +281,10 @@ Otherwise, you will instead need these arguments below:
 
 - `--samtools_path`: Path to a specific samtools binary for use (e.g., /path/to/my/samtools). Uses samtools on system path by default.
 
+- `--sv_vcf`: Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.
+
+- `--sv_vcf_no_filter`: Use all external SV calls from the --sv_vcf arg, even those without 'PASS' in the FILTER column. 
+
 
 ## Interpreting classification outputs
 - Information about the amplicon classification files produced at the end of the workflow are available [here](https://github.com/AmpliconSuite/AmpliconClassifier?tab=readme-ov-file#3-outputs).
@@ -319,9 +323,9 @@ For samples derived from a common origin (longitudinal, multiregional sampling f
 between runs. We provide a script `GroupedAnalysisAmpSuite.py` which automates this analysis. `GroupedAnalysisAmpSuite.py` takes almost all the same arguments as `PrepareAA.py`, 
 however it requires an additional input file, listing the inputs. This file is to be formatted as follows
 
-`sample_name` `bamfile` `"tumor"/"normal"` `[CNV_calls]` `[sample_metadata_json]`
+`sample_name` `bamfile` `"tumor"|"normal"` `[CNV_calls.bed]` `[sample_metadata.json]` `[SV_calls.vcf]`
 
-Where `CNV_calls` and `sample_metadata_json` are optional. All samples listed in each file should be uniquely named and from the same group of related samples. Do not include different collections of related samples in the same table - make different tables. However, they are positional, so if `CNV_calls` is skipped, it should be set as either `NA` or `None`.
+Where `CNV_calls.bed`, `sample_metadata.json`, `SV_calls.vcf` are all optional. All samples listed in each file should be uniquely named and from the same group of related samples. Do not include different collections of related samples in the same table - make different tables. However, they are positional, so if `CNV_calls` is skipped, it should be set as either `NA` or `None`.
 
 AA and AC will be run by default, but can be disabled with `--no_AA`.
 

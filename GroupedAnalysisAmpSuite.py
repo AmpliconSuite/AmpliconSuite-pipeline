@@ -116,7 +116,7 @@ def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
         curr_argstring = "{} --run_AA --run_AC -s {} --bam {} --bed {} -o {}".format(base_argstring, tf[0], tf[1],
                                                                                curr_seeds, odir)
 
-        optionals = zip(["--sample_metadata", ], tf[4:])
+        optionals = zip(["--sample_metadata", "--sv_vcf"], tf[4:])
         for k, v in optionals:
             if v:
                 curr_argstring += " {} {}".format(k, v)
@@ -144,7 +144,7 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, paren
         if normalbam:
             curr_argstring += " --normal_bam {}".format(normalbam[1])
 
-        optionals = zip(["--cnv_bed", "--sample_metadata"], tf[3:])
+        optionals = zip(["--cnv_bed", "--sample_metadata", "--sv_vcf"], tf[3:])
         for k, v in optionals:
             if v:
                 curr_argstring += " {} {}".format(k, v)
@@ -188,8 +188,9 @@ def read_group_data(input_file):
     sample_name  bam_file  sample_type
     where 'sample_type' is either 'tumor' or 'normal'
     additional optional fields are as follows:
-    cnv_calls  sample_metadata_json
+    cnv_calls  sample_metadata_json  sv_calls
     """
+    data_len = 6
     tumor_lines = []
     normal_lines = []
     seen_names = set ()
@@ -211,6 +212,9 @@ def read_group_data(input_file):
                 if v.upper() == "NA" or v.upper() == "NONE" or v.upper() == "":
                     fields[ind] = None
 
+            if len(fields) < data_len:
+                fields.extend([None] * (data_len - len(fields)))
+
             if fields[2].lower() == "tumor":
                 tumor_lines.append(fields)
 
@@ -219,6 +223,21 @@ def read_group_data(input_file):
 
             else:
                 sys.stderr.write("Input formatting error! Column 3 must either be 'tumor' or 'normal'.\nSee README for "
+                                 "group input formatting instructions.\n\n")
+                sys.exit(1)
+
+            if fields[3] and not any(fields[3].endswith(x) for x in ['.bed', '.cns']):
+                sys.stderr.write("Input formatting error! Column 4 (CNV calls) must either be 'NA' or a .bed or .cns file.\nSee README for "
+                                 "group input formatting instructions.\n\n")
+                sys.exit(1)
+
+            elif fields[4] and not fields[4].endswith('.json'):
+                sys.stderr.write("Input formatting error! Column 5 (Sample metadata json) must either be 'NA' or a .json file.\nSee README for "
+                                 "group input formatting instructions.\n\n")
+                sys.exit(1)
+
+            elif fields[5] and not fields[5].endswith('.vcf'):
+                sys.stderr.write("Input formatting error! Column 6 (external SV calls) must either be 'NA' or a .vcf file.\nSee README for "
                                  "group input formatting instructions.\n\n")
                 sys.exit(1)
 
