@@ -64,6 +64,13 @@ parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --ext
 parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
                     "increase for sequencing runs with high variance after insert size selection step. (default "
                     "3.0)", type=float, default=None)
+parser.add_argument('--pair_support_min', dest='pair_support_min', help="Number of read pairs for "
+                        "minimum breakpoint support (default 2 but typically becomes higher due to coverage-scaled "
+                        "cutoffs)", metavar='INT', action='store', type=int, default=2)
+parser.add_argument('--foldback_pair_support_min', help="Number of read pairs for minimum foldback SV support "
+                        "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
+                        " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
+                        metavar='INT', action='store', type=int, default=2)
 parser.add_argument(
     "--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
 parser.add_argument("--ploidy", type=int,
@@ -237,6 +244,12 @@ if args.no_QC:
 
 if args.AA_insert_sdevs:
     argstring += " --AA_insert_sdevs " + str(args.AA_insert_sdevs)
+
+if args.pair_support_min:
+    argstring += " --pair_support_min " + str(args.pair_support_min)
+
+if args.foldback_pair_support_min:
+    argstring += " --foldback_pair_support_min " + str(args.foldback_pair_support_min)
 
 # To use, would need to mount the directory of this file. Users should just modify as needed afterwards.
 # if args.sample_metadata:
