@@ -40,7 +40,7 @@ python3-dev=3.8.2-0ubuntu2 \
 samtools=1.10-3 \
 ttf-mscorefonts-installer=3.7ubuntu6 \
 unzip=6.0-25ubuntu1 \
-wget=1.20.3-1ubuntu2 \
+wget \
 zlib1g-dev
 
 fc-cache -f
