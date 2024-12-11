@@ -279,6 +279,10 @@ Otherwise, you will instead need these arguments below:
 
 - `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly-controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
 
+- `--pair_support_min {int}`, Default is auto-detected by AA based on downsampling parameter, but 2 for default downsampling. This is the minimum number of reads required for breakpoint support.
+
+- `--foldback_pair_support_min {int}`, Number of read pairs for minimum foldback SV support. Default is the same value as `pair_support_min`, however value will be the maximum of `pair_support_min` and this argument. Raising to 3 will help dramatically in heavily artifacted samples (e.g. FFPE).
+
 - `--samtools_path`: Path to a specific samtools binary for use (e.g., /path/to/my/samtools). Uses samtools on system path by default.
 
 - `--sv_vcf`: Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.
