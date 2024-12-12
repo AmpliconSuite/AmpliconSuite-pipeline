@@ -5,7 +5,7 @@ bioconda to fetch the actual bioconda recipe, you can do the following
 
 ```bash
 git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
-conda build -c biocomda -c conda-forge AmpliconSuite-pipeline/conda-recipe/  # add '--python=3.8 --numpy=1.22.4` if needed
+conda build -c bioconda -c conda-forge AmpliconSuite-pipeline/conda-recipe/  # add '--python=3.8 --numpy=1.22.4` if needed
 conda create -n "ampsuite_local" python=3.10
 conda activate ampsuite_local
 conda install -n ampsuite_local -c local ampliconsuite
