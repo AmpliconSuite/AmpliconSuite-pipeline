@@ -1,7 +1,7 @@
 ![AmpliconSuite-pipeline logo](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/images/AmpliconSuite-pipeline.png)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
-[![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/prepareaa?logo=docker)](https://hub.docker.com/r/jluebeck/prepareaa)
-[![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/prepareaa?logo=docker)]((https://hub.docker.com/r/jluebeck/prepareaa))
+[![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
+[![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/ampliconsuite-pipeline?logo=docker)]((https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline))
 [![Singularity](https://img.shields.io/badge/singularity-available-blue)](https://cloud.sylabs.io/library/jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline)
 [![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
 
@@ -95,7 +95,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 
    - **Docker**:
      * Docker installation: https://docs.docker.com/install/
-     * Pull the docker image: `docker pull jluebeck/prepareaa`
+     * Pull the docker image: `docker pull jluebeck/ampliconsuite-pipeline`
     
      * (Optional): Add user to the docker group:
          `sudo usermod -a -G docker $USER` (log out and back in after performing).
