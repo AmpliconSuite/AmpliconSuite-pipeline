@@ -27,7 +27,7 @@ echo "###############################"
 echo "RUNNING DOCKER STAGE..."
 echo "${RUN_COMMAND}"
 
-python programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/PAA_stdout.log
+python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/PAA_stdout.log
 echo "###############################"
 
 echo "FINISHED DOCKER STAGE"
