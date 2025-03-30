@@ -46,7 +46,6 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
                 sys.stderr.write("Unexpected error during individual CNV call generation!\n")
                 sys.exit(1)
 
-
         # if it was a seeds file, PAA won't modify, so copy it into the right location
         if sname in cnv_bed_dict and cnv_bed_dict[sname].endswith("AA_CNV_SEEDS.bed"):
             if not os.path.dirname(os.path.realpath(cnv_bed_dict[sname])) == os.path.realpath(odir):
@@ -184,7 +183,26 @@ def make_base_argstring(arg_dict, stop_at_seeds=False):
     return base_argstring
 
 
-# read a file providing the group data
+def verify_file_exists(file_path):
+    """
+    Verify if a file exists
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        True if file exists, False otherwise
+    """
+    if file_path is None:
+        return True
+
+    # Check if file exists
+    if os.path.isfile(file_path):
+        return True
+    else:
+        return False
+
+
+# Modify the read_group_data function to also check file existence
 def read_group_data(input_file):
     """
     group data is formatted as follows:
@@ -196,7 +214,9 @@ def read_group_data(input_file):
     data_len = 6
     tumor_lines = []
     normal_lines = []
-    seen_names = set ()
+    seen_names = set()
+    missing_files = []
+
     with open(input_file) as infile:
         for line in infile:
             if line.startswith("#"):
@@ -230,25 +250,50 @@ def read_group_data(input_file):
                 sys.exit(1)
 
             if fields[3] and not any(fields[3].endswith(x) for x in ['.bed', '.cns']):
-                sys.stderr.write("Input formatting error! Column 4 (CNV calls) must either be 'NA' or a .bed or .cns file.\nSee README for "
-                                 "group input formatting instructions.\n\n")
+                sys.stderr.write(
+                    "Input formatting error! Column 4 (CNV calls) must either be 'NA' or a .bed or .cns file.\nSee README for "
+                    "group input formatting instructions.\n\n")
                 sys.exit(1)
 
             elif fields[4] and not fields[4].endswith('.json'):
-                sys.stderr.write("Input formatting error! Column 5 (Sample metadata json) must either be 'NA' or a .json file.\nSee README for "
-                                 "group input formatting instructions.\n\n")
+                sys.stderr.write(
+                    "Input formatting error! Column 5 (Sample metadata json) must either be 'NA' or a .json file.\nSee README for "
+                    "group input formatting instructions.\n\n")
                 sys.exit(1)
 
             elif fields[5] and not fields[5].endswith('.vcf'):
-                sys.stderr.write("Input formatting error! Column 6 (external SV calls) must either be 'NA' or a .vcf file.\nSee README for "
-                                 "group input formatting instructions.\n\n")
+                sys.stderr.write(
+                    "Input formatting error! Column 6 (external SV calls) must either be 'NA' or a .vcf file.\nSee README for "
+                    "group input formatting instructions.\n\n")
                 sys.exit(1)
 
             if fields[0] in seen_names:
-                sys.stderr.write("Duplicate sample name {} in .input file! Sample names must be unique.\n".format(fields[0]))
+                sys.stderr.write(
+                    "Duplicate sample name {} in .input file! Sample names must be unique.\n".format(fields[0]))
                 sys.exit(1)
 
             seen_names.add(fields[0])
+
+            # Check if required BAM file exists
+            if not verify_file_exists(fields[1]):
+                missing_files.append("BAM file '{}' for sample '{}'".format(fields[1], fields[0]))
+
+            # Check if optional files that were provided exist
+            file_types = ["CNV file", "metadata JSON file", "SV VCF file"]
+            for i, file_path in enumerate(fields[3:6]):
+                if file_path and not verify_file_exists(file_path):
+                    missing_files.append("{} '{}' for sample '{}'".format(file_types[i], file_path, fields[0]))
+
+    # If any files are missing, exit with error
+    if missing_files:
+        sys.stderr.write("\nERROR: The following input files do not exist:\n")
+        for file_desc in missing_files:
+            sys.stderr.write("  - {}\n".format(file_desc))
+        sys.stderr.write("\nPlease ensure all input files exist before running the pipeline.\n")
+        sys.exit(1)
+
+    if tumor_lines:
+        print("All input files verified successfully.")
 
     return tumor_lines, normal_lines
 
