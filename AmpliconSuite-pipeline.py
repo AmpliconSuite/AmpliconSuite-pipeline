@@ -838,18 +838,52 @@ if __name__ == '__main__':
         args.cnvkit_dir += "cnvkit.py"
 
     if args.run_AA:
-        if not os.path.exists(os.environ["HOME"] + "/mosek/mosek.lic") and not "MOSEKLM_LICENSE_FILE" in os.environ:
+        mosek_license_path = None
+
+        # Check if license exists in default location
+        if os.path.exists(os.environ["HOME"] + "/mosek/mosek.lic"):
+            mosek_license_path = os.environ["HOME"] + "/mosek/mosek.lic"
+
+        # Check if license exists in location specified by MOSEKLM_LICENSE_FILE
+        elif "MOSEKLM_LICENSE_FILE" in os.environ:
+            if os.environ["MOSEKLM_LICENSE_FILE"].endswith("mosek.lic"):
+                logging.error(
+                    "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'")
+                sys.exit(1)
+            elif os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
+                mosek_license_path = os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"
+            else:
+                logging.error("--run_AA set, but MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
+                sys.exit(1)
+        else:
             logging.error("--run_AA set, but MOSEK license not found in $HOME/mosek/")
             sys.exit(1)
 
-        elif "MOSEKLM_LICENSE_FILE" in os.environ:
-            if os.environ["MOSEKLM_LICENSE_FILE"].endswith("mosek.lic"):
-                logging.error("MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'")
-                sys.exit(1)
+        # Check license age
+        if mosek_license_path:
+            file_time = os.path.getmtime(mosek_license_path)
+            file_date = datetime.fromtimestamp(file_time)
+            current_date = datetime.now()
+            days_old = (current_date - file_date).days
 
-            elif not os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
-                logging.error("--run_AA set, but MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
-                sys.exit(1)
+            # Check if license has expired (older than 365 days)
+            if days_old >= 365:
+                logging.warning("*" * 80)
+                logging.warning("WARNING: MOSEK LICENSE IS EXPIRED!")
+                logging.warning(
+                    "The Mosek license file at " + mosek_license_path + " is " + str(days_old) + " days old.")
+                logging.warning("AA will not run with an expired license.")
+                logging.warning("Please obtain an updated Mosek license to continue using AA.")
+                logging.warning("*" * 80)
+            # Check if license is about to expire (within 7 days)
+            elif days_old >= 358:
+                days_until_expiry = 365 - days_old
+                logging.warning("*" * 80)
+                logging.warning("WARNING: MOSEK LICENSE WILL EXPIRE SOON!")
+                logging.warning("The Mosek license file at " + mosek_license_path + " will expire in " + str(
+                    days_until_expiry) + " days.")
+                logging.warning("Please obtain an updated Mosek license before expiration to continue using AA.")
+                logging.warning("*" * 80)
 
     runCNV = None
     if args.cnvkit_dir and not args.cnv_bed:
