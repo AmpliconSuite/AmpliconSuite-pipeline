@@ -9,6 +9,7 @@ from subprocess import *
 import sys
 import time
 import threading
+import queue
 
 from paalib._version import __ampliconsuitepipeline_version__
 
@@ -89,23 +90,25 @@ def group_seeds(individual_seed_dct, odir):
     return gs_dict
 
 
-def launch_AA_AC(jobq, aa_py, PAA_PATH, parent_odir):
-    while jobq:
+def launch_AA_AC(job_queue, aa_py, PAA_PATH, parent_odir):
+    while not job_queue.empty():
         try:
-            sname, arg_string = jobq.pop()
+            sname, cmd_string = job_queue.get(block=False)
 
-        except IndexError:
-            return
+            odir = parent_odir + sname
+            with open("{}/{}_AA_AC_out.txt".format(odir, sname), 'w') as outfile:
+                time.sleep(random.uniform(0, 0.75))
+                cmd = "{} {}{}".format(aa_py, PAA_PATH, cmd_string)
+                print("\nLaunching AA+AC job for " + sname + "\n" + cmd)
+                ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
+                if ecode != 0:
+                    sys.stderr.write("Unexpected error while running AA+AC job!\n")
+                    sys.exit(1)
 
-        odir = parent_odir + sname
-        with open("{}/{}_AA_AC_out.txt".format(odir, sname), 'w') as outfile:
-            time.sleep(random.uniform(0, 0.75))
-            cmd = "{} {}{}".format(aa_py, PAA_PATH, arg_string)
-            print("\nLaunching AA+AC job for " + sname + "\n" + cmd)
-            ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
-            if ecode != 0:
-                sys.stderr.write("Unexpected error while running AA+AC job!\n")
-                sys.exit(1)
+            job_queue.task_done()
+
+        except queue.Empty:
+            break
 
 
 def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
@@ -383,17 +386,22 @@ if __name__ == '__main__':
         threadL = []
         paa_threads = min(args.nthreads, len(all_lines))
         print("\nQueueing " + str(len(all_lines)) + " PAA jobs")
-        jobq = []
+
+        # Create a thread-safe queue and fill it directly
+        job_queue = queue.Queue()
         for i in range(len(all_lines)):
             sname = all_lines[i][0]
             cmd_string = cmd_dict[sname]
-            jobq.append((sname, cmd_string))
+            job_queue.put((sname, cmd_string))
 
+        # Start threads
         for i in range(paa_threads):
-            threadL.append(threading.Thread(target=launch_AA_AC, args=(jobq, args.aa_python_interpreter, PAA_PATH,
-                                                                       args.output_directory)))
+            threadL.append(threading.Thread(target=launch_AA_AC,
+                                            args=(job_queue, args.aa_python_interpreter, PAA_PATH,
+                                                  args.output_directory)))
             threadL[i].start()
 
+        # Wait for all threads to complete
         for t in threadL:
             t.join()
 

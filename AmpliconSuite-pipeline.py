@@ -600,8 +600,8 @@ if __name__ == '__main__':
     parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
     parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
                         action='store_true')
-    parser.add_argument("--ref", metavar='STR', help="Reference genome version.", choices=["hg19", "GRCh37",
-                        "GRCh38", "hg38", "mm10", "GRCm38", "GRCh38_viral"])
+    parser.add_argument("--ref", metavar='STR', help="Reference genome version. Autodetected unless fastqs given as input.",
+                        choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10", "GRCm38", "GRCh38_viral"])
     parser.add_argument("--cngain", metavar='FLOAT', type=float, help="CN gain threshold to consider for AA seeding",
                         default=4.5)
     parser.add_argument("--cnsize_min", metavar='INT', type=int, help="CN interval size (in bp) to consider for AA seeding",
@@ -651,8 +651,7 @@ if __name__ == '__main__':
     parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.",
                         default='')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("--bam", "--sorted_bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported "
-                                                     "reference.)")
+    group.add_argument("--bam", "--sorted_bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported reference.)")
     group.add_argument("--fastqs", metavar='TWO FILES', help="Fastq files (r1.fq r2.fq)", nargs=2)
     group.add_argument("--completed_AA_runs", metavar='PATH',
                        help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
