@@ -282,7 +282,6 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     pair_support = args.pair_support_min
     fb_pair_support = args.foldback_pair_support_min
 
-
     AA_version = \
     Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
     if not AA_version:
@@ -630,11 +629,11 @@ if __name__ == '__main__':
                         "3.0)", metavar="FLOAT", type=float, default=None)
     parser.add_argument('--pair_support_min', dest='pair_support_min', help="Number of read pairs for "
                         "minimum breakpoint support (default 2 but typically becomes higher due to coverage-scaled "
-                        "cutoffs)", metavar='INT', action='store', type=int, default=2)
+                        "cutoffs)", metavar='INT', action='store', type=int)
     parser.add_argument('--foldback_pair_support_min', help="Number of read pairs for minimum foldback SV support "
                         "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
-                        metavar='INT', action='store', type=int, default=2)
+                        metavar='INT', action='store', type=int)
     parser.add_argument("--normal_bam", metavar='FILE', help="Path to matched normal bam for CNVKit (optional)")
     parser.add_argument("--ploidy", metavar='FLOAT', type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside of CNVKit.",
                         default=None)
