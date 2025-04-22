@@ -436,7 +436,7 @@ def save_run_metadata(outdir, sname, args, launchtime, commandstring):
     metadata_dict["launch_datetime"] = launchtime
     metadata_dict["hostname"] = socket.gethostname()
     metadata_dict["ref_genome"] = args.ref
-    aapint = args.aa_python_interpreter if args.aa_python_interpreter else "python"
+    aapint = args.aa_python_interpreter
     aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
     try:
         aa_python_v = aa_python_v.decode('utf-8')
@@ -613,7 +613,7 @@ if __name__ == '__main__':
     parser.add_argument("--aa_python_interpreter",
                         help="By default AmpliconSuite-pipeline will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
-                             "'python3' or 'python2' (default 'python')", metavar='PATH', type=str, default='python')
+                             "'python', 'python3', 'python2' (default 'python3')", metavar='PATH', type=str, default='python3')
     parser.add_argument("--sv_vcf",
                         help="Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
                         metavar='FILE', action='store', type=str)

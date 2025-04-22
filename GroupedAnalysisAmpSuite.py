@@ -354,7 +354,7 @@ if __name__ == '__main__':
     parser.add_argument("--aa_python_interpreter",
                         help="By default PrepareAA will use the system's default python path. If you would like to use "
                              "a different python version with AA, set this to either the path to the interpreter or "
-                             "'python3' or 'python2' (default 'python')", type=str, default='python')
+                             "'python', 'python3', 'python2' (default 'python3')", type=str, default='python3')
     parser.add_argument("--AA_src", help="Specify a custom $AA_SRC path. Overrides the bash variable")
     parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                                              "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
