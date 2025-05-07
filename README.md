@@ -10,7 +10,7 @@ A multithread-enabled end-to-end wrapper for [AmpliconArchitect](https://github.
 
 AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier. AmpliconSuite-pipeline was formerly called "PrepareAA".
 
-[comment]: # (Versioning based on major_version.days_since_initial_commit.minor_version. Initial commit: March 5th, 2019)
+[comment]: # (Initial commit: March 5th, 2019)
 
 We recommend browsing our [**detailed guide**](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/GUIDE.md) to learn about best practices and to see some FAQs. 
 
@@ -27,11 +27,11 @@ Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their
 ## Installation
 
 ### Option A: Installation-free platforms
-The most convenient option, but not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
 
 #### [GenePattern](https://cloud.genepattern.org):
 AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://cloud.genepattern.org). Search the module list for `AmpliconSuite`. 
-Constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). 
+Constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). The most convenient option, but not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
+
 
 #### [Nextflow](https://nf-co.re/circdna):
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
@@ -130,7 +130,7 @@ An example command might look like:
 
 `AmpliconSuite-pipeline/singularity/run_paa_singularity.py --sif /path/to/ampliconsuite-pipeline.sif -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
-### Option E: Installation without installer script
+### Option E: Custom installation without installer script
 Try this if you are going to use `python2`. Please see [the instructions here](documentation/CUSTOM_INSTALL.md).
 
 ## Downloading required reference annotations (AA data repo)
@@ -153,7 +153,7 @@ The main driver script for the standalone pipeline is called `AmpliconSuite-pipe
 
 #### Example 1: Starting from .fastq files, using CNVkit for seed generation.
 
->`AmpliconSuite-pipeline.py -s sample_name  -t number_of_threads --cnvkit_dir /path/to/cnvkit.py --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name  -t number_of_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
 
 
 * `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
@@ -200,7 +200,7 @@ If the user has one or more AA results directories inside a directory, the user 
 
 >`AmpliconSuite-pipeline.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata run_metadata_file.json -t 1 --ref hg38`
 
-Note that when this mode is used all AA results must have been generated with respect to the same reference genome version.
+Note that when this mode is used, all AA results must have been generated with respect to the same reference genome version.
 
 ## Command line arguments to AmpliconSuite-pipeline
 
@@ -222,19 +222,23 @@ Otherwise, you will instead need these arguments below:
 
 - One of the following input files:
 
-  * `--bam | --sorted_bam {sample.cs.bam}` Coordinate-sorted bam
+  * `--bam {sample.cs.bam}` Coordinate-sorted bam
   * `--fastqs {sample_r1.fq.gz sample_r2.fq.gz}` Two fastqs (r1 & r2)
   * `--completed_AA_runs {/path/to/some/AA_outputs}`, a directory with AA output files (one or more samples).
 
-#### Optional
-
-- `--cnv_bed {cnvfile.bed}` Supply your own CNV calls. Bed file with CN estimate in last column, or the CNVkit `sample.cns` file. If not specified, CNVkit will be called by the wrapper.
-
-- `--cnvkit_dir {/path/to/cnvkit.py}` Path to directory containing `cnvkit.py`. Required if CNVkit was installed from source and `--cnv_bed [cnvfile.bed]` is not given.
+#### To invoke downstream analysis
 
 - `--run_AA`: Run AA at the end of the preparation pipeline.
 
 - `--run_AC`: Run AmpliconClassifier following AA. No effect if `--run_AA` not set.
+
+#### Optional
+
+- `--ref {ref name} `: Name of ref genome version, one of `"hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"`. This will be auto-detected if it is not set. Required with fastq input.
+
+- `--cnv_bed {cnvfile.bed}` Supply your own CNV calls. Bed file with CN estimate in last column, or the CNVkit `sample.cns` file. If not specified, CNVkit will be called by the wrapper.
+
+- `--cnvkit_dir {/path/to/cnvkit.py}` Path to directory containing `cnvkit.py`. Required if CNVkit was installed from source and `--cnv_bed [cnvfile.bed]` is not given.
 
 - `--normal_bam {matched_normal.bam}` Specify a matched normal BAM file for CNVkit. Not used by AA itself.
 
@@ -247,7 +251,6 @@ Otherwise, you will instead need these arguments below:
 - `--aa_python_interpreter {/path/to/python}` By default PrepareAA will use the system's default `python` path. If you would like to use a different python version with AA, set this to either the path to the interpreter or `python3` or `python2` (default `python`)
 
 [//]: # (- `--freebayes_dir` &#40;Currently deprecated&#41; Specify custom path to freebayes installation folder &#40;not path to executable&#41;. Assumes freebayes on system path if not set. Please note this flag is currently deprecated.)
-- `--ref {ref name} `: Name of ref genome version, one of `"hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"`. This will be auto-detected if it is not set.
 
 [//]: # (- `--vcf [your_file.vcf]`: &#40;Currently deprecated&#41;. Supply your own VCF to skip the freebayes step. )
 - `--cngain {float}`: Set a custom threshold for the CN gain considered by AA. Default: 4.5.
@@ -277,7 +280,7 @@ Otherwise, you will instead need these arguments below:
 
 - `--AA_extendmode {EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL}`: Default `EXPLORE`. See AA documentation for more info.
 
-- `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly-controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
+- `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
 
 - `--pair_support_min {int}`, Default is auto-detected by AA based on downsampling parameter, but 2 for default downsampling. This is the minimum number of reads required for breakpoint support.
 
@@ -285,7 +288,7 @@ Otherwise, you will instead need these arguments below:
 
 - `--samtools_path`: Path to a specific samtools binary for use (e.g., /path/to/my/samtools). Uses samtools on system path by default.
 
-- `--sv_vcf`: Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.
+- `--sv_vcf`: Provide a VCF file of externally called SVs to augment SVs identified by AA internally.
 
 - `--sv_vcf_no_filter`: Use all external SV calls from the --sv_vcf arg, even those without 'PASS' in the FILTER column. 
 

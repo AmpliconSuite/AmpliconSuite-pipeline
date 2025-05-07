@@ -62,10 +62,12 @@ def extract_seq_info(bam_header):
     return bamSeqLenD
 
 
-# check if bam matches to a reference genome in terms of length and sequence name
-# returns false if the same chromosome has different length in bam vs. reference
-# returns false if no chromosome names are shared between bam/reference
-# returns true if no shared chromosomes have different lengths and at least one chromosome is present.
+""" 
+check if bam matches to a reference genome in terms of length and sequence name
+returns false if the same chromosome has different length in bam vs. reference
+returns false if no chromosome names are shared between bam/reference
+returns true if no shared chromosomes have different lengths and at least one chromosome is present.
+"""
 def match_ref(bamSeqLenD, ref_len_d):
     overlaps = 0
     for chrom, len in ref_len_d.items():
@@ -99,10 +101,8 @@ def check_properly_paired(bamf, samtools):
     ppp = float(t.rsplit("(")[-1].rsplit("%")[0])
     if t.startswith("0 + 0"):
         logging.error("ERROR: UNSUITABLE BAM FILE! No properly-paired reads were found by samtools. "
-                         "AmpliconSuite-pipeline requires paired-end sequencing data. If this is PE WGS, then the most common "
-                         "reason for no identified properly paired reads is that the reference genome used in alignment "
-                         "contained alt contigs that were not indicated to the aligner. You must re-align the reads to use "
-                         "AA (and many other bioinformatic tools) on this data.\n\n")
+                         "AmpliconSuite-pipeline requires paired-end sequencing data. AA requires paired-end WGS. If "
+                      "this was PE WGS, please confirm your alignment steps were done appropriately\n\n")
         sys.exit(1)
 
     elif ppp < 95:

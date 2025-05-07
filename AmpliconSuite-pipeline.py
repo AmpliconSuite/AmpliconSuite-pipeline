@@ -555,14 +555,14 @@ def download_file(url, destination_folder):
         response.close()
         file_size = round(file_size / (1024**3), 2)
         if file_size > 0.1:
-            print("\nDownloading " + url + " ... (" + str(file_size) + "GB)")
+            logging.info("\nDownloading " + url + " ... (" + str(file_size) + "GB)")
         else:
-            print("\nDownloading " + url + " ...")
+            logging.info("\nDownloading " + url + " ...")
 
         urllib.request.urlretrieve(url, filename)
-        print("File downloaded and saved to: " + str(filename))
+        logging.info("File downloaded and saved to: " + str(filename))
     except Exception as e:
-        print("Failed to download file. Error: " + str(e))
+        logging.info("Failed to download file. Error: " + str(e))
 
 
 def extract_tar_gz(file_path, destination_folder):
@@ -600,7 +600,7 @@ if __name__ == '__main__':
     parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
                         action='store_true')
     parser.add_argument("--ref", metavar='STR', help="Reference genome version. Autodetected unless fastqs given as input.",
-                        choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10", "GRCm38", "GRCh38_viral"])
+                        choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10", "GRCm38", "GRCh38_viral"], type=str)
     parser.add_argument("--cngain", metavar='FLOAT', type=float, help="CN gain threshold to consider for AA seeding",
                         default=4.5)
     parser.add_argument("--cnsize_min", metavar='INT', type=int, help="CN interval size (in bp) to consider for AA seeding",
@@ -684,18 +684,18 @@ if __name__ == '__main__':
         # launch data repo download and exit
         data_repo_base_url = "https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/"
         for ref in args.download_repo:
-            print(ref)
+            logging.info("Downloading " + ref)
             ref_base_url = data_repo_base_url + ref
             md5file = ref_base_url + "_md5sum.txt"
             ref_file = ref_base_url + ".tar.gz"
             if os.path.exists(AA_REPO + ref):
-                print("An AA data repo directory already exists for " + ref + " and it will be replaced!")
+                logging.info("An AA data repo directory already exists for " + ref + " and it will be replaced!")
             download_file(md5file, AA_REPO)
             download_file(ref_file, AA_REPO)
-            print("Extracting...\n")
+            logging.info("Extracting...\n")
             extract_tar_gz(AA_REPO + ref + ".tar.gz", AA_REPO)
 
-        print("Finished")
+        logging.info("Finished")
         sys.exit(0)
 
     # Preflight checks for running AS-pipeline
@@ -1071,6 +1071,8 @@ if __name__ == '__main__':
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
                                                            args.cngain, pfilt_odir)
                 logging.info("Skipping amplified_intervals.py step due to --no_filter")
+
+            amplified_interval_bed = args.cnv_bed
 
         else:
             logging.info("Skipping filtering of bed file.")

@@ -32,7 +32,7 @@ def fasta_reader(fasta_file, chroms_to_get):
         for header in faiter:
             # drop the ">"
             seq_name = next(header)[1:].rstrip().rsplit()[0]
-            if (seq_name in chroms_to_get):
+            if seq_name in chroms_to_get:
                 # join all sequence lines to one.
                 seq = "".join(s.strip() for s in next(faiter))
                 fasta_dict[seq_name] = seq

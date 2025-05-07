@@ -1,1 +1,1 @@
-__ampliconsuitepipeline_version__ = "1.3.7"
+__ampliconsuitepipeline_version__ = "1.3.8"

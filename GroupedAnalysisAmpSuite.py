@@ -343,7 +343,7 @@ if __name__ == '__main__':
     parser.add_argument("--no_union", help="Do not create a unified collection of seeds for the group (keep seeds "
                                            "separate between samples", action='store_true')
     parser.add_argument("--ref", help="Reference genome version of all samples.", choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10",
-                        "GRCm38", "GRCh38_viral"], required=True)
+                        "GRCm38", "GRCh38_viral"], type=str, required=True)
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
