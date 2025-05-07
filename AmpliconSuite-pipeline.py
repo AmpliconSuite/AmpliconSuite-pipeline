@@ -555,14 +555,14 @@ def download_file(url, destination_folder):
         response.close()
         file_size = round(file_size / (1024**3), 2)
         if file_size > 0.1:
-            logging.info("\nDownloading " + url + " ... (" + str(file_size) + "GB)")
+            print("\nDownloading " + url + " ... (" + str(file_size) + "GB)")
         else:
-            logging.info("\nDownloading " + url + " ...")
+            print("\nDownloading " + url + " ...")
 
         urllib.request.urlretrieve(url, filename)
-        logging.info("File downloaded and saved to: " + str(filename))
+        print("File downloaded and saved to: " + str(filename))
     except Exception as e:
-        logging.info("Failed to download file. Error: " + str(e))
+        sys.stderr.write("Failed to download file. Error: " + str(e) + "\n")
 
 
 def extract_tar_gz(file_path, destination_folder):
@@ -684,18 +684,18 @@ if __name__ == '__main__':
         # launch data repo download and exit
         data_repo_base_url = "https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/"
         for ref in args.download_repo:
-            logging.info("Downloading " + ref)
+            print("Downloading " + ref)
             ref_base_url = data_repo_base_url + ref
             md5file = ref_base_url + "_md5sum.txt"
             ref_file = ref_base_url + ".tar.gz"
             if os.path.exists(AA_REPO + ref):
-                logging.info("An AA data repo directory already exists for " + ref + " and it will be replaced!")
+                print("An AA data repo directory already exists for " + ref + " and it will be replaced!")
             download_file(md5file, AA_REPO)
             download_file(ref_file, AA_REPO)
-            logging.info("Extracting...\n")
+            print("Extracting...\n")
             extract_tar_gz(AA_REPO + ref + ".tar.gz", AA_REPO)
 
-        logging.info("Finished")
+        print("Finished")
         sys.exit(0)
 
     # Preflight checks for running AS-pipeline
