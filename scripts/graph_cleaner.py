@@ -16,7 +16,7 @@ max_hop = 800
 
 
 # read graph file
-def read_graph(graphf, maxhopsize, filter_non_everted, filter_source, max_support):
+def read_graph(graphf, maxhopsize, filter_everted, filter_del, filter_all, filter_source, min_support):
     intD = defaultdict(IntervalTree)
     edge_line_list = []
     dbp_set = set()
@@ -52,17 +52,22 @@ def read_graph(graphf, maxhopsize, filter_non_everted, filter_source, max_suppor
                     support = int(fields[3])
 
                 # expected orientation: ldir == "+" and rdir == "-", on concordant but backwards for discordant:
-                if support <= max_support:
+                if support < min_support:
                     if fields[0] == "discordant" and rchrom == lchrom and 0 < abs(lpos - rpos) <= maxhopsize and \
-                            ldir == '+' and rdir == '-':
+                            ldir == '+' and rdir == '-' and filter_everted:
                         print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
                         removed_count+=1
                         continue
 
                     if fields[0] == "discordant" and rchrom == lchrom and 0 < abs(lpos - rpos) <= maxhopsize and \
-                            ldir == '-' and rdir == '+' and filter_non_everted:
+                            ldir == '-' and rdir == '+' and filter_del:
                         print("Removing: " + line.rstrip() + " | hopsize: " + str(abs(lpos - rpos)))
                         removed_count+=1
+                        continue
+
+                    if fields[0] == "discordant" and filter_all:
+                        print("Removing: " + line.rstrip())
+                        removed_count += 1
                         continue
 
                     if fields[0] == "source" and filter_source:
@@ -341,15 +346,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Remove spurious sequence artifact edges from AA graph")
     parser.add_argument("-g", help="path to graph", type=str)
     parser.add_argument("--graph_list", help="Text file listing paths to all graphs to clean", type=str)
-    parser.add_argument("--max_hop_size", help="Maximum size of everted read hop (default 4000)", type=float,
+    parser.add_argument("--max_hop_size", help="Maximum size of everted or deletion SVs (default 4000)", type=float,
                         default=4000)
-    parser.add_argument("--max_hop_support", help="Maximum number of discordant read pairs to consider as artificial "
-                                                  "hop (default (10)", type=int, default=10)
-    parser.add_argument("--filter_non_everted", help="Filter non-everted hops", action='store_true', default=False)
+    parser.add_argument("--min_support", help="Minimum number of discordant read pairs supporting to prevent filtering "
+                                                  "(default (10)", type=int, default=10)
+    parser.add_argument("--filter_dup", help="Filter duplication-like (everted) SVs (brown)", action='store_true', default=False)
+    parser.add_argument("--filter_del", help="Filter deletion-like SVs (red)", action='store_true', default=False)
+    parser.add_argument("--filter_all", help="Filter all SV types", action='store_true', default=False)
     parser.add_argument("--filter_source", help="Filter and remove source edges", action='store_true', default=False)
 
     args = parser.parse_args()
 
+    gfile_list = []
     if not args.g and not args.graph_list:
         sys.stderr.write("At least one of -g or --graph_list required.\n")
         sys.exit(1)
@@ -367,9 +375,9 @@ if __name__ == '__main__':
         print("Cleaning " + gfile)
         p, f = os.path.split(gfile)
         outname = f.rsplit("_graph.txt")[0] + "_cleaned_graph.txt"
-        seg_intd, edge_line_list, dbp_set, removed_count = read_graph(gfile, max_hop, args.filter_non_everted,
-                                                                      args.filter_source, args.max_hop_support)
-        # compute the fraction of segments over 50 kbp
+        seg_intd, edge_line_list, dbp_set, removed_count = read_graph(gfile, max_hop, args.filter_dup, args.filter_del,
+                                                                args.filter_all, args.filter_source, args.min_support)
+        # compute the fraction of segments over 25 kbp
         print("Initial proportion over 25kbp:", proportion_over_size(seg_intd))
         if removed_count > 0:
             clustered_ivald = ClusterIntervalsFromSortedList(seg_intd, dbp_set)

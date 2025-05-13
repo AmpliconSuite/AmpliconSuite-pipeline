@@ -380,8 +380,9 @@ Usage:
 >`scripts/cycles_to_bed.py -c sample_amplicon1_cycles.txt`
 
 ### - `graph_cleaner.py`
-Requires `intervaltree` python package. Poorly controlled insert size can lead to numerous spurious short breakpoint edges. This script attempts to remove SV edges which conform to small artificial indels. 
-Namely, very short everted (inside-out read pair) orientation edges. These will appear as numerous short brown 'spikes' in the AA amplicon image. This script removes them from the graph file. The filtering of these artifacts is done automatically by AA in modern releases, so this script is for legacy purposes.
+Requires `intervaltree` python package. Poorly controlled insert size can lead to numerous spurious short breakpoint edges. This enables users to remove SV edges from the AA graph file based on type of SV, support and SV size. 
+Namely, for artifact removal it can clean the very short everted (inside-out read pair) duplication-like orientation edges characteristic of sequencing artifact. These will appear as numerous short brown 'spikes' in the AA amplicon image. 
+Most artifacts should be filtered though by increasing AA's `--AA_insert_sdevs` paramter to 9 or higher. However users can still use this script for other cleaning purposes (e.g. SVs with weak support).
 
 
 Usage:
