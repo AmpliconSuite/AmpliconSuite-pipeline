@@ -776,11 +776,12 @@ if __name__ == '__main__':
     timing_logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')
     timing_logfile.write("#stage:\twalltime(seconds)\n")
 
+    logging.info("samtools path is set to: " + args.samtools_path)
     samtools_version = get_samtools_version(args.samtools_path)
     if samtools_version:
-        logging.info("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
+        logging.info("samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
     else:
-        logging.error("Failed to retrieve Samtools version.")
+        logging.error("Failed to retrieve samtools version.")
         sys.exit(1)
 
     # Check if expected system paths and files are present. Check if provided argument combinations are valid.
@@ -922,6 +923,14 @@ if __name__ == '__main__':
         logging.error("--aa_python_interpreter must be a path of a valid python interpreter")
         sys.exit(1)
 
+    try:
+        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
+            datestring = file.read()
+            logging.info(args.ref + " data repo constructed on " + datestring)
+
+    except FileNotFoundError:
+        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
+
     refFnames = {x: None for x in ["hg19", "GRCh37", "GRCh38", "GRCh38_viral", "mm10"]}
     # Paths of all the repo files needed
     if args.ref == "hg38":
@@ -962,14 +971,6 @@ if __name__ == '__main__':
 
         elif args.ref and not determined_ref:
             logging.warning("WARNING! The BAM file did not match " + args.ref)
-
-    try:
-        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
-            datestring = file.read()
-            logging.info(args.ref + " data repo constructed on " + datestring)
-
-    except FileNotFoundError:
-        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
 
     gdir = AA_REPO + args.ref + "/"
     ref_fasta = gdir + refFnames[args.ref]
@@ -1021,7 +1022,6 @@ if __name__ == '__main__':
         bambase = os.path.splitext(os.path.basename(args.bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
-            logging.info("samtools path is set to: " + args.samtools_path)
             prop_paired_proportion = check_reference.check_properly_paired(args.bam, args.samtools_path)
 
         tb = time.time()
