@@ -164,35 +164,45 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
                         "normal and running in tumor-only mode.\n")
         
     logging.info("Running CNVKit batch\n")
+
+    rscript_str = ""
+    if args.rscript_path:
+        rscript_str = " --rscript-path " + args.rscript_path
+        logging.info("Set Rscript flag: " + rscript_str)
+
     if normal and not args.ref == "GRCh38_viral":
         # create a version of the stripped reference
         reduce_fasta.reduce_fasta(ref_fasta, ref_genome_size_file, outdir)
-        base = os.path.basename(ref_fasta) # args.ref is the name, ref is the fasta
+        base = os.path.basename(ref_fasta)  # args.ref is the name, ref is the fasta
         stripRefG = outdir + os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
         logging.debug("Stripped reference: " + stripRefG)
-        cmd = "{} {} batch {} -m wgs --fasta {} -p {} -d {} --normal {}".format(PY3_PATH, ckpy_path, bamfile, stripRefG,
-                                                                                nthreads, outdir, normal)
+        cmd = "{} {} batch {} -m wgs{} --fasta {} -p {} -d {} --normal {}".format(PY3_PATH, ckpy_path, bamfile,
+                                                                        rscript_str, stripRefG, nthreads, outdir, normal)
     else:
-        cmd = "{} {} batch -m wgs -r {} -p {} -d {} {}".format(PY3_PATH, ckpy_path, ckRef, nthreads, outdir, bamfile)
+        cmd = "{} {} batch -m wgs{} -r {} -p {} -d {} {}".format(PY3_PATH, ckpy_path, rscript_str, ckRef, nthreads, outdir, bamfile)
 
     logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["cnvkit_cmd"] = cmd + " ; "
-    rscript_str = ""
-    if args.rscript_path:
-        rscript_str = "--rscript-path " + args.rscript_path
-        logging.info("Set Rscript flag: " + rscript_str)
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
+    logging.debug(".cns file already exists: {}".format(cnsFile, os.path.exists(cnsFile)))
+
     logging.info("Running CNVKit segment")
     # TODO: possibly include support for adding VCF calls.
-    cmd = "{} {} segment {} {} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
+    cmd = "{} {} segment {}{} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
                                                          cnsFile)
     logging.info(cmd + "\n")
-    exit_code = call(cmd, shell=True)
-    if exit_code != 0:
-        logging.error("CNVKit encountered a non-zero exit status. Exiting...\n")
+
+    # Use Popen to capture stderr
+    process = Popen(cmd, shell=True, stderr=PIPE, text=True)
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        logging.error(stdout)
+        logging.error("CNVKit encountered a non-zero exit status ({}). Error message:\n{}".format(
+            process.returncode, stderr))
         sys.exit(1)
 
     metadata_dict["cnvkit_cmd"] = metadata_dict["cnvkit_cmd"] + cmd
