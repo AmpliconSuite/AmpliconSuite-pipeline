@@ -198,9 +198,9 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     # Use Popen to capture stderr
     process = Popen(cmd, shell=True, stderr=PIPE, universal_newlines=True)
     stdout, stderr = process.communicate()
+    print(stdout)
 
     if process.returncode != 0:
-        logging.error(stdout)
         logging.error("CNVKit encountered a non-zero exit status ({}). Error message:\n{}".format(
             process.returncode, stderr))
         sys.exit(1)
