@@ -150,11 +150,11 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     # -p: number of threads
     # -f: reference genome fasta
     bamBase = os.path.splitext(os.path.basename(bamfile))[0]
-    cnvkit_version = Popen([PY3_PATH, ckpy_path, "version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
-    try:
-        cnvkit_version = cnvkit_version.decode('utf-8')
-    except UnicodeError:
-        pass
+    cnvkit_version = Popen([PY3_PATH, ckpy_path, "version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[0].rstrip()
+    # try:
+    #     cnvkit_version = cnvkit_version.decode('utf-8')
+    # except UnicodeError:
+    #     pass
 
     metadata_dict["cnvkit_version"] = cnvkit_version
 
@@ -196,7 +196,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     logging.info(cmd + "\n")
 
     # Use Popen to capture stderr
-    process = Popen(cmd, shell=True, stderr=PIPE, text=True)
+    process = Popen(cmd, shell=True, stderr=PIPE, universal_newlines=True)
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
@@ -293,15 +293,15 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     fb_pair_support = args.foldback_pair_support_min
 
     AA_version = \
-    Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
+    Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[0].rstrip()
     if not AA_version:
         AA_version = \
-            Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[1].rstrip()
+            Popen([AA_interpreter, AA_SRC + "/AmpliconArchitect.py", "--version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[1].rstrip()
 
-    try:
-        AA_version = AA_version.decode('utf-8')
-    except UnicodeError:
-        pass
+    # try:
+    #     AA_version = AA_version.decode('utf-8')
+    # except UnicodeError:
+    #     pass
 
     metadata_dict["AA_version"] = AA_version
 
@@ -355,12 +355,12 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     # Get AC version
     AC_version = \
-    Popen([PY3_PATH, AC_src + "/amplicon_classifier.py", "--version"], stdout=PIPE, stderr=PIPE).communicate()[
+    Popen([PY3_PATH, AC_src + "/amplicon_classifier.py", "--version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[
         0].rstrip()
-    try:
-        AC_version = AC_version.decode('utf-8')
-    except UnicodeError:
-        pass
+    # try:
+    #     AC_version = AC_version.decode('utf-8')
+    # except UnicodeError:
+    #     pass
 
     metadata_dict["AC_version"] = AC_version
 
@@ -447,11 +447,11 @@ def save_run_metadata(outdir, sname, args, launchtime, commandstring):
     metadata_dict["hostname"] = socket.gethostname()
     metadata_dict["ref_genome"] = args.ref
     aapint = args.aa_python_interpreter
-    aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE).communicate()[0].rstrip()
-    try:
-        aa_python_v = aa_python_v.decode('utf-8')
-    except UnicodeError:
-        pass
+    aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[0].rstrip()
+    # try:
+    #     aa_python_v = aa_python_v.decode('utf-8')
+    # except UnicodeError:
+    #     pass
 
     metadata_dict["AA_python_version"] = aa_python_v
     metadata_dict["AmpliconSuite-pipeline_command"] = commandstring
@@ -533,12 +533,12 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
 def get_samtools_version(samtools):
     try:
         # Run the command to get the version information
-        result = Popen([samtools], stderr=PIPE, stdout=PIPE)
+        result = Popen([samtools], stderr=PIPE, stdout=PIPE, universal_newlines=True)
         _, output = result.communicate()
 
         # Decode the output if it's in bytes (Python 3)
-        if isinstance(output, bytes):
-            output = output.decode('utf-8')
+        # if isinstance(output, bytes):
+        #     output = output.decode('utf-8')
 
         # Parse the version information to extract major and minor versions
         version_pattern = r'Version: (\d+)\.(\d+)'
