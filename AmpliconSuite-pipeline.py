@@ -175,7 +175,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
         reduce_fasta.reduce_fasta(ref_fasta, ref_genome_size_file, outdir)
         base = os.path.basename(ref_fasta)  # args.ref is the name, ref is the fasta
         stripRefG = outdir + os.path.splitext(base)[0] + "_reduced" + "".join(os.path.splitext(base)[1:])
-        logging.debug("Stripped reference: " + stripRefG)
+        logging.info("Stripped reference: " + stripRefG)
         cmd = "{} {} batch {} -m wgs{} --fasta {} -p {} -d {} --normal {}".format(PY3_PATH, ckpy_path, bamfile,
                                                                         rscript_str, stripRefG, nthreads, outdir, normal)
     else:
@@ -187,7 +187,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
-    logging.debug(".cns file already exists: {}".format(cnsFile, os.path.exists(cnsFile)))
+    logging.info(".cns file already exists: {}".format(cnsFile, os.path.exists(cnsFile)))
 
     logging.info("Running CNVKit segment")
     # TODO: possibly include support for adding VCF calls.
@@ -778,7 +778,7 @@ if __name__ == '__main__':
 
     samtools_version = get_samtools_version(args.samtools_path)
     if samtools_version:
-        logging.debug("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
+        logging.info("Samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
     else:
         logging.error("Failed to retrieve Samtools version.")
         sys.exit(1)
@@ -1021,7 +1021,7 @@ if __name__ == '__main__':
         bambase = os.path.splitext(os.path.basename(args.bam))[0]
         prop_paired_proportion = None
         if not args.no_QC:
-            logging.debug("samtools path is set to: " + args.samtools_path)
+            logging.info("samtools path is set to: " + args.samtools_path)
             prop_paired_proportion = check_reference.check_properly_paired(args.bam, args.samtools_path)
 
         tb = time.time()
