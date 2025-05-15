@@ -155,6 +155,8 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     #     cnvkit_version = cnvkit_version.decode('utf-8')
     # except UnicodeError:
     #     pass
+    env = os.environ.copy()
+    env['NUMEXPR_MAX_THREADS'] = str(nthreads)
 
     metadata_dict["cnvkit_version"] = cnvkit_version
 
@@ -182,7 +184,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
         cmd = "{} {} batch -m wgs{} -r {} -p {} -d {} {}".format(PY3_PATH, ckpy_path, rscript_str, ckRef, nthreads, outdir, bamfile)
 
     logging.info(cmd + "\n")
-    call(cmd, shell=True)
+    call(cmd, shell=True, env=env)
     metadata_dict["cnvkit_cmd"] = cmd + " ; "
 
     cnrFile = outdir + bamBase + ".cnr"
@@ -196,7 +198,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     logging.info(cmd + "\n")
 
     # Use Popen to capture stderr
-    process = Popen(cmd, shell=True, stderr=PIPE, universal_newlines=True)
+    process = Popen(cmd, shell=True, stderr=PIPE, universal_newlines=True, env=env)
     stdout, stderr = process.communicate()
     print(stdout)
 
@@ -776,7 +778,7 @@ if __name__ == '__main__':
     timing_logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')
     timing_logfile.write("#stage:\twalltime(seconds)\n")
 
-    logging.info("samtools path is set to: " + args.samtools_path)
+    logging.debug("samtools path is set to: " + args.samtools_path)
     samtools_version = get_samtools_version(args.samtools_path)
     if samtools_version:
         logging.info("samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
