@@ -39,12 +39,13 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
         call(cmd, shell=True)
 
     logging.info("Performing alignment and sorting\n")
+    sort_threads = min(nthreads, 4)
     if samtools_version[0] < 1:
-        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 - {}.cs; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@{} - {}.cs; }} 2>{}_aln_stage.stderr".format(
+            nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, outname, outname)
     else:
-        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@4 -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref_fasta, fastqs, samtools, samtools, outname, outname)
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@{} -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
+            nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, outname, outname)
 
     logging.info(cmd + "\n")
     call(cmd, shell=True)
@@ -1005,6 +1006,10 @@ if __name__ == '__main__':
 
         elif contains_spaces(args.fastqs[0]) or contains_spaces(args.fastqs[1]):
             logging.error("FASTQ filepaths cannot contain spaces!")
+            sys.exit(1)
+
+        elif not os.path.exists(args.fastqs[0]) or not os.path.exists(args.fastqs[1]):
+            logging.error("One or both FASTQ files do not exist!")
             sys.exit(1)
 
         fastqs = " ".join(args.fastqs)

@@ -32,6 +32,13 @@ def metadata_helper(metadata_args):
     json_file.close()
 
 
+def verify_file(path, description="File"):
+    if not os.path.exists(path):
+        sys.exit("ERROR: {} not found: {}".format(description, path))
+    if os.path.getsize(path) == 0:
+        sys.exit("ERROR: {} is empty: {}".format(description, path))
+
+
 # Parses the command line arguments
 parser = argparse.ArgumentParser(
     description="A simple pipeline wrapper for AmpliconArchitect and AmpliconClassifier, invoking alignment "
@@ -186,13 +193,16 @@ if args.ref:
 
 if args.bam:
     args.bam = os.path.realpath(args.bam)
+    verify_file(args.bam, "BAM file")
     bamdir, bamname = os.path.split(args.bam)
     norm_bamdir = bamdir
     argstring += " --bam /home/bam_dir/" + bamname
 
 elif args.fastqs:
-    args.fastqs[0], args.fastqs[1] = os.path.realpath(
-        args.fastqs[0]), os.path.realpath(args.fastqs[1])
+    args.fastqs[0] = os.path.realpath(args.fastqs[0])
+    args.fastqs[1] = os.path.realpath(args.fastqs[1])
+    verify_file(args.fastqs[0], "FASTQ file 1")
+    verify_file(args.fastqs[1], "FASTQ file 2")
     _, fq1name = os.path.split(args.fastqs[0])
     bamdir, fq2name = os.path.split(args.fastqs[1])
     norm_bamdir = bamdir
@@ -205,16 +215,17 @@ else:
 
 if args.normal_bam:
     args.normal_bam = os.path.realpath(args.normal_bam)
+    verify_file(args.normal_bam, "Normal BAM file")
     norm_bamdir, norm_bamname = os.path.split(args.normal_bam)
     argstring += " --normal_bam /home/norm_bam_dir/" + norm_bamname
 
 if args.sv_vcf:
     args.sv_vcf = os.path.realpath(args.sv_vcf)
+    verify_file(args.sv_vcf, "SV VCF file")
     vcf_dir, vcf_name = os.path.split(args.sv_vcf)
     argstring += " --sv_vcf /home/vcf_dir/" + vcf_name
     if args.sv_vcf_no_filter:
         argstring += " --sv_vcf_no_filter"
-
 else:
     vcf_dir = bamdir
 
