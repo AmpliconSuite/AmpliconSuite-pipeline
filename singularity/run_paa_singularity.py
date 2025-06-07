@@ -120,14 +120,14 @@ args = parser.parse_args()
 test_singularity_version()
 
 if args.sif and not args.sif.endswith(".sif"):
-    sys.stderr.write("Path of .sif file must go to .sif file!")
+    sys.stderr.write("Path of .sif file must go to .sif file!\n")
     sys.exit(1)
 
 if args.ref == "hg38": args.ref = "GRCh38"
 if args.ref == "GRCm38": args.ref = "mm10"
 if (args.fastqs or args.completed_AA_runs) and not args.ref:
     sys.stderr.write(
-        "Must specify --ref when providing unaligned fastq files.")
+        "Must specify --ref when providing unaligned fastq files.\n")
     sys.exit(1)
 
 if not args.output_directory:
@@ -308,7 +308,7 @@ with open(runscript_outname, 'w') as outfile:
         outfile.write('echo DOWNLOADING {} COMPLETE\n'.format(args.ref))
 
     elif no_data_repo and not args.ref:
-        sys.stderr.write("Must specify --ref argument!")
+        sys.stderr.write("Must specify --ref argument!\n")
         sys.exit(1)
 
     # write exported envs to env-file

@@ -39,7 +39,7 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
         call(cmd, shell=True)
 
     logging.info("Performing alignment and sorting\n")
-    sort_threads = min(nthreads, 4)
+    sort_threads = min(int(nthreads), 4)
     if samtools_version[0] < 1:
         cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@{} - {}.cs; }} 2>{}_aln_stage.stderr".format(
             nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, outname, outname)

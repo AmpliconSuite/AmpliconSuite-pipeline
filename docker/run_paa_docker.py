@@ -34,9 +34,9 @@ def metadata_helper(metadata_args):
 
 def verify_file(path, description="File"):
     if not os.path.exists(path):
-        sys.exit("ERROR: {} not found: {}".format(description, path))
+        sys.exit("ERROR: {} not found: {}\n".format(description, path))
     if os.path.getsize(path) == 0:
-        sys.exit("ERROR: {} is empty: {}".format(description, path))
+        sys.exit("ERROR: {} is empty: {}\n".format(description, path))
 
 
 # Parses the command line arguments
@@ -124,7 +124,7 @@ if args.ref == "hg38": args.ref = "GRCh38"
 if args.ref == "GRCm38": args.ref = "mm10"
 if (args.fastqs or args.completed_AA_runs) and not args.ref:
     sys.stderr.write(
-        "Must specify --ref when providing unaligned fastq files.")
+        "Must specify --ref when providing unaligned fastq files.\n")
     sys.exit(1)
 
 if not args.output_directory:
@@ -321,7 +321,7 @@ with open(runscript_outname, 'w') as outfile:
         outfile.write('echo DOWNLOADING {} COMPLETE\n'.format(args.ref))
 
     elif no_data_repo and not args.ref:
-        sys.stderr.write("Must specify --ref argument!")
+        sys.stderr.write("Must specify --ref argument!\n")
         sys.exit(1)
 
     # assemble a docker command string
