@@ -173,7 +173,7 @@ def make_base_argstring(arg_dict, stop_at_seeds=False):
                 arg = " --" + k
                 base_argstring+=arg
 
-        elif k == "AA_insert_sdevs" and v is None:
+        elif any([k == x for x in ["AA_insert_sdevs", "pair_support_min", "foldback_pair_support_min"]]) and v is None:
             continue
 
         elif v is not False and not k == "input" and not k == "cnvkit_dir" and not k == "output_directory":
@@ -365,6 +365,13 @@ if __name__ == '__main__':
     parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
                                                   "increase for sequencing runs with high variance after insert size "
                                                   "selection step. (default 3.0)", type=float, default=None)
+    parser.add_argument('--pair_support_min', dest='pair_support_min', help="Number of read pairs for "
+                        "minimum breakpoint support (default 2 but typically becomes higher due to coverage-scaled "
+                        "cutoffs)", metavar='INT', action='store', type=int)
+    parser.add_argument('--foldback_pair_support_min', help="Number of read pairs for minimum foldback SV support "
+                        "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
+                        " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
+                        metavar='INT', action='store', type=int)
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                       "default segmentation method (cbs).",
                         choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
