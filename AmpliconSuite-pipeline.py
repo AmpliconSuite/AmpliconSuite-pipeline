@@ -243,6 +243,26 @@ def convert_cnvkit_cns_to_bed(cnvkit_output_directory, base, cnsfile=None, resca
 
     return cnvkit_output_directory + base + "_CNV_CALLS.bed"
 
+def load_cnv_bed_file(file_path):
+    """Load CNV bed file into a DataFrame."""
+    return pd.read_csv(file_path, sep='\t', header=None, 
+                       names=['chrom', 'start', 'end', 'package', 'CN'])
+
+def plot_cnv_distribution_chromosomes(df, output_file):
+    """Plot genome-wide CNV distribution across all chromosomes."""
+    plt.figure(figsize=(12, 8))
+    
+    for chrom in df['chrom'].unique():
+        chrom_data = df[df['chrom'] == chrom]
+        plt.plot(chrom_data['start'], chrom_data['CN'], label=chrom)
+    
+    plt.title('Genome-wide CNV Distribution across Chromosomes')
+    plt.xlabel('Genomic Position')
+    plt.ylabel('Copy Number')
+    plt.legend()
+    plt.grid()
+    plt.savefig(output_file)
+    plt.close()
 
 def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
     if purity is None and ploidy is None:
@@ -1098,6 +1118,10 @@ if __name__ == '__main__':
         tb = time.time()
         timing_logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
+
+        #Plot CNV across genome
+        cnv_data = load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
+        plot_cnv_distribution_chromosomes(cnv_data, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png")
 
         # Run AA
         if args.run_AA:
