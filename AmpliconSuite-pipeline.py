@@ -1120,8 +1120,12 @@ if __name__ == '__main__':
         ta = tb
 
         #Plot CNV across genome
-        cnv_data = load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
-        plot_cnv_distribution_chromosomes(cnv_data, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png")
+        if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
+            logging.info("Plotting CNV distribution across chromosomes")
+            cnv_data = load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
+            plot_cnv_distribution_chromosomes(cnv_data, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png")
+        else:
+            logging.warning("Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
 
         # Run AA
         if args.run_AA:
