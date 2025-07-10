@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import re
 import argparse
 
 def load_cnv_bed_file(file_path):
@@ -33,7 +34,7 @@ def plot_cnv_distribution_chromosomes(df, output_file):
     
     for chrom in df['chrom'].unique():
         chrom_data = df[df['chrom'] == chrom]
-        plt.plot(chrom_data['start'], chrom_data['CN'], label=chrom)
+        plt.step(chrom_data['start'], chrom_data['CN'], label=chrom)
     
     plt.title('Genome-wide CNV Distribution across Chromosomes')
     plt.xlabel('Genomic Position')
@@ -45,7 +46,7 @@ def plot_cnv_distribution_chromosomes(df, output_file):
 
 def main():
     parser = argparse.ArgumentParser(description='Plot CNV distribution from bed files.')
-    parser.add_argument('samples', nargs='+', help='List of sample CNV bed files')
+    parser.add_argument('--samples', nargs='+', help='List of sample CNV bed files')
     parser.add_argument('--chromosome', default='chr1', help='Chromosome to plot (default: chr1)')
     parser.add_argument('--output_directory', default='.', help='Output directory for plots')
     parser.add_argument('--output_samples', default='cnv_distribution_samples.png', help='Output file for sample CNV distribution')
@@ -61,6 +62,13 @@ def main():
     plot_cnv_distribution_samples(samples, chromosome, f'{output_dir}/{output_samples}')
     for sample in samples:
         cnv_data = load_cnv_bed_file(sample)
+        print(cnv_data.head())
+        match = re.search(r'/([^/]+)_alignment[^/]*\.bed$', sample)
+        if match:
+            sample_id = match.group(1)
+            print(sample_id)
+        else:
+            print("No match found")
         plot_cnv_distribution_chromosomes(cnv_data, f'{output_dir}/{sample}_{output_chromosomes}')
 
 if __name__ == "__main__":

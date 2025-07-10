@@ -246,22 +246,57 @@ def convert_cnvkit_cns_to_bed(cnvkit_output_directory, base, cnsfile=None, resca
 def load_cnv_bed_file(file_path):
     """Load CNV bed file into a DataFrame."""
     return pd.read_csv(file_path, sep='\t', header=None, 
-                       names=['chrom', 'start', 'end', 'package', 'CN'])
+                       names=['chrom', 'start', 'end', 'package', 'CN']) 
+def chrom_sort_key(chrom):
+    if chrom.startswith("chr"):
+        chrom = chrom[3:]
+    if chrom == 'X':
+        return (0, 23)
+    elif chrom == 'Y':
+        return (0, 24)
+    elif chrom.isdigit():
+        return (0, int(chrom))
+    else:
+        return (1, chrom)
+    
+def plot_cnv_distribution_chromosomes(df, sample_name,  output_file, log_base=2):
+    """
+    Plot CNV profiles in a grid of subplots — one per chromosome, log-transformed CN values.
+    """
+    #Sort chromosome labels
+    df['chrom'] = df['chrom'].astype(str)
+    chromosomes = sorted(df['chrom'].unique(), key=chrom_sort_key)
 
-def plot_cnv_distribution_chromosomes(df, output_file):
-    """Plot genome-wide CNV distribution across all chromosomes."""
-    plt.figure(figsize=(12, 8))
-    
-    for chrom in df['chrom'].unique():
-        chrom_data = df[df['chrom'] == chrom]
-        plt.plot(chrom_data['start'], chrom_data['CN'], label=chrom)
-    
-    plt.title('Genome-wide CNV Distribution across Chromosomes')
-    plt.xlabel('Genomic Position')
-    plt.ylabel('Copy Number')
-    plt.legend()
-    plt.grid()
-    plt.savefig(output_file)
+    #Force CN numeric and log-transform
+    df['CN'] = pd.to_numeric(df['CN'], errors='coerce')
+    df['log_CN'] = np.log(df['CN']+1) / np.log(log_base)
+
+    fig, axes = plt.subplots(nrows=4, ncols=6, figsize=(18, 12), sharey=False)
+    axes = axes.flatten()
+    for i, chrom in enumerate(chromosomes):   
+        ax = axes[i]
+        chrom_data = df[df['chrom'] == chrom].sort_values(by='start')
+        #scatter plot vs step plot
+        #ax.scatter(chrom_data['start'], chrom_data['CN'], 
+        #          alpha=0.8, s=0.5, c='#0072b2')
+        ax.step(chrom_data['start'], chrom_data['CN'], where='post', color='steelblue', linewidth=1)
+        ax.set_title(f'{chrom}', fontsize=10)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.grid(True, linestyle='--', alpha=0.3)
+        ax.set_xlim(left=0)
+        ax.set_ylim(0, max(10, chrom_data['CN'].max() * 1.1))
+
+    #Hide unused subplots
+    for j in range(len(chromosomes), len(axes)):
+        axes[j].axis("off")
+
+    fig.suptitle(f"{sample_name} Genome-wide CNV Profiles", fontsize=16)
+    fig.text(0.5, 0.04, "Genomic Position (bp)", ha="center", fontsize=12)
+    fig.text(0.06, 0.5, f"Copy Number", va="center", rotation="vertical", fontsize=12)
+
+    plt.tight_layout(rect=[0.07, 0.07, 1, 0.93])
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
 
 def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
@@ -1123,7 +1158,7 @@ if __name__ == '__main__':
         if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
             logging.info("Plotting CNV distribution across chromosomes")
             cnv_data = load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
-            plot_cnv_distribution_chromosomes(cnv_data, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png")
+            plot_cnv_distribution_chromosomes(cnv_data, bambase, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png")
         else:
             logging.warning("Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
 
