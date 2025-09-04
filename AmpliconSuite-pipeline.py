@@ -14,7 +14,7 @@ import sys
 import tarfile
 import time
 
-from paalib import check_reference, reduce_fasta
+from paalib import check_reference, reduce_fasta, cnv_plots
 from paalib._version import __ampliconsuitepipeline_version__
 
 
@@ -242,7 +242,6 @@ def convert_cnvkit_cns_to_bed(cnvkit_output_directory, base, cnsfile=None, resca
             outfile.write(outline)
 
     return cnvkit_output_directory + base + "_CNV_CALLS.bed"
-
 
 def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
     if purity is None and ploidy is None:
@@ -1098,6 +1097,22 @@ if __name__ == '__main__':
         tb = time.time()
         timing_logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
+
+        # Load centromere dictionary
+        aa_data_repo = os.environ.get("AA_DATA_REPO", None)
+        if not aa_data_repo:
+            logging.warning("Warning: AA_DATA_REPO not found. Cannot highlight centromeres.")
+        else:
+            centromeres = cnv_plots.load_centromere_file(aa_data_repo, args.ref)
+            if centromeres is not None:
+                logging.info(f"Loaded {len(centromeres)} centromere regions for highlighting")
+        # Plot CNV across genome
+        if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
+            logging.info("Plotting CNV distribution across chromosomes")
+            cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
+            cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png", centromeres=centromeres)
+        else:
+            logging.warning("Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
 
         # Run AA
         if args.run_AA:

@@ -328,7 +328,7 @@ If using AmpliconSuite-pipeline in your publication, please cite all the relevan
 ### - Grouped analysis of related samples `GroupedAnalysisAmpSuite.py`
 For samples derived from a common origin (longitudinal, multiregional sampling from the same source material), it is advised that the seed intervals be unified before running AA in order to provide the best comparability
 between runs. We provide a script `GroupedAnalysisAmpSuite.py` which automates this analysis. `GroupedAnalysisAmpSuite.py` takes almost all the same arguments as `PrepareAA.py`, 
-however it requires an additional input file, listing the inputs. This file is to be formatted as follows
+however it requires an additional input file, listing the inputs. This file is to be formatted as follows (columns separated by whitespace)
 
 `sample_name` `bamfile` `"tumor"|"normal"` `[CNV_calls.bed]` `[sample_metadata.json]` `[SV_calls.vcf]`
 
