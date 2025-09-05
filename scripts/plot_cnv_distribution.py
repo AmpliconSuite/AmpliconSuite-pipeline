@@ -79,7 +79,7 @@ def plot_segments_as_lines(ax, chrom_data):
         ax.plot([start, end], [cn, cn], color='black', linewidth=1.5, solid_capstyle='butt', zorder=1)
     return ax
     
-def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=None, log_base=2):
+def plot_cnv_distribution_chromosomes(df, sample_name, output_pre, centromeres=None, log_base=2):
     """
     Plot CNV profiles in a grid of subplots — one per chromosome, log-transformed CN values.
     Highlights centromere regions with light grey bars.
@@ -128,8 +128,9 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=
     fig.text(0.5, 0.04, "Genomic Position (bp)", ha="center", fontsize=12)
     fig.text(0.06, 0.5, f"Copy Number", va="center", rotation="vertical", fontsize=12)
 
-    plt.tight_layout(rect=[0.07, 0.07, 1, 0.93])
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.tight_layout(rect=(0.07, 0.07, 1, 0.93))
+    plt.savefig(output_pre + '.png', dpi=300, bbox_inches='tight')
+    plt.savefig(output_pre + '.pdf', bbox_inches='tight')
     plt.close()
 
 def main():

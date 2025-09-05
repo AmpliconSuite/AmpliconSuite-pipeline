@@ -2,25 +2,37 @@
 
 # author: Jens Luebeck (jluebeck [at] ucsd.edu)
 
-import argparse
 from datetime import datetime
 import json
 import logging
 import os
-import re
 import socket
 from subprocess import *
 import sys
-import tarfile
 import time
 
+from paalib.argument_parser import setup_argument_parser
+from paalib.config_validator import (
+    validate_arguments, setup_environment_and_paths, setup_tool_paths,
+    validate_aa_environment, initialize_logging_and_directories,
+    create_coverage_stats_file, get_samtools_version
+)
+from paalib.repo_downloader import handle_repo_download
+from paalib.run_uploader import archive_and_upload_sample
 from paalib import check_reference, reduce_fasta, cnv_plots
 from paalib._version import __ampliconsuitepipeline_version__
 
 
-PY3_PATH = "python3"  # updated by command-line arg if specified
-metadata_dict = {}  # stores the run metadata (bioinformatic metadata)
+# Global variables
+# These will be set in main() and available to all functions
+args = type('Args', (), {})()  # Empty object that won't cause attribute errors
+AA_REPO = ""
+AA_SRC = ""
+AC_SRC = ""
+metadata_dict = {}
 sample_info_dict = {}  # stores the sample metadata
+ref_genome_size_file = ""
+PY3_PATH = "python3"
 
 
 def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_version):
@@ -66,81 +78,6 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
     cmd = "rm {}.cs.bam".format(outname)
     call(cmd, shell=True)
     return final_bam_name, outname + "_aln_stage.stderr"
-
-
-# This is not currently used by AmpliconSuite-pipeline.
-def run_freebayes(ref, bam_file, outdir, sname, nthreads, regions, fb_path=None):
-    # Freebayes cmd-line args
-    # -f is fasta
-    # -r is region to call
-    logging.info("Running freebayes...")
-    fb_exec = "freebayes"
-    if fb_path:
-        fb_exec = fb_path + "/" + fb_exec
-    while True:
-        try:
-            curr_region_tup = regions.pop()
-        except IndexError:
-            break
-
-        curr_region_string = curr_region_tup[0] + ":" + curr_region_tup[1]
-        logging.info(curr_region_string + ". " + str(len(regions)) + " items remaining.")
-        vcf_file = outdir + sname + "_" + curr_region_tup[0] + "_" + curr_region_tup[2] + ".vcf"
-        replace_filter_field_func = "awk '{ if (substr($1,1,1) != \"#\" ) { $7 = ($7 == \".\" ? \"PASS\" : $7 ) }} 1 ' OFS=\"\\t\""
-        cmd = "{} --genotype-qualities --standard-filters --use-best-n-alleles 5 --limit-coverage 25000 \
-        --strict-vcf -f {} -r {} {} | {} > {}".format(fb_exec, ref, curr_region_string, bam_file,
-                                                      replace_filter_field_func, vcf_file)
-        logging.info(cmd)
-        call(cmd, shell=True)
-        # gzip the new VCF
-        call("gzip -f " + vcf_file, shell=True)
-
-
-# This is not currently used by AmpliconSuite-pipeline.
-def merge_and_filter_vcfs(chr_names, vcf_list, outdir, sname):
-    logging.info("Merging VCFs and zipping...\n")
-    # collect the vcf files to merge
-    merged_vcf_file = outdir + sname + "_merged.vcf"
-    relevant_vcfs = [x for x in vcf_list if any([i in x for i in chr_names])]
-    chrom_vcf_d = {}
-    for f in relevant_vcfs:
-        curr_chrom = f.rsplit(".vcf.gz")[0].rsplit("_")[-2:]
-        chrom_vcf_d[curr_chrom[0] + curr_chrom[1]] = f
-
-    # chr_nums = [x.lstrip("chr") for x in chr_names]
-    pre_chr_str_names = [str(x) for x in range(1, 23)] + ["X", "Y"]
-
-    # sort the elements
-    # include the header from the first one
-    if args.ref != "GRCh37" and args.ref != "GRCm38":
-        sorted_chr_names = ["chr" + str(x) for x in pre_chr_str_names]
-        cmd = "zcat " + chrom_vcf_d["chrM"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
-
-    else:
-        sorted_chr_names = [str(x) for x in pre_chr_str_names]
-        cmd = "zcat " + chrom_vcf_d["MT"] + ''' | awk '$4 != "N"' > ''' + merged_vcf_file
-
-    logging.info(cmd + "\n")
-    call(cmd, shell=True)
-
-    # zcat the rest, grepping out all header lines starting with "#"
-    logging.debug(sorted_chr_names)
-    for i in sorted_chr_names:
-        if i == "chrM" or i == "MT":
-            continue
-
-        cmd_p = "zcat " + chrom_vcf_d[i + "p"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
-        cmd_q = "zcat " + chrom_vcf_d[i + "q"] + ''' | grep -v "^#" | awk '$4 != "N"' >> ''' + merged_vcf_file
-        logging.info(cmd_p)
-        call(cmd_p, shell=True)
-        logging.info(cmd_q)
-        call(cmd_q, shell=True)
-
-    cmd = "gzip -f " + merged_vcf_file
-    logging.info(cmd)
-    call(cmd, shell=True)
-
-    return merged_vcf_file + ".gz"
 
 
 def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None, ref_fasta=None, vcf=None):
@@ -193,7 +130,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     logging.info(".cns file already exists: {}".format(cnsFile, os.path.exists(cnsFile)))
 
     logging.info("Running CNVKit segment")
-    # TODO: possibly include support for adding VCF calls.
+    # TODO: Allow a .cnr as input for --bed arg and then jump directly to this step?
     cmd = "{} {} segment {}{} -p {} -m {} -o {}".format(PY3_PATH, ckpy_path, cnrFile, rscript_str, nthreads, seg_meth,
                                                          cnsFile)
     logging.info(cmd + "\n")
@@ -242,6 +179,7 @@ def convert_cnvkit_cns_to_bed(cnvkit_output_directory, base, cnsfile=None, resca
             outfile.write(outline)
 
     return cnvkit_output_directory + base + "_CNV_CALLS.bed"
+
 
 def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None, ploidy=None, purity=None):
     if purity is None and ploidy is None:
@@ -450,6 +388,7 @@ def save_run_metadata(outdir, sname, args, launchtime, commandstring):
     metadata_dict["ref_genome"] = args.ref
     aapint = args.aa_python_interpreter
     aa_python_v = Popen([aapint, "--version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[0].rstrip()
+    samtools_version = get_samtools_version(args.samtools_path)
     # try:
     #     aa_python_v = aa_python_v.decode('utf-8')
     # except UnicodeError:
@@ -532,432 +471,108 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
     return False
 
 
-def get_samtools_version(samtools):
-    try:
-        # Run the command to get the version information
-        result = Popen([samtools], stderr=PIPE, stdout=PIPE, universal_newlines=True)
-        _, output = result.communicate()
-
-        # Decode the output if it's in bytes (Python 3)
-        # if isinstance(output, bytes):
-        #     output = output.decode('utf-8')
-
-        # Parse the version information to extract major and minor versions
-        version_pattern = r'Version: (\d+)\.(\d+)'
-        match = re.search(version_pattern, output)
-        if match:
-            major_version = int(match.group(1))
-            minor_version = int(match.group(2))
-            return major_version, minor_version
-        else:
-            # Return None if version information couldn't be parsed
-            return None, None
-    except OSError as e:
-        # Handle the case when Samtools is not found
-        logging.error("Error: Samtools not found. Please make sure it is installed and in your PATH.")
-        return None, None
-
-
-def download_file(url, destination_folder):
-    import urllib.request  # here because python2 not work with it
-    filename = os.path.join(destination_folder, url.split("/")[-1])
-    try:
-        response = urllib.request.urlopen(url)
-        file_size = int(response.headers.get('Content-Length', 0))
-        response.close()
-        file_size = round(file_size / (1024**3), 2)
-        if file_size > 0.1:
-            print("\nDownloading " + url + " ... (" + str(file_size) + "GB)")
-        else:
-            print("\nDownloading " + url + " ...")
-
-        urllib.request.urlretrieve(url, filename)
-        print("File downloaded and saved to: " + str(filename))
-    except Exception as e:
-        sys.stderr.write("Failed to download file. Error: " + str(e) + "\n")
-
-
-def extract_tar_gz(file_path, destination_folder):
-    if not file_path.endswith('.tar.gz'):
-        sys.stderr.write("Cannot extract file " + file_path)
-        sys.exit(1)
-
-    with tarfile.open(file_path, 'r:gz') as tar:
-        tar.extractall(destination_folder)
-
-    os.remove(file_path)
-
-
 def contains_spaces(file_path):
     return any(char == ' ' for char in file_path)
 
 
 # MAIN #
-if __name__ == '__main__':
-    # Parses the command line arguments
-    parser = argparse.ArgumentParser(
-        description="A pipeline wrapper for AmpliconArchitect, invoking alignment CNV calling and CNV filtering prior. "
-                    "Can launch AA, as well as downstream amplicon classification.")
-    parser.add_argument("-v", "--version", action='version',
-                        version='AmpliconSuite-pipeline version {version} \n'.format(version=__ampliconsuitepipeline_version__))
-    parser.add_argument("--download_repo", help="Download the selected data repo to the $AA_DATA_REPO "
-                        "directory and exit. '_indexed' suffix indicates BWA index is included, which is useful if "
-                        "performing alignment with AmpliconSuite-pipeline, but has a larger filesize.", choices=["hg19",
-                        "GRCh37", "GRCh38", "mm10", "GRCh38_viral", "hg19_indexed", "GRCh37_indexed", "GRCh38_indexed",
-                        "mm10_indexed", "GRCh38_viral_indexed"], nargs='+')
-    parser.add_argument("-o", "--output_directory", metavar='PATH', help="output directory names (will create if not already created)")
-    parser.add_argument("-s", "--sample_name", metavar='STR', help="(Required) Sample name")
-    parser.add_argument("-t", "--nthreads", metavar='INT', help="(Required) Number of threads to use in BWA and CNV calling")
-    parser.add_argument("--run_AA", help="Run AA after all files prepared. Default off.", action='store_true')
-    parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files prepared. Default off.",
-                        action='store_true')
-    parser.add_argument("--ref", metavar='STR', help="Reference genome version. Autodetected unless fastqs given as input.",
-                        choices=["hg19", "GRCh37", "GRCh38", "hg38", "mm10", "GRCm38", "GRCh38_viral"], type=str)
-    parser.add_argument("--cngain", metavar='FLOAT', type=float, help="CN gain threshold to consider for AA seeding",
-                        default=4.5)
-    parser.add_argument("--cnsize_min", metavar='INT', type=int, help="CN interval size (in bp) to consider for AA seeding",
-                        default=50000)
-    parser.add_argument("--downsample", metavar='FLOAT', type=float, help="AA downsample argument (see AA documentation)",
-                        default=10)
-    parser.add_argument("--rscript_path", metavar='PATH', help="Specify custom path to Rscript for CNVKit, "
-                        "which requires R version >=3.5")
-    parser.add_argument("--python3_path", metavar='PATH', help="If needed, specify a custom path to python3.")
-    parser.add_argument("--aa_python_interpreter",
-                        help="By default AmpliconSuite-pipeline will use the system's default python path. If you would like to use "
-                             "a different python version with AA, set this to either the path to the interpreter or "
-                             "'python', 'python3', 'python2' (default 'python3')", metavar='PATH', type=str, default='python3')
-    parser.add_argument("--sv_vcf",
-                        help="Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
-                        metavar='FILE', action='store', type=str)
-    parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
-                        "those without 'PASS' in the FILTER column.", action='store_true', default=False)
-    parser.add_argument("--AA_src", metavar='PATH', help="Specify a custom $AA_SRC path. Overrides the bash variable")
-    parser.add_argument("--AA_runmode", metavar='STR', help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
-                        "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
-    parser.add_argument("--AA_extendmode", metavar='STR', help="If --run_AA selected, set the --extendmode argument to AA. Default "
-                        "mode is 'EXPLORE'", choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"], default='EXPLORE')
-    parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
-                        "increase for sequencing runs with high variance after insert size selection step. (default "
-                        "3.0)", metavar="FLOAT", type=float, default=None)
-    parser.add_argument('--pair_support_min', dest='pair_support_min', help="Number of read pairs for "
-                        "minimum breakpoint support (default 2 but typically becomes higher due to coverage-scaled "
-                        "cutoffs)", metavar='INT', action='store', type=int)
-    parser.add_argument('--foldback_pair_support_min', help="Number of read pairs for minimum foldback SV support "
-                        "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
-                        " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
-                        metavar='INT', action='store', type=int)
-    parser.add_argument("--normal_bam", metavar='FILE', help="Path to matched normal bam for CNVKit (optional)")
-    parser.add_argument("--ploidy", metavar='FLOAT', type=float, help="Ploidy estimate for CNVKit (optional). This is not used outside of CNVKit.",
-                        default=None)
-    parser.add_argument("--purity", metavar='FLOAT', type=float, help="Tumor purity estimate for CNVKit (optional). This is not used outside of CNVKit.",
-                        default=None)
-    parser.add_argument("--cnvkit_segmentation", metavar='STR', help="Segmentation method for CNVKit (if used), defaults to CNVKit "
-                        "default segmentation method (cbs).", choices=['cbs', 'haar', 'hmm', 'hmm-tumor', 'hmm-germline', 'none'],
-                        default='cbs')
-    parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to remove low confidence candidate seed"
-                                            " regions overlapping repetitive parts of the genome", action='store_true')
-    parser.add_argument("--no_QC", help="Skip QC on the BAM file. Do not adjust AA insert_sdevs for "
-                                        "poor-quality insert size distribution", action='store_true')
-    parser.add_argument("--sample_metadata", metavar='FILE', help="JSON file of sample metadata to build on")
-    parser.add_argument("--samtools_path", help="Path to samtools binary (e.g., /path/to/my/samtools). If unset, will use samtools on system path.",
-                        default='')
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("--bam", "--sorted_bam", metavar='FILE', help="Coordinate sorted BAM file (aligned to an AA-supported reference.)")
-    group.add_argument("--fastqs", metavar='TWO FILES', help="Fastq files (r1.fq r2.fq)", nargs=2)
-    group.add_argument("--completed_AA_runs", metavar='PATH',
-                       help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")
-    group2 = parser.add_mutually_exclusive_group()
-    group2.add_argument("--cnv_bed", "--bed", metavar='FILE',
-                        help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
-                             " be: chr start end name cngain")
-    group2.add_argument("--cnvkit_dir", metavar='PATH', help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set",
-                        default="")
-    group2.add_argument("--completed_run_metadata", metavar='FILE',
-                        help="Run metadata JSON to retroactively assign to collection of samples", default="")
-    group2.add_argument("--align_only", help="Only perform the alignment stage (do not run CNV calling and seeding",
-                        action='store_true')
+def main():
+    """Main entry point for AmpliconSuite-pipeline"""
+    global args, AA_REPO, AA_SRC, AC_SRC, metadata_dict, ref_genome_size_file, PY3_PATH
 
-    # start timing
+    # Parse arguments using the new modular approach
+    parser = setup_argument_parser()
+    args = parser.parse_args()
+
+    # Handle special cases that exit early
+    if args.download_repo:
+        handle_repo_download(args, AA_REPO)
+        return
+
+    # Start timing
     ta = time.time()
     ti = ta
     launchtime = str(datetime.now())
-    args = parser.parse_args()
 
-    # Check if AA_REPO set, print error and quit if not
-    try:
-        AA_REPO = os.environ['AA_DATA_REPO'] + "/"
+    # Initialize logging and directories
+    timing_logfile, commandstring, finish_flag_filename = initialize_logging_and_directories(args, launchtime)
 
-    except KeyError:
-        sys.stderr.write("AA_DATA_REPO bash variable not found. Please see installation instructions and run ./install.sh before using.\n")
-        sys.exit(1)
+    logging.info("Running initial checks and configurations...")
 
-    # Download any requested data repo files
-    if args.download_repo:
-        # launch data repo download and exit
-        data_repo_base_url = "https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/"
-        for ref in args.download_repo:
-            print("Downloading " + ref)
-            ref_base_url = data_repo_base_url + ref
-            md5file = ref_base_url + "_md5sum.txt"
-            ref_file = ref_base_url + ".tar.gz"
-            if os.path.exists(AA_REPO + ref):
-                print("An AA data repo directory already exists for " + ref + " and it will be replaced!")
-            download_file(md5file, AA_REPO)
-            download_file(ref_file, AA_REPO)
-            print("Extracting...\n")
-            extract_tar_gz(AA_REPO + ref + ".tar.gz", AA_REPO)
+    # Setup environment and validate using the new modules
+    AA_REPO = setup_environment_and_paths(args)
 
-        print("Finished")
-        sys.exit(0)
 
-    # Preflight checks for running AS-pipeline
-    if not args.sample_name:
-        parser.error("--sample_name (-s) is a required argument.")
-    if not args.nthreads:
-        parser.error("--nthreads (-t) is a required argument.")
-    if not any([args.bam, args.fastqs, args.completed_AA_runs]):
-        parser.error("One of --bam | --fastqs | --completed_AA_runs is required!")
 
-    # set an output directory if user did not specify
-    if not args.output_directory:
-        args.output_directory = os.getcwd()
+    # Validate arguments
+    validate_arguments(args, parser)
 
-    if not args.output_directory.endswith("/"):
-        args.output_directory += "/"
+    # Setup tool paths
+    setup_tool_paths(args)
 
-    sname = args.sample_name
-    outdir = args.output_directory
-    sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
-    
-    # set samtools version for use
-    if not args.samtools_path.endswith("/samtools"):
-        if args.samtools_path and not args.samtools_path.endswith("/"):
-            args.samtools_path += "/"
-        args.samtools_path += "samtools"
-
-    # Make and clear necessary directories.
-    # make the output directory location if it does not exist
-    if not os.path.exists(args.output_directory):
-        os.mkdir(args.output_directory)
-
-    # initiate logging
-    paa_logfile = args.output_directory + sname + '.log'
-    logging.basicConfig(filename=paa_logfile, format='[%(name)s:%(levelname)s]\t%(message)s',
-                        level=logging.INFO, filemode='w')
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(name)s:%(levelname)s]\t%(message)s')
-    console_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(console_handler)
-    logging.info("Launched on " + launchtime)
-    logging.info("AmpiconSuite-pipeline version " + __ampliconsuitepipeline_version__ + "\n")
-
-    commandstring = ""
-    for arg in sys.argv:
-        if ' ' in arg:
-            commandstring += '"{}" '.format(arg)
-        else:
-            commandstring += "{} ".format(arg)
-
-    logging.info("AmpliconSuite-pipeline command:")
-    logging.info(commandstring + "\n")
-
-    if "/" in args.sample_name:
-        logging.error("Sample name -s cannot be a path. Specify output directory with -o.\n")
-        sys.exit(1)
-
-    finish_flag_filename = args.output_directory + args.sample_name + "_finish_flag.txt"
-    if os.path.exists(finish_flag_filename):
-        logging.warning("WARNING: Running AmpliconSuite-pipeline.py with outputs directed into the same output location"
-                        " as a previous run may cause crashes or other unexpected behavior. To avoid errors, clear "
-                        "previous files before re-running.\n")
-
-    with open(finish_flag_filename, 'w') as ffof:
-        ffof.write("UNSUCCESSFUL\n")
-
-    timing_logfile = open(args.output_directory + args.sample_name + '_timing_log.txt', 'w')
-    timing_logfile.write("#stage:\twalltime(seconds)\n")
-
-    logging.debug("samtools path is set to: " + args.samtools_path)
-    samtools_version = get_samtools_version(args.samtools_path)
-    if samtools_version:
-        logging.info("samtools version: {}.{}".format(samtools_version[0], samtools_version[1]))
-    else:
-        logging.error("Failed to retrieve samtools version.")
-        sys.exit(1)
-
-    # Check if expected system paths and files are present. Check if provided argument combinations are valid.
-    if args.AA_src:
-        os.environ['AA_SRC'] = args.AA_src
-
-    if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
-        logging.info("coverage.stats file not found in " + AA_REPO + "\nCreating a new coverage.stats file.")
-        cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(AA_REPO, AA_REPO)
-        logging.info(cmd)
-        call(cmd, shell=True)
-
-    try:
-        AA_SRC = os.environ['AA_SRC']
-
-    except KeyError:
-        try:
-            import ampliconarchitectlib
-            AA_SRC = os.path.realpath(os.path.dirname(ampliconarchitectlib.__file__))
-
-        except ModuleNotFoundError:
-            logging.error("AA_SRC bash variable or library files not found. AmpliconArchitect may not be properly installed.\n")
-            sys.exit(1)
-
-    try:
-        AC_SRC = os.environ['AC_SRC']
-
-    except KeyError:
-        try:
-            import ampclasslib
-            ac_path = check_output("which amplicon_classifier.py", shell=True).decode("utf-8")
-            AC_SRC = ac_path.rsplit("/amplicon_classifier.py")[0]
-
-        except Exception as e:
-            logging.error(e)
-            logging.error(
-                "\nAC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
-            sys.exit(1)
-
-    if (args.fastqs or args.completed_AA_runs) and not args.ref:
-        logging.error("Must specify --ref when providing unaligned fastq files or completed AA runs.\n")
-        sys.exit(1)
-
-    if args.completed_run_metadata.lower() == "none":
-        args.completed_run_metadata = None
-
-    # if not these args are set, assume cnvkit.py is on the path.
-    if not (args.cnv_bed or args.cnvkit_dir or args.completed_run_metadata or args.align_only) and (args.fastqs or
-                                                                                                    args.bam):
-        try:
-            args.cnvkit_dir = str(check_output(["which cnvkit.py"], shell=True).decode("utf-8").rstrip())
-
-        except CalledProcessError:
-            logging.error("cnvkit.py not found on system path. Must specify --cnvkit_dir")
-            sys.exit(1)
-
-    elif args.cnvkit_dir and not args.cnvkit_dir.endswith("/") and not args.cnvkit_dir.endswith("cnvkit.py"):
-        args.cnvkit_dir += "/"
-
-    else:
-        args.completed_run_metadata = None
-
-    if not args.cnvkit_dir.endswith("cnvkit.py"):
-        args.cnvkit_dir += "cnvkit.py"
-
-    if args.run_AA:
-        mosek_license_path = None
-
-        # Check if license exists in default location
-        if os.path.exists(os.environ["HOME"] + "/mosek/mosek.lic"):
-            mosek_license_path = os.environ["HOME"] + "/mosek/mosek.lic"
-
-        # Check if license exists in location specified by MOSEKLM_LICENSE_FILE
-        elif "MOSEKLM_LICENSE_FILE" in os.environ:
-            if os.environ["MOSEKLM_LICENSE_FILE"].endswith("mosek.lic"):
-                logging.error(
-                    "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'")
-                sys.exit(1)
-            elif os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
-                mosek_license_path = os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"
-            else:
-                logging.error("--run_AA set, but MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
-                sys.exit(1)
-        else:
-            logging.error("--run_AA set, but MOSEK license not found in $HOME/mosek/")
-            sys.exit(1)
-
-        # Check license age
-        if mosek_license_path:
-            file_time = os.path.getmtime(mosek_license_path)
-            file_date = datetime.fromtimestamp(file_time)
-            current_date = datetime.now()
-            days_old = (current_date - file_date).days
-
-            # Check if license has expired (older than 365 days)
-            if days_old >= 365:
-                logging.warning("*" * 80)
-                logging.warning("WARNING: MOSEK LICENSE IS EXPIRED!")
-                logging.warning(
-                    "The Mosek license file at " + mosek_license_path + " is " + str(days_old) + " days old.")
-                logging.warning("AA will not run with an expired license.")
-                logging.warning("Please obtain an updated Mosek license to continue using AA.")
-                logging.warning("*" * 80)
-            # Check if license is about to expire (within 7 days)
-            elif days_old >= 358:
-                days_until_expiry = 365 - days_old
-                logging.warning("*" * 80)
-                logging.warning("WARNING: MOSEK LICENSE WILL EXPIRE SOON!")
-                logging.warning("The Mosek license file at " + mosek_license_path + " will expire in " + str(
-                    days_until_expiry) + " days.")
-                logging.warning("Please obtain an updated Mosek license before expiration to continue using AA.")
-                logging.warning("*" * 80)
-
-    runCNV = None
-    if args.cnvkit_dir and not args.cnv_bed:
-        runCNV = "CNVkit"
-        # check Rscript version
-        test_rscript = "Rscript"
-        if args.rscript_path:
-            if not args.rscript_path.endswith("/Rscript"):
-                args.rscript_path += "/Rscript"
-
-            test_rscript = args.rscript_path
-
-        try:
-            rscript_version_out = str(check_output([test_rscript, "--version"], stderr=STDOUT).decode("utf-8").rstrip())
-
-        except CalledProcessError:
-            logging.error(test_rscript + " not found. Must specify --rscript_path")
-            sys.exit(1)
-
+    # Set PY3_PATH if provided
     if args.python3_path:
-        if not args.python3_path.endswith("/python") and not args.python3_path.endswith("/python3"):
-            args.python3_path += "/python3"
-
         PY3_PATH = args.python3_path
 
-    if args.aa_python_interpreter and not any(args.aa_python_interpreter.endswith(x) for x in ['python', 'python2', 'python3']):
-        logging.error("--aa_python_interpreter must be a path of a valid python interpreter")
-        sys.exit(1)
+    # Validate AA environment
+    AA_SRC, AC_SRC = validate_aa_environment(args)
 
-    try:
-        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
-            datestring = file.read()
-            logging.info(args.ref + " data repo constructed on " + datestring)
+    # Initialize the metadata_dict here so functions can access it
+    metadata_dict = {}
 
-    except FileNotFoundError:
-        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
+    # Create coverage stats file if needed
+    create_coverage_stats_file(AA_REPO)
 
+    # Validate samtools
+    samtools_version = get_samtools_version(args.samtools_path)
+
+    # Setup reference genome info early so functions can access it
     refFnames = {x: None for x in ["hg19", "GRCh37", "GRCh38", "GRCh38_viral", "mm10"]}
-    # Paths of all the repo files needed
-    if args.ref == "hg38":
-        args.ref = "GRCh38"
-    if args.ref == "GRCm38":
-        args.ref = "mm10"
-
     for rname in refFnames.keys():
         if os.path.exists(AA_REPO + "/" + rname):
             refFnames[rname] = check_reference.get_ref_fname(AA_REPO, rname)
 
+    try:
+        # Now run your existing pipeline logic
+        run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtools_version, refFnames, finish_flag_filename)
+
+    finally:
+        if timing_logfile:
+            timing_logfile.close()
+
+
+def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtools_version, refFnames, finish_flag_filename):
+    """Your existing pipeline logic from the main function"""
+    global ref_genome_size_file
+
+    sname = args.sample_name
+    outdir = args.output_directory
+    sample_metadata_filename = args.output_directory + sname + "_sample_metadata.json"
+
+    # Load sample metadata
+    with open(args.sample_metadata) as input_json:
+        sample_info_dict = json.load(input_json)
+
+    sample_info_dict["reference_genome"] = args.ref
+    sample_info_dict["sample_name"] = sname
+
+    # Check data repo freshness
+    try:
+        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
+            datestring = file.read()
+            logging.info(args.ref + " data repo constructed on " + datestring)
+    except FileNotFoundError:
+        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
+
+    # Handle BAM file reference checking
     faidict = {}
     if args.bam:
-        if contains_spaces(args.bam):
-            logging.error("BAM filepath cannot contain spaces!")
-            sys.exit(1)
-
         if args.ref and refFnames[args.ref]:
             faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
-
         elif args.ref and refFnames[args.ref] is None:
             em = "Data repo files for ref " + args.ref + " not found. Please download using the '--download_repo " + args.ref + "' option\n"
             logging.error(em)
             sys.exit(1)
-
         else:
             for k, v in refFnames.items():
                 if v:
@@ -967,55 +582,45 @@ if __name__ == '__main__':
         if not determined_ref and not args.ref:
             logging.error("Could not determine ref build. Please make sure AA data repo is populated.")
             sys.exit(1)
-
         elif not args.ref:
             args.ref = determined_ref
-
         elif args.ref and not determined_ref:
             logging.warning("WARNING! The BAM file did not match " + args.ref)
 
+    # Setup file paths - NOW we can properly set ref_genome_size_file
     gdir = AA_REPO + args.ref + "/"
     ref_fasta = gdir + refFnames[args.ref]
     ref_genome_size_file = gdir + args.ref + "_noAlt.fa.fai"
-    if args.cnv_bed and not os.path.isfile(args.cnv_bed):
-        logging.error("Specified CNV bed file does not exist: " + args.cnv_bed + "\n")
-        sys.exit(1)
 
-    if not args.sample_metadata:
-        args.sample_metadata = os.path.realpath(os.path.dirname(check_reference.__file__)) + "/sample_metadata_skeleton.json"
-
-    with open(args.sample_metadata) as input_json:
-        sample_info_dict = json.load(input_json)
-
-    sample_info_dict["reference_genome"] = args.ref
-    sample_info_dict["sample_name"] = sname
-
+    # Log initialization timing
     tb = time.time()
     timing_logfile.write("Initialization:\t" + "{:.2f}".format(tb - ta) + "\n")
     ta = tb
     logging.info("Running AmpliconSuite-pipeline on sample: " + sname)
-    # Begin pipeline
+
+    # Begin pipeline execution - copy your existing main function code from here
     aln_stage_stderr = None
+
+    # Alignment stage
     if args.fastqs:
-        # Run BWA
         if args.fastqs[0] == args.fastqs[1]:
             logging.error(str(args.fastqs))
             logging.error("You must provide two different fastq files for paired-end reads!\n")
             sys.exit(1)
-
         elif contains_spaces(args.fastqs[0]) or contains_spaces(args.fastqs[1]):
             logging.error("FASTQ filepaths cannot contain spaces!")
             sys.exit(1)
-
         elif not os.path.exists(args.fastqs[0]) or not os.path.exists(args.fastqs[1]):
             logging.error("One or both FASTQ files do not exist!")
             sys.exit(1)
 
         fastqs = " ".join(args.fastqs)
         logging.info("Will perform alignment on " + fastqs)
-        args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path, samtools_version)
+        args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path,
+                                             samtools_version)
 
     if not args.completed_AA_runs:
+        # BAM indexing
         bamBaiNoExt = args.bam[:-3] + "bai"
         cramCraiNoExt = args.bam[:-4] + "crai"
         baiExists = os.path.isfile(args.bam + ".bai") or os.path.isfile(bamBaiNoExt)
@@ -1037,41 +642,62 @@ if __name__ == '__main__':
             logging.info("Completed\n")
             tf = time.time()
             timing_logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
-            timing_logfile.close()
-            sys.exit()
+            return
 
         ta = tb
         centromere_dict = get_ref_centromeres(args.ref)
         chr_sizes = get_ref_sizes(ref_genome_size_file)
-        # coordinate CNV calling
+
+        # CNV calling stage
         cnvkit_output_directory = None
-        if runCNV == "CNVkit":
+        runCNV = None
+        if not args.cnv_bed:
+            runCNV = "CNVkit"
             cnvkit_output_directory = args.output_directory + sname + "_cnvkit_output/"
             if not os.path.exists(cnvkit_output_directory):
                 os.mkdir(cnvkit_output_directory)
 
+            # Your run_cnvkit function can now access all globals it needs
             run_cnvkit(args.cnvkit_dir, args.nthreads, cnvkit_output_directory, args.bam,
                        seg_meth=args.cnvkit_segmentation, normal=args.normal_bam, ref_fasta=ref_fasta)
+
             if args.ploidy or args.purity:
-                rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase, ploidy=args.ploidy,
-                                     purity=args.purity)
+                rescale_cnvkit_calls(args.cnvkit_dir, cnvkit_output_directory, bambase,
+                                     ploidy=args.ploidy, purity=args.purity)
                 rescaling = True
             else:
                 rescaling = False
 
             args.cnv_bed = convert_cnvkit_cns_to_bed(cnvkit_output_directory, bambase, rescaled=rescaling)
 
-        if args.cnv_bed.endswith(".cns"):
-            args.cnv_bed = convert_cnvkit_cns_to_bed(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
+            if args.cnv_bed and args.cnv_bed.endswith(".cns"):
+                args.cnv_bed = convert_cnvkit_cns_to_bed(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
 
-        tb = time.time()
-        timing_logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
+            sample_info_dict["sample_cnv_bed"] = args.cnv_bed
+
+            # Custom CNV plotting
+            centromeres = cnv_plots.load_centromere_file(AA_REPO, args.ref)
+            if centromeres is not None:
+                logging.info(f"Loaded {len(centromeres)} centromere regions for highlighting")
+
+            if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
+                logging.info("Plotting CNV distribution across chromosomes")
+                cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
+                cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase,
+                                                            f"{cnvkit_output_directory}/{sname}_cnv_distribution",
+                                                            centromeres=centromeres)
+            else:
+                logging.warning(
+                    "Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
+
+            tb = time.time()
+            timing_logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
+
         ta = tb
-
-        sample_info_dict["sample_cnv_bed"] = args.cnv_bed
-
+        # Seed filtering stage
         if not args.no_filter and not args.cnv_bed.endswith("_AA_CNV_SEEDS.bed"):
-            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
+            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith(
+                    "_CNV_CALLS_unfiltered_gains.bed"):
                 from paalib import cnv_prefilter
                 pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
@@ -1081,7 +707,8 @@ if __name__ == '__main__':
                                                              outdir, sname, args.cngain, args.cnsize_min)
 
         elif args.no_filter and runCNV:
-            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith("_CNV_CALLS_unfiltered_gains.bed"):
+            if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith(
+                    "_CNV_CALLS_unfiltered_gains.bed"):
                 from paalib import cnv_prefilter
                 pfilt_odir = cnvkit_output_directory if cnvkit_output_directory else args.output_directory
                 args.cnv_bed = cnv_prefilter.prefilter_bed(args.cnv_bed, args.ref, centromere_dict, chr_sizes,
@@ -1089,7 +716,6 @@ if __name__ == '__main__':
                 logging.info("Skipping amplified_intervals.py step due to --no_filter")
 
             amplified_interval_bed = args.cnv_bed
-
         else:
             logging.info("Skipping filtering of bed file.")
             amplified_interval_bed = args.cnv_bed
@@ -1098,29 +724,13 @@ if __name__ == '__main__':
         timing_logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb
 
-        # Load centromere dictionary
-        aa_data_repo = os.environ.get("AA_DATA_REPO", None)
-        if not aa_data_repo:
-            logging.warning("Warning: AA_DATA_REPO not found. Cannot highlight centromeres.")
-        else:
-            centromeres = cnv_plots.load_centromere_file(aa_data_repo, args.ref)
-            if centromeres is not None:
-                logging.info(f"Loaded {len(centromeres)} centromere regions for highlighting")
-        # Plot CNV across genome
-        if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
-            logging.info("Plotting CNV distribution across chromosomes")
-            cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
-            cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, f"{cnvkit_output_directory}/{bambase}_cnv_distribution.png", centromeres=centromeres)
-        else:
-            logging.warning("Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
-
-        # Run AA
+        # AmpliconArchitect stage
         if args.run_AA:
             AA_outdir = outdir + sname + "_AA_results/"
             if not os.path.exists(AA_outdir):
                 os.mkdir(AA_outdir)
 
-            # set the insert sdevs if not given by user.
+            # Set insert sdevs if not given by user
             if not args.no_QC and not args.AA_insert_sdevs and prop_paired_proportion is not None and prop_paired_proportion < 90:
                 logging.info("Properly paired rate less than 90%, setting --insert_sdevs 9.0 for AA")
                 args.AA_insert_sdevs = 9.0
@@ -1129,17 +739,18 @@ if __name__ == '__main__':
             tb = time.time()
             timing_logfile.write("AmpliconArchitect:\t" + "{:.2f}".format(tb - ta) + "\n")
             ta = tb
-            # Run AC
+
+            # AmpliconClassifier stage
             if args.run_AC:
                 AC_outdir = outdir + sname + "_classification/"
                 if not os.path.exists(AC_outdir):
                     os.mkdir(AC_outdir)
 
                 run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
-
                 tb = time.time()
                 timing_logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
+        # Save metadata
         run_metadata_filename = save_run_metadata(outdir, sname, args, launchtime, commandstring)
 
         with open(sample_metadata_filename, 'w') as fp:
@@ -1149,8 +760,17 @@ if __name__ == '__main__':
             make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename,
                           args.ref, cnv_bed=sample_info_dict["sample_cnv_bed"])
 
+            # files to give over
+            # AA_outdir
+            # AC_outdir
+            # cnv_bed OR cnvkit_output_directory
+            # run_metadata_filename
+            # sample_metadata_filename
+            # amplified_interval_bed
+            #
+
     else:
-        ta = time.time()
+        # Handle completed AA runs path
         if not args.ref:
             logging.error("--ref is a required argument if --completed_AA_runs is provided!")
             sys.exit(1)
@@ -1169,18 +789,25 @@ if __name__ == '__main__':
 
         make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata, sample_metadata_filename, args.ref)
 
-    if not args.run_AA:
-        AA_outdir = None
-
-    if not args.run_AC:
-        AC_outdir = None
+    # Final checks and cleanup
+    AA_outdir = None if not args.run_AA else outdir + sname + "_AA_results/"
+    AC_outdir = None if not args.run_AC else outdir + sname + "_classification/"
 
     if not detect_run_failure(aln_stage_stderr, AA_outdir, sname, AC_outdir):
         logging.info("All stages appear to have completed successfully.")
-        with open(args.output_directory + args.sample_name + "_finish_flag.txt", 'w') as ffof:
+        with open(finish_flag_filename, 'w') as ffof:
             ffof.write("All stages completed\n")
 
-
+    # Final timing
     tf = time.time()
     timing_logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
-    timing_logfile.close()
+
+    if args.upload:
+        archive_and_upload_sample(AA_outdir, AC_outdir, sample_info_dict["sample_cnv_bed"], cnvkit_output_directory,
+                                  run_metadata_filename, sample_metadata_filename, amplified_interval_bed,
+                                  finish_flag_filename, args.project_uuid, args.project_key, args.username, outdir + sname,
+                                  server=args.upload_server)
+
+
+if __name__ == '__main__':
+    main()

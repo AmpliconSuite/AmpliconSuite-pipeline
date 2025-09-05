@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-import seaborn as sns
 import os
+
 
 # Plot CNV distribution from a CNV bed file
 def load_cnv_bed_file(file_path):
@@ -46,6 +46,7 @@ def highlight_centromere_regions(ax, chrom, centromeres, debug=False):
         #Add a vertical span covering the centromere region
         ax.axvspan(centro['start'], centro['end'], alpha=0.3, color='lightgrey', zorder=0)
 
+
 def chrom_sort_key(chrom):
     if chrom.startswith("chr"):
         chrom = chrom[3:]
@@ -57,12 +58,14 @@ def chrom_sort_key(chrom):
         return (0, int(chrom))
     else:
         return (1, chrom)
-    
+
+
 def closest_divisors(n):
     a = round(math.sqrt(n))
     while n % a > 0:
         a -= 1
     return a, n // a
+
 
 def plot_segments_as_lines(ax, chrom_data):
     """
@@ -75,7 +78,8 @@ def plot_segments_as_lines(ax, chrom_data):
         cn = row['CN']
         ax.plot([start, end], [cn, cn], color='black', linewidth=1.5, solid_capstyle='butt', zorder=1)
     return ax
-    
+
+
 def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=None, log_base=2):
     """
     Plot CNV profiles in a grid of subplots — one per chromosome, log-transformed CN values.
@@ -123,5 +127,6 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=
     fig.text(0.06, 0.5, f"Copy Number", va="center", rotation="vertical", fontsize=12)
 
     plt.tight_layout(rect=[0.07, 0.07, 1, 0.93])
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file + ".png", dpi=300, bbox_inches='tight')
+    plt.savefig(output_file + ".pdf", bbox_inches='tight')
     plt.close()
