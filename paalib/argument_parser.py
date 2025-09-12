@@ -12,6 +12,7 @@ def setup_argument_parser():
                     "Can launch AA, as well as downstream amplicon classification.")
     
     _add_basic_arguments(parser)
+    _add_mutually_exclusive_groups(parser)
     _add_io_arguments(parser)
     _add_pipeline_arguments(parser)
     _add_reference_arguments(parser)
@@ -21,8 +22,7 @@ def setup_argument_parser():
     _add_cnvkit_arguments(parser)
     _add_utility_arguments(parser)
     _add_upload_arguments(parser)
-    _add_mutually_exclusive_groups(parser)
-    
+
     return parser
 
 
@@ -30,15 +30,14 @@ def _add_basic_arguments(parser):
     """Add basic arguments like version, sample name, threads"""
     parser.add_argument("-v", "--version", action='version',
                         version='AmpliconSuite-pipeline version {version} \n'.format(version=__ampliconsuitepipeline_version__))
-    parser.add_argument("-s", "--sample_name", metavar='STR', help="(Required) Sample name")
     parser.add_argument("-t", "--nthreads", metavar='INT', help="(Required) Number of threads to use in BWA and CNV calling")
 
 
 def _add_io_arguments(parser):
     """Add input/output related arguments"""
+    parser.add_argument("-s", "--sample_name", metavar='STR', help="(Required) Sample name")
     parser.add_argument("-o", "--output_directory", metavar='PATH', 
-                        help="output directory names (will create if not already created)")
-    parser.add_argument("--sample_metadata", metavar='FILE', help="JSON file of sample metadata to build on")
+                        help="Output directory name. Will create directory if needed.")
 
 
 def _add_pipeline_arguments(parser):
@@ -127,6 +126,7 @@ def _add_cnvkit_arguments(parser):
 
 def _add_utility_arguments(parser):
     """Add utility and miscellaneous arguments"""
+    parser.add_argument("--sample_metadata", metavar='FILE', help="JSON file of sample metadata to build on")
     parser.add_argument("--completed_run_metadata", metavar='FILE',
                         help="Run metadata JSON to retroactively assign to collection of samples", default="")
 
@@ -134,13 +134,13 @@ def _add_utility_arguments(parser):
 def _add_upload_arguments(parser):
     """Add upload-related arguments"""
     parser.add_argument("--upload",
-                        help="Upload sample results to AmpliconRepository (requires --run_AA and --run_AC)",
+                        help="(Optional) Upload results to specified project on AmpliconRepository",
                         action='store_true')
     parser.add_argument("--project_uuid", metavar='STR',
                         help="Project UUID for upload (required if --upload is set)")
     parser.add_argument("--project_key", metavar='STR', help="Project key for upload (required if --upload is set)")
     parser.add_argument("--username", metavar='STR', help="Username for upload (required if --upload is set)")
-    parser.add_argument("--upload_server", metavar='STR', help="Upload server ('local', 'dev', 'prod')",
+    parser.add_argument("--upload_server", metavar='STR', help="Upload server: 'local', 'dev', 'prod' (prod is default)",
                         choices=['local', 'dev', 'prod'], default='prod')
 
 
@@ -159,5 +159,5 @@ def _add_mutually_exclusive_groups(parser):
     group2.add_argument("--cnv_bed", "--bed", metavar='FILE',
                         help="BED file (or CNVKit .cns file) of CNV changes. Fields in the bed file should"
                              " be: chr start end name cngain")
-    group2.add_argument("--cnvkit_dir", metavar='PATH', help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set",
+    group2.add_argument("--cnvkit_dir", metavar='PATH', help="Optional path to cnvkit.py. Assumes CNVKit is on the system path if not set and no --cnv_bed given",
                         default="")

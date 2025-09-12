@@ -43,10 +43,6 @@ def validate_arguments(args, parser):
     upload_args_provided = [arg for arg in upload_args if arg is not None]
 
     if args.upload:
-        # Upload requires both AA and AC to be run
-        if not (args.run_AA and args.run_AC):
-            parser.error("--upload requires both --run_AA and --run_AC to be set")
-
         # If --upload flag is set, all upload arguments must be provided
         if len(upload_args_provided) != len(upload_args):
             missing_args = []
@@ -227,42 +223,55 @@ def initialize_logging_and_directories(args, launchtime):
     # Make output directory
     if not os.path.exists(args.output_directory):
         os.makedirs(args.output_directory)
-    
-    # Setup logging
+
+    # Setup logging with different levels for file vs console
     paa_logfile = args.output_directory + sname + '.log'
-    logging.basicConfig(filename=paa_logfile, format='[%(name)s:%(levelname)s]\t%(message)s',
-                        level=logging.INFO, filemode='w')
+
+    # Clear any existing handlers to avoid conflicts
+    logging.getLogger().handlers.clear()
+
+    # Set root logger to DEBUG to capture everything
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    # File handler - DEBUG and higher
+    file_handler = logging.FileHandler(paa_logfile, mode='w')
+    file_handler.setLevel(logging.DEBUG)
+    file_formatter = logging.Formatter('[%(name)s:%(levelname)s]\t%(message)s')
+    file_handler.setFormatter(file_formatter)
+    logging.getLogger().addHandler(file_handler)
+
+    # Console handler - INFO and higher
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(name)s:%(levelname)s]\t%(message)s')
-    console_handler.setFormatter(formatter)
+    console_formatter = logging.Formatter('[%(name)s:%(levelname)s]\t%(message)s')
+    console_handler.setFormatter(console_formatter)
     logging.getLogger().addHandler(console_handler)
-    
+
     # Log startup info
     from paalib._version import __ampliconsuitepipeline_version__
     logging.info("Launched on " + launchtime)
     logging.info("AmpliconSuite-pipeline version " + __ampliconsuitepipeline_version__ + "\n")
-    
+
     # Log command
     commandstring = _build_command_string()
     logging.info("AmpliconSuite-pipeline command:")
     logging.info(commandstring + "\n")
-    
+
     # Create timing log
     timing_logfile = open(args.output_directory + sname + '_timing_log.txt', 'w')
     timing_logfile.write("#stage:\twalltime(seconds)\n")
-    
+
     # Setup finish flag
     finish_flag_filename = args.output_directory + args.sample_name + "_finish_flag.txt"
     if os.path.exists(finish_flag_filename):
         logging.warning("WARNING: Running AmpliconSuite-pipeline.py with outputs directed into the same output location"
                         " as a previous run may cause crashes or other unexpected behavior. To avoid errors, clear "
                         "previous files before re-running.\n")
-    
+
     with open(finish_flag_filename, 'w') as ffof:
         ffof.write("UNSUCCESSFUL\n")
-    
-    return timing_logfile, commandstring, finish_flag_filename
+
+    return paa_logfile, timing_logfile, commandstring, finish_flag_filename
 
 
 def create_coverage_stats_file(AA_REPO):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # author: Jens Luebeck (jluebeck [at] ucsd.edu)
 
@@ -6,10 +6,13 @@ from datetime import datetime
 import json
 import logging
 import os
+import shutil
 import socket
 from subprocess import *
 import sys
+import tarfile
 import time
+import zipfile
 
 from paalib.argument_parser import setup_argument_parser
 from paalib.config_validator import (
@@ -43,7 +46,7 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
     for i in exts:
         if not os.path.exists(ref_fasta + i):
             indexPresent = False
-            logging.info("Could not find " + ref_fasta + i + ", building BWA index from scratch. This could take > 60 minutes")
+            logging.info("Could not find " + ref_fasta + i + ", building BWA index from scratch. This could take >60 minutes")
             break
 
     if not indexPresent:
@@ -127,7 +130,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
 
     cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
-    logging.info(".cns file already exists: {}".format(cnsFile, os.path.exists(cnsFile)))
 
     logging.info("Running CNVKit segment")
     # TODO: Allow a .cnr as input for --bed arg and then jump directly to this step?
@@ -202,12 +204,12 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
 
 
 def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, output_directory, sname, cngain,
-                            cnsize_min):
+                            cnsize_min, paa_logfile):
     logging.info("Running amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-    cmd = "{} {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(
+    cmd = "{} {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {} --logfile {}".format(
         AA_interpreter, AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min),
-        AA_seeds_filename)
+        AA_seeds_filename, paa_logfile)
 
     logging.info(cmd + "\n")
     exit_code = call(cmd, shell=True)
@@ -413,7 +415,7 @@ def save_run_metadata(outdir, sname, args, launchtime, commandstring):
     return run_metadata_filename
 
 
-def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
+def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir, completed_AA_runs):
     if align_stderr_file:
         cmd = 'grep -i error ' + align_stderr_file
         try:
@@ -426,7 +428,7 @@ def detect_run_failure(align_stderr_file, AA_outdir, sname, AC_outdir):
             logging.error("Detected error during bwa mem alignment stage\n")
             return True
 
-    if AA_outdir:
+    if AA_outdir and not completed_AA_runs:
         sumfile = AA_outdir + sname + "_summary.txt"
         if os.path.isfile(sumfile):
             namps = -1
@@ -475,6 +477,95 @@ def contains_spaces(file_path):
     return any(char == ' ' for char in file_path)
 
 
+def handle_completed_aa_runs(completed_aa_path, output_dir, sample_name):
+    """
+    Handle completed AA runs - extract if archive, or use directory directly
+
+    Returns:
+        str: Path to AA output directory
+    """
+    if os.path.isdir(completed_aa_path):
+        # Already a directory, use as-is
+        return completed_aa_path
+
+    elif completed_aa_path.endswith('.tar.gz') or completed_aa_path.endswith('.tgz'):
+        # Extract tar.gz
+        extract_dir = os.path.join(output_dir, sample_name + "_extracted_AA")
+        os.makedirs(extract_dir, exist_ok=True)
+
+        with tarfile.open(completed_aa_path, 'r:gz') as tar:
+            tar.extractall(path=extract_dir)
+
+        logging.info("Extracted tar.gz to: {}".format(extract_dir))
+        return extract_dir
+
+    elif completed_aa_path.endswith('.zip'):
+        # Extract zip
+        extract_dir = os.path.join(output_dir, sample_name + "_extracted_AA")
+        os.makedirs(extract_dir, exist_ok=True)
+
+        with zipfile.ZipFile(completed_aa_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+        logging.info("Extracted zip to: {}".format(extract_dir))
+        return extract_dir
+
+    else:
+        logging.error("Unsupported file type for completed AA runs: {}".format(completed_aa_path))
+        sys.exit(1)
+
+
+def remove_existing_classifications(aa_outdir):
+    """
+    Remove existing *_classification/ directories that contain amplicon classification profiles
+    Searches recursively and respects permission errors
+    """
+    if not os.path.exists(aa_outdir):
+        logging.warning("AA output directory does not exist: {}".format(aa_outdir))
+        return
+
+    classification_dirs_found = []
+
+    try:
+        # Walk recursively through all subdirectories
+        for root, dirs, files in os.walk(aa_outdir):
+            for dirname in dirs:
+                if dirname.endswith('_classification'):
+                    dir_path = os.path.join(root, dirname)
+
+                    # Check if directory contains amplicon classification profiles
+                    try:
+                        has_profile = False
+                        for file in os.listdir(dir_path):
+                            if file.endswith('_amplicon_classification_profiles.tsv'):
+                                has_profile = True
+                                break  # Break inner file loop only
+
+                        if has_profile:
+                            classification_dirs_found.append(dir_path)
+
+                    except (OSError, PermissionError) as e:
+                        logging.warning("Cannot access directory {}: {}".format(dir_path, str(e)))
+                        continue
+
+        # Remove found directories
+        for dir_path in classification_dirs_found:
+            try:
+                logging.info("Removing existing classification directory: {}".format(dir_path))
+                shutil.rmtree(dir_path)
+            except PermissionError:
+                logging.error("Permission denied: Cannot remove {}. May be owned by different user.".format(dir_path))
+            except OSError as e:
+                logging.error("Failed to remove {}: {}".format(dir_path, str(e)))
+
+    except (OSError, PermissionError) as e:
+        logging.error("Cannot access AA output directory {}: {}".format(aa_outdir, str(e)))
+        return
+
+    if classification_dirs_found:
+        logging.info("Processed {} classification directories".format(len(classification_dirs_found)))
+
+
 # MAIN #
 def main():
     """Main entry point for AmpliconSuite-pipeline"""
@@ -494,18 +585,16 @@ def main():
     ti = ta
     launchtime = str(datetime.now())
 
+    # Validate arguments
+    validate_arguments(args, parser)
+
     # Initialize logging and directories
-    timing_logfile, commandstring, finish_flag_filename = initialize_logging_and_directories(args, launchtime)
+    paa_logfile, timing_logfile, commandstring, finish_flag_filename = initialize_logging_and_directories(args, launchtime)
 
     logging.info("Running initial checks and configurations...")
 
     # Setup environment and validate using the new modules
     AA_REPO = setup_environment_and_paths(args)
-
-
-
-    # Validate arguments
-    validate_arguments(args, parser)
 
     # Setup tool paths
     setup_tool_paths(args)
@@ -534,14 +623,14 @@ def main():
 
     try:
         # Now run your existing pipeline logic
-        run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtools_version, refFnames, finish_flag_filename)
+        run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commandstring, samtools_version, refFnames, finish_flag_filename)
 
     finally:
         if timing_logfile:
             timing_logfile.close()
 
 
-def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtools_version, refFnames, finish_flag_filename):
+def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commandstring, samtools_version, refFnames, finish_flag_filename):
     """Your existing pipeline logic from the main function"""
     global ref_genome_size_file
 
@@ -556,20 +645,10 @@ def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtoo
     sample_info_dict["reference_genome"] = args.ref
     sample_info_dict["sample_name"] = sname
 
-    # Check data repo freshness
-    try:
-        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
-            datestring = file.read()
-            logging.info(args.ref + " data repo constructed on " + datestring)
-    except FileNotFoundError:
-        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
-
     # Handle BAM file reference checking
     faidict = {}
     if args.bam:
-        if args.ref and refFnames[args.ref]:
-            faidict[args.ref] = AA_REPO + args.ref + "/" + refFnames[args.ref] + ".fai"
-        elif args.ref and refFnames[args.ref] is None:
+        if args.ref and refFnames[args.ref] is None:
             em = "Data repo files for ref " + args.ref + " not found. Please download using the '--download_repo " + args.ref + "' option\n"
             logging.error(em)
             sys.exit(1)
@@ -585,7 +664,18 @@ def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtoo
         elif not args.ref:
             args.ref = determined_ref
         elif args.ref and not determined_ref:
-            logging.warning("WARNING! The BAM file did not match " + args.ref)
+            logging.error("ERROR! The BAM file could not be matched to an available reference genome in AA_DATA_REPO! Is it aligned to an AA-supported reference genome?")
+        elif args.ref != determined_ref:
+            logging.warning("WARNING: User specified --ref {}, however the bam header matches instead to build {}. Continuing with {}...".format(args.ref, determined_ref, determined_ref))
+            args.ref = determined_ref
+
+    # Check data repo freshness
+    try:
+        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
+            datestring = file.read()
+            logging.info(args.ref + " data repo constructed on " + datestring)
+    except FileNotFoundError:
+        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
 
     # Setup file paths - NOW we can properly set ref_genome_size_file
     gdir = AA_REPO + args.ref + "/"
@@ -619,6 +709,8 @@ def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtoo
         args.bam, aln_stage_stderr = run_bwa(ref_fasta, fastqs, outdir, sname, args.nthreads, args.samtools_path,
                                              samtools_version)
 
+    AA_outdir = None
+    AC_outdir = None
     if not args.completed_AA_runs:
         # BAM indexing
         bamBaiNoExt = args.bam[:-3] + "bai"
@@ -704,7 +796,7 @@ def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtoo
                                                            args.cngain, pfilt_odir)
 
             amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.bam,
-                                                             outdir, sname, args.cngain, args.cnsize_min)
+                                                             outdir, sname, args.cngain, args.cnsize_min, paa_logfile)
 
         elif args.no_filter and runCNV:
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith(
@@ -760,53 +852,68 @@ def run_pipeline_logic(timing_logfile, ta, ti, launchtime, commandstring, samtoo
             make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename,
                           args.ref, cnv_bed=sample_info_dict["sample_cnv_bed"])
 
-            # files to give over
-            # AA_outdir
-            # AC_outdir
-            # cnv_bed OR cnvkit_output_directory
-            # run_metadata_filename
-            # sample_metadata_filename
-            # amplified_interval_bed
-            #
+    else:  # Handle completed AA runs
+        cnvkit_output_directory = None
+        run_metadata_filename = args.completed_run_metadata
+        amplified_interval_bed = None
 
-    else:
-        # Handle completed AA runs path
         if not args.ref:
             logging.error("--ref is a required argument if --completed_AA_runs is provided!")
             sys.exit(1)
 
-        AC_outdir = outdir + sname + "_classification/"
-        if not os.path.exists(AC_outdir):
-            os.mkdir(AC_outdir)
+        if not args.upload and not args.run_AC:
+            logging.error(
+                "If AA results provided, either --run_AC and/or --upload (and associated upload args) must be provided!")
+            sys.exit(1)
 
-        run_AC(args.completed_AA_runs, sname, args.ref, AC_outdir, AC_SRC)
+        # Handle archive extraction or use directory directly
+        AA_outdir = handle_completed_aa_runs(args.completed_AA_runs, outdir, sname)
 
-        tb = time.time()
-        timing_logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
+        if args.run_AC:
+            # Remove existing classification directories to avoid conflicts
+            remove_existing_classifications(AA_outdir)
 
-        with open(sample_metadata_filename, 'w') as fp:
-            json.dump(sample_info_dict, fp, indent=2)
+            AC_outdir = outdir + sname + "_classification/"
+            if not os.path.exists(AC_outdir):
+                os.mkdir(AC_outdir)
 
-        make_AC_table(sname, AC_outdir, AC_SRC, args.completed_run_metadata, sample_metadata_filename, args.ref)
+            ta = time.time()
+            run_AC(AA_outdir, sname, args.ref, AC_outdir, AC_SRC)
+
+            with open(sample_metadata_filename, 'w') as fp:
+                json.dump(sample_info_dict, fp, indent=2)
+
+            make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename, args.ref)
+            tb = time.time()
+            timing_logfile.write("AmpliconClassifier:\t" + "{:.2f}".format(tb - ta) + "\n")
 
     # Final checks and cleanup
-    AA_outdir = None if not args.run_AA else outdir + sname + "_AA_results/"
-    AC_outdir = None if not args.run_AC else outdir + sname + "_classification/"
-
-    if not detect_run_failure(aln_stage_stderr, AA_outdir, sname, AC_outdir):
+    run_failure = detect_run_failure(aln_stage_stderr, AA_outdir, sname, AC_outdir, args.completed_AA_runs)
+    if not run_failure:
         logging.info("All stages appear to have completed successfully.")
         with open(finish_flag_filename, 'w') as ffof:
             ffof.write("All stages completed\n")
 
+    else:
+        logging.error("One or more stages did not complete successfully.")
+
+    if args.upload:
+        if not run_failure:
+            ta = time.time()
+            final_cnv_bed = sample_info_dict.get("sample_cnv_bed", None)
+            archive_and_upload_sample(AA_outdir, AC_outdir, final_cnv_bed, cnvkit_output_directory,
+                                      run_metadata_filename, sample_metadata_filename, amplified_interval_bed,
+                                      finish_flag_filename, args.project_uuid, args.project_key, args.username, outdir + sname,
+                                      server=args.upload_server)
+            tb = time.time()
+            timing_logfile.write("run_upload:\t" + "{:.2f}".format(tb - ta) + "\n")
+
+        else:
+            logging.error("Skipped run upload due to detected run failure!")
+
     # Final timing
     tf = time.time()
     timing_logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
-
-    if args.upload:
-        archive_and_upload_sample(AA_outdir, AC_outdir, sample_info_dict["sample_cnv_bed"], cnvkit_output_directory,
-                                  run_metadata_filename, sample_metadata_filename, amplified_interval_bed,
-                                  finish_flag_filename, args.project_uuid, args.project_key, args.username, outdir + sname,
-                                  server=args.upload_server)
 
 
 if __name__ == '__main__':

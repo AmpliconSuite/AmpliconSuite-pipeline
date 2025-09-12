@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
 """
 Sample archiving and upload functionality for AmpliconSuite-pipeline
 """
-import os
-import tarfile
+import argparse
 import logging
+import os
 import subprocess
+import sys
+import tarfile
 
 
 def archive_and_upload_sample(AA_outdir, 
@@ -18,7 +21,7 @@ def archive_and_upload_sample(AA_outdir,
                              project_uuid,
                              project_key,
                              username,
-                             outpre,
+                             output_prefix,
                              server='prod'):
     """
     Archive sample files and upload to AmpliconRepository
@@ -35,8 +38,8 @@ def archive_and_upload_sample(AA_outdir,
         project_uuid: Project UUID for upload (ignored if server='None')
         project_key: Project key for upload (ignored if server='None')
         username: Username for upload (ignored if server='None')
-        outpre: Sample name prefix for archive filename
-        server: Server endpoint ('local', 'dev', 'prod')
+        output_prefix: Output directory and prefix for archive (e.g., "/path/to/sample_name")
+        server: Server endpoint ('local', 'dev', 'prod', 'None')
         
     Returns:
         bool: True if successful, False otherwise
@@ -47,6 +50,7 @@ def archive_and_upload_sample(AA_outdir,
         'local': 'http://localhost:8000',
         'dev': 'https://dev.ampliconrepository.org',
         'prod': 'https://ampliconrepository.org',
+        'None': None  # No upload
     }
     
     if server not in server_urls:
@@ -67,12 +71,18 @@ def archive_and_upload_sample(AA_outdir,
             sample_metadata_filename=sample_metadata_filename,
             amplified_interval_bed=amplified_interval_bed,
             finish_flag_filename=finish_flag_filename,
-            output_prefix=outpre
+            output_prefix=output_prefix
         )
         
         if not archive_path:
             logging.error("Failed to create sample archive")
             return False
+        
+        # If server is 'None', just create archive but don't upload
+        if server == 'None':
+            logging.info("Archive created but not uploaded (server='None'): {}".format(archive_path))
+            # Don't delete the archive in this case - leave it for user
+            return True
         
         # Upload the archive
         success = _upload_archive(
@@ -91,7 +101,7 @@ def archive_and_upload_sample(AA_outdir,
         
     finally:
         # Clean up temporary archive only if we uploaded it
-        if archive_path and os.path.exists(archive_path):
+        if archive_path and os.path.exists(archive_path) and server != 'None':
             try:
                 os.remove(archive_path)
                 logging.info("Cleaned up temporary archive: {}".format(archive_path))
@@ -119,8 +129,8 @@ def _create_sample_archive(AA_outdir,
     """
     
     # Extensions to exclude
-    excluded_extensions = {'.bam', '.cram', '.bai', '.crai', '.fq', '.fastq', 
-                          '.fasta', '.fai', '.fa', '.cnr.gz'}
+    excluded_extensions = {'.bam', '.cram', '.bai', '.crai', '.fq', '.fastq', '.fq.gz', '.fastq.gz'
+                          '.fasta', '.fai', '.fa', '.cnr.gz', '.zip', '.tar.gz', '.bz', '.bz2', '_aln_stage.stderr'}
     
     # Create archive file path
     archive_path = "{}.tar.gz".format(output_prefix)
@@ -215,48 +225,156 @@ def _should_exclude_file(filename, excluded_extensions):
     return False
 
 
-def _upload_archive(archive_path,
-                   server_url, 
-                   project_uuid,
-                   project_key,
-                   username):
+def _upload_archive(archive_path, server_url, project_uuid, project_key, username):
     """
     Upload archive to AmpliconRepository using curl
-    
+
     Returns:
         bool: True if upload successful, False otherwise
     """
-    
+
     upload_url = "{}/add_samples_to_project_api/".format(server_url)
-    
-    # Construct curl command
+
+    # Construct curl command - removed --fail to see full response body
     curl_cmd = [
         'curl', '-X', 'POST',
+        '-w', '\n%{http_code}',  # Add newline before HTTP status code
         upload_url,
         '-F', 'project_uuid={}'.format(project_uuid),
-        '-F', 'project_key={}'.format(project_key), 
+        '-F', 'project_key={}'.format(project_key),
         '-F', 'username={}'.format(username),
         '-F', 'file=@{}'.format(archive_path)
     ]
-    
+
     try:
         logging.info("Uploading archive to {}...".format(server_url))
         logging.debug("Upload command: {}".format(' '.join(curl_cmd)))
-        
+
         result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=300)
-        
+
         if result.returncode == 0:
-            logging.info("Archive uploaded successfully")
-            logging.debug("Upload response: {}".format(result.stdout))
-            return True
+            # Parse response body and HTTP status code
+            response_parts = result.stdout.strip().rsplit('\n', 1)
+
+            if len(response_parts) == 2:
+                response_body, http_code = response_parts
+                logging.debug("Full HTTP response body: {}".format(response_body))
+
+                if http_code.startswith('2'):  # 2xx success codes
+                    logging.info("Archive uploaded successfully (HTTP {})".format(http_code))
+                    return True
+                else:
+                    logging.error("Upload failed with HTTP status: {}".format(http_code))
+                    logging.error("Server response: {}".format(response_body))
+
+                    # Check for specific error types
+                    if "403" in http_code or "Forbidden" in response_body:
+                        if "CSRF" in response_body:
+                            logging.error("CSRF verification failed - the API may require additional authentication")
+                        else:
+                            logging.error("Access forbidden - check project permissions and credentials")
+
+                    return False
+            else:
+                # Couldn't parse response properly
+                logging.error("Could not parse curl response: {}".format(result.stdout))
+                return False
         else:
             logging.error("Upload failed with return code {}".format(result.returncode))
-            logging.error("Upload error output: {}".format(result.stderr))
+            logging.error("Curl error output: {}".format(result.stderr))
             return False
-            
+
     except subprocess.TimeoutExpired:
         logging.error("Upload timed out after 5 minutes")
         return False
     except Exception as e:
         logging.error("Upload failed with exception: {}".format(str(e)))
         return False
+
+
+def upload_existing_archive(archive_path, server, project_uuid, project_key, username):
+    """
+    Upload an existing .tar.gz archive to AmpliconRepository
+    
+    Args:
+        archive_path: Path to existing .tar.gz file
+        server: Server endpoint ('local', 'dev', 'prod')
+        project_uuid: Project UUID for upload
+        project_key: Project key for upload
+        username: Username for upload
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    
+    # Use the same server URL mapping
+    server_urls = {
+        'local': 'http://localhost:8000',
+        'dev': 'https://dev.ampliconrepository.org',
+        'prod': 'https://ampliconrepository.org',
+    }
+    
+    if server not in server_urls:
+        logging.error("Invalid server option: {}. Must be one of: {}".format(server, list(server_urls.keys())))
+        return False
+    
+    server_url = server_urls[server]
+    
+    # Use the existing upload function
+    return _upload_archive(
+        archive_path=archive_path,
+        server_url=server_url,
+        project_uuid=project_uuid,
+        project_key=project_key,
+        username=username
+    )
+
+
+def main():
+    """Main entry point when run as CLI script"""
+    parser = argparse.ArgumentParser(
+        description="Upload existing AmpliconSuite-pipeline .tar.gz archive to AmpliconRepository"
+    )
+    
+    parser.add_argument("archive_file", help="Path to existing .tar.gz archive file")
+    parser.add_argument("--project_uuid", required=True, help="Project UUID for upload")
+    parser.add_argument("--project_key", required=True, help="Project key for upload")
+    parser.add_argument("--username", required=True, help="Username for upload")
+    parser.add_argument("--server", choices=['local', 'dev', 'prod'], default='prod',
+                        help="Upload server (default: prod)")
+    parser.add_argument("--verbose", "-v", action='store_true', help="Enable verbose logging")
+    
+    args = parser.parse_args()
+    
+    # Setup logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=log_level, format='[%(levelname)s] %(message)s')
+    
+    # Validate archive file exists
+    if not os.path.exists(args.archive_file):
+        logging.error("Archive file does not exist: {}".format(args.archive_file))
+        sys.exit(1)
+    
+    if not args.archive_file.endswith('.tar.gz'):
+        logging.error("Archive file must be a .tar.gz file")
+        sys.exit(1)
+    
+    # Upload the archive using existing function
+    success = upload_existing_archive(
+        archive_path=args.archive_file,
+        server=args.server,
+        project_uuid=args.project_uuid,
+        project_key=args.project_key,
+        username=args.username
+    )
+    
+    if success:
+        logging.info("Upload completed successfully")
+        sys.exit(0)
+    else:
+        logging.error("Upload failed")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
