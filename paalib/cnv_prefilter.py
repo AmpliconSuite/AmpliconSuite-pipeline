@@ -45,6 +45,9 @@ def ivald_to_ilist(ivald):
 
 # takes list of tuples (chrom, start, end, cn)
 def compute_cn_median(cnlist, armlen):
+    if armlen == 0:
+        return 2.0
+
     cnsum = sum([x[2]-x[1] for x in cnlist])
     if cnsum < 0.5 * armlen:
         return 2.0
@@ -149,7 +152,7 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
                 arm2lens[carm] = carm_interval.end - carm_interval.begin
             else:
                 arm2cns["other"].append((c, s, e, cn))
-                logging.debug("Did not match " + c + ":" + str(s) + "-" + str(e) + " to a known chromosome arm!")
+                # logging.debug("Did not match " + c + ":" + str(s) + "-" + str(e) + " to a known chromosome arm!")
 
     continuous_high_region_ivald = get_continuous_high_regions(bedfile, cngain)
     cn_filt_entries = []
