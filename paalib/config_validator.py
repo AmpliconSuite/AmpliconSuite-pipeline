@@ -233,6 +233,17 @@ def initialize_logging_and_directories(args, launchtime):
     # Set root logger to DEBUG to capture everything
     logging.getLogger().setLevel(logging.DEBUG)
 
+    # Suppress noisy third-party libraries
+    logging.getLogger('fontTools.subset').level = logging.WARN
+    logging.getLogger('fontTools.ttLib').level = logging.WARN
+    logging.getLogger('matplotlib.backends').level = logging.WARN
+    logging.getLogger('matplotlib.font_manager').level = logging.WARN
+    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    logging.getLogger('PIL').setLevel(logging.WARNING)
+    logging.getLogger('matplotlib.pyplot').setLevel(logging.WARNING)
+    logging.getLogger('PIL.PngImagePlugin').setLevel(logging.WARNING)
+    logging.getLogger('fontTools').setLevel(logging.WARNING)
+
     # File handler - DEBUG and higher
     file_handler = logging.FileHandler(paa_logfile, mode='w')
     file_handler.setLevel(logging.DEBUG)
@@ -270,11 +281,6 @@ def initialize_logging_and_directories(args, launchtime):
 
     with open(finish_flag_filename, 'w') as ffof:
         ffof.write("UNSUCCESSFUL\n")
-
-    logging.getLogger('fontTools.subset').level = logging.WARN
-    logging.getLogger('fontTools.ttLib').level = logging.WARN
-    logging.getLogger('matplotlib.backends').level = logging.WARN
-    logging.getLogger('matplotlib.font_manager').level = logging.WARN
 
     return paa_logfile, timing_logfile, commandstring, finish_flag_filename
 
