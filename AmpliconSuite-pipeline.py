@@ -14,6 +14,7 @@ import tarfile
 import time
 import zipfile
 
+from paalib import check_reference, reduce_fasta, cnv_plots
 from paalib.argument_parser import setup_argument_parser
 from paalib.config_validator import (
     validate_arguments, setup_environment_and_paths, setup_tool_paths,
@@ -22,9 +23,7 @@ from paalib.config_validator import (
 )
 from paalib.repo_downloader import handle_repo_download
 from paalib.run_uploader import archive_and_upload_sample
-from paalib import check_reference, reduce_fasta, cnv_plots
 from paalib._version import __ampliconsuitepipeline_version__
-
 
 # Global variables
 # These will be set in main() and available to all functions
@@ -93,7 +92,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     bamBase = os.path.splitext(os.path.basename(bamfile))[0]
 
     env = os.environ.copy()
-    env['NUMEXPR_MAX_THREADS'] = str(nthreads)
+    env['NUMEXPR_MAX_THREADS'] = env.get('NUMEXPR_MAX_THREADS', str(nthreads))
 
     cnvkit_version = Popen([PY3_PATH, ckpy_path, "version"], stdout=PIPE, stderr=PIPE, universal_newlines=True, env=env).communicate()[0].rstrip()
 

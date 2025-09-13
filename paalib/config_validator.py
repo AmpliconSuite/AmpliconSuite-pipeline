@@ -94,6 +94,7 @@ def validate_arguments(args, parser):
 
 def setup_environment_and_paths(args):
     """Setup environment variables, paths, and basic configurations"""
+    os.environ['NUMEXPR_MAX_THREADS'] = str(args.nthreads)
     # Check AA_REPO
     try:
         AA_REPO = os.environ['AA_DATA_REPO'] + "/"
