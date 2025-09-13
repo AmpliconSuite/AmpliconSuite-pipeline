@@ -32,9 +32,6 @@ def validate_arguments(args, parser):
         logging.error("Must specify --ref when providing unaligned fastq files or completed AA runs.\n")
         sys.exit(1)
 
-    if args.completed_AA_runs and not (args.run_AC or args.upload):
-        logging.warning("Specify --completed_AA_runs without --run_AC and/or --upload will have no effect!\n")
-
     # Python interpreter validation
     if args.aa_python_interpreter and not any(
             args.aa_python_interpreter.endswith(x) for x in ['python', 'python2', 'python3']):

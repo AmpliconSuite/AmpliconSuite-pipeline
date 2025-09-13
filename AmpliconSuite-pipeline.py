@@ -204,9 +204,28 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
                             cnsize_min, paa_logfile):
     logging.info("Running amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
-    cmd = "{} {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {} --logfile {}".format(
+
+    # Test if --logfile is supported by checking help output
+    help_cmd = "{} {}/amplified_intervals.py --help".format(AA_interpreter, AA_SRC)
+    try:
+        help_output = check_output(help_cmd, shell=True, stderr=STDOUT, text=True)
+        supports_logfile = "--logfile" in help_output
+    except CalledProcessError:
+        supports_logfile = False
+        logging.warning(
+            "Could not check amplified_intervals.py help. Assuming older version without --logfile support.")
+
+    # Build base command
+    cmd = "{} {}/amplified_intervals.py --ref {} --bed {} --bam {} --gain {} --cnsize_min {} --out {}".format(
         AA_interpreter, AA_SRC, args.ref, CNV_seeds_filename, sorted_bam, str(cngain), str(cnsize_min),
-        AA_seeds_filename, paa_logfile)
+        AA_seeds_filename)
+
+    # Add --logfile if supported
+    if supports_logfile:
+        cmd += " --logfile {}".format(paa_logfile)
+        logging.info("Using amplified_intervals.py with --logfile support")
+    else:
+        logging.info("Using amplified_intervals.py without --logfile (older version)")
 
     logging.info(cmd + "\n")
     exit_code = call(cmd, shell=True)
@@ -219,6 +238,7 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
 
 
 def run_AA(amplified_interval_bed, AA_outdir, sname, args):
+    logging.info("Running AA")
     AA_interpreter = args.aa_python_interpreter
     sorted_bam = args.bam
     downsample = args.downsample
@@ -282,7 +302,24 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
     cmd = "{}/make_input.sh {} {}".format(AC_src, AA_outdir, class_output)
     logging.info(cmd)
-    call(cmd, shell=True)
+
+    # Capture stdout and stderr
+    result = run(cmd, shell=True, capture_output=True, text=True)
+
+    # Log stdout as info if there's any output
+    if result.stdout.strip():
+        for line in result.stdout.strip().split('\n'):
+            logging.info(line)
+
+    # Log stderr as error if there's any error output
+    if result.stderr.strip():
+        for line in result.stderr.strip().split('\n'):
+            logging.error(line)
+
+    # Check return code
+    if result.returncode != 0:
+        logging.error("Failed to make AmpliconClassifier input file!")
+        sys.exit(1)
 
     with open(input_file) as ifile:
         sample_info_dict["number_of_AA_amplicons"] = len(ifile.readlines())
@@ -296,10 +333,6 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     AC_version = \
     Popen([PY3_PATH, AC_src + "/amplicon_classifier.py", "--version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[
         0].rstrip()
-    # try:
-    #     AC_version = AC_version.decode('utf-8')
-    # except UnicodeError:
-    #     pass
 
     metadata_dict["AC_version"] = AC_version
 
@@ -860,7 +893,7 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
 
         if not args.upload and not args.run_AC:
             logging.error(
-                "If AA results provided, either --run_AC and/or --upload (and associated upload args) must be provided!")
+                "If --completed_AA_runs provided, either --run_AC and/or --upload (and associated upload args) must also be set!")
             sys.exit(1)
 
         # Handle archive extraction or use directory directly
