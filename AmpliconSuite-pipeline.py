@@ -770,10 +770,10 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                 logging.info(f"Loaded {len(centromeres)} centromere regions for highlighting")
 
             if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
-                logging.info("Plotting CNV distribution across chromosomes: {}/{}_cnv_distribution.png/.pdf".format(
+                logging.info("Plotting CNV distribution across chromosomes: {}{}_cnv_distribution.png/.pdf".format(
                     cnvkit_output_directory,sname))
                 cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
-                cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, "{}/{}_cnv_distribution".format(
+                cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, "{}{}_cnv_distribution".format(
                     cnvkit_output_directory,sname), centromeres=centromeres)
             else:
                 logging.warning(
