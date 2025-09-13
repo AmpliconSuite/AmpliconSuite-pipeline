@@ -54,9 +54,6 @@ parser.add_argument("--run_AC", help="Run AmpliconClassifier after all files pre
                     action='store_true')
 parser.add_argument("--ref", help="Reference genome version.",
                     choices=["hg19", "GRCh37", "GRCh38", "GRCh38_viral", "hg38", "mm10", "GRCm38"])
-# parser.add_argument("--vcf", help="VCF (in Canvas format, i.e., \"PASS\" in filter field, AD field as 4th entry of "
-# 								  "FORMAT field). When supplied with \"--sorted_bam\", pipeline will start from Canvas CNV stage."
-# 					)
 parser.add_argument("--cngain", type=float,
                     help="CN gain threshold to consider for AA seeding", default=4.5)
 parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
@@ -98,10 +95,6 @@ parser.add_argument("--run_as_user", help="Run the docker image as the user laun
                     action='store_true')
 parser.add_argument(
     "--no_QC", help="Skip QC on the BAM file.", action='store_true')
-# parser.add_argument(
-#     '--ref_path', help="Path to reference Genome. Won't download reference genome if provided.", default="None")
-# parser.add_argument(
-#     '--AA_seed', help='Seeds that sets randomness for AA', default=0)
 parser.add_argument("--sv_vcf", help="Provide a VCF file of externally-called SVs to augment SVs identified by AA internally.",
                     metavar='FILE', action='store', type=str)
 parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
@@ -109,8 +102,6 @@ parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from t
 
 parser.add_argument('--metadata', help="Path to a JSON of sample metadata to build on", default="", nargs="+")
 
-
-# parser.add_argument("--sample_metadata", help="Path to a JSON of sample metadata to build on")
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--bam", "--sorted_bam",
                    help="Coordinate-sorted BAM file (aligned to an AA-supported reference.)")
@@ -209,8 +200,24 @@ elif args.fastqs:
     argstring += " --fastqs /home/bam_dir/" + fq1name + " /home/bam_dir/" + fq2name
 
 else:
-    argstring += " --completed_AA_runs /home/bam_dir/ --completed_run_metadata None"
-    bamdir = os.path.realpath(args.completed_AA_runs)
+    # Resolve the full path first to handle symlinks
+    resolved_input_path = os.path.realpath(args.completed_AA_runs)
+
+    # Check if completed_AA_runs is a file or directory on the host
+    if os.path.isfile(resolved_input_path):
+        # It's a file - mount parent directory and specify the file path in container
+        host_dir = os.path.dirname(resolved_input_path)
+        filename = os.path.basename(resolved_input_path)
+        container_file_path = "/home/bam_dir/{}".format(filename)
+
+        argstring += " --completed_AA_runs {} --completed_run_metadata None".format(container_file_path)
+        bamdir = host_dir  # Already resolved, no symlinks
+
+    else:
+        # It's a directory - mount the whole directory
+        argstring += " --completed_AA_runs /home/bam_dir/ --completed_run_metadata None"
+        bamdir = resolved_input_path  # Already resolved, no symlinks
+
     norm_bamdir = bamdir
 
 if args.normal_bam:
@@ -262,11 +269,6 @@ if args.pair_support_min:
 if args.foldback_pair_support_min:
     argstring += " --foldback_pair_support_min " + str(args.foldback_pair_support_min)
 
-# To use, would need to mount the directory of this file. Users should just modify as needed afterwards.
-# if args.sample_metadata:
-# 	args.sample_metadata = os.path.abspath(args.sample_metadata)
-# 	argstring += " --sample_metadata " + args.sample_metadata
-
 if args.run_AA:
     argstring += " --run_AA"
 
@@ -276,8 +278,6 @@ if args.run_AC:
 if args.metadata != "":
     metadata_helper(args.metadata)
     argstring += " --sample_metadata /home/metadata.json"
-#
-# os.environ['AA_SEED'] = str(args.AA_seed)
 
 userstring = ""
 if args.run_as_user:

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This is invoked by run_paa_docker.py after the container is launched by run_paa_docker.py
+# This is invoked after the container is launched by run_paa_docker.py
 
 AA_DATA_REPO=/home/data_repo
 export AA_DATA_REPO
@@ -22,12 +22,12 @@ ls $AA_DATA_REPO >> /home/output/docker_home_manifest.log
 #python $NCM_HOME/ncm.py -h >> /home/output/docker_home_manifest.log
 
 # works for py2 and py3
-RUN_COMMAND="python programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log"
+RUN_COMMAND="python3 programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/AS-p_stdout.log"
 echo "###############################"
 echo "RUNNING DOCKER STAGE..."
 echo "${RUN_COMMAND}"
 
-python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/PAA_stdout.log
+python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/AS-p_stdout.log
 echo "###############################"
 
 echo "FINISHED DOCKER STAGE"
@@ -36,15 +36,6 @@ echo "###############################"
 echo -e "\n"
 echo -e "\n"
 
-#ls -alrt $AA_DATA_REPO
-#if [[ "$REF_PATH" == "None" ]]
-#then
-#  rm -rf $PWD/data_repo
-#  echo REMOVED DATA REPO
-#fi
-#echo -e "\n"
-#echo -e "\n"
-#ls -alrt
 tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.bai" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
 mv /home/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
 

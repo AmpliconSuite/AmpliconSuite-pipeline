@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This is invoked by run_paa_singularity.py after the container is launched by run_paa_singularity.py
+# This is invoked after the container is launched by run_paa_singularity.py
 
 cd /home/output
 
@@ -10,10 +10,10 @@ echo "" >> /home/output/singularity_home_manifest.log
 ls $AA_DATA_REPO >> /home/output/singularity_home_manifest.log
 
 # works for py2 and py3
-RUN_COMMAND="python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log"
+RUN_COMMAND="python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/AS-p_stdout.log"
 
 echo "${RUN_COMMAND}"
-python /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/PAA_stdout.log
+python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/AS-p_stdout.log
 echo -e "\n"
 echo -e "\n"
 
