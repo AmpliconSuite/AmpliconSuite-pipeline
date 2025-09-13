@@ -38,6 +38,7 @@ requirements:
         - matplotlib-base
         - mscorefonts
         - numpy
+        - pandas
         - pysam
         - samtools
         - scipy

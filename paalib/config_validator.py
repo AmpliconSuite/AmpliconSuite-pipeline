@@ -271,6 +271,11 @@ def initialize_logging_and_directories(args, launchtime):
     with open(finish_flag_filename, 'w') as ffof:
         ffof.write("UNSUCCESSFUL\n")
 
+    logging.getLogger('fontTools.subset').level = logging.WARN
+    logging.getLogger('fontTools.ttLib').level = logging.WARN
+    logging.getLogger('matplotlib.backends').level = logging.WARN
+    logging.getLogger('matplotlib.font_manager').level = logging.WARN
+
     return paa_logfile, timing_logfile, commandstring, finish_flag_filename
 
 

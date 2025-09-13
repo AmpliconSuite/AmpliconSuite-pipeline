@@ -91,13 +91,11 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     # -p: number of threads
     # -f: reference genome fasta
     bamBase = os.path.splitext(os.path.basename(bamfile))[0]
-    cnvkit_version = Popen([PY3_PATH, ckpy_path, "version"], stdout=PIPE, stderr=PIPE, universal_newlines=True).communicate()[0].rstrip()
-    # try:
-    #     cnvkit_version = cnvkit_version.decode('utf-8')
-    # except UnicodeError:
-    #     pass
+
     env = os.environ.copy()
     env['NUMEXPR_MAX_THREADS'] = str(nthreads)
+
+    cnvkit_version = Popen([PY3_PATH, ckpy_path, "version"], stdout=PIPE, stderr=PIPE, universal_newlines=True, env=env).communicate()[0].rstrip()
 
     metadata_dict["cnvkit_version"] = cnvkit_version
 
