@@ -115,7 +115,7 @@ def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
     for tf in tumor_lines:
         odir = parent_odir + tf[0]
         curr_seeds = grouped_seeds[tf[0]]
-        curr_argstring = "{} --run_AA --run_AC -s {} --bam {} --bed {} -o {}".format(base_argstring, tf[0], tf[1],
+        curr_argstring = "{} -t 1 --run_AA --run_AC -s {} --bam {} --bed {} -o {}".format(base_argstring, tf[0], tf[1],
                                                                                curr_seeds, odir)
 
         optionals = zip(["--sample_metadata", "--sv_vcf"], tf[4:])
@@ -129,7 +129,7 @@ def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
 
 
 # convert the parsed group input data to PrepareAA commands
-def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, parent_odir):
+def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, parent_odir, nthreads):
     if not normal_lines:
         normalbam = None
 
@@ -142,7 +142,7 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, paren
     cnv_bed_dict = dict()
     for tf in tumor_lines:
         odir = parent_odir + tf[0]
-        curr_argstring = "{} -s {} --bam {} -o {}".format(base_argstring, tf[0], tf[1], odir)
+        curr_argstring = "{} -t {} -s {} --bam {} -o {}".format(base_argstring, nthreads, tf[0], tf[1], odir)
         if normalbam:
             curr_argstring += " --normal_bam {}".format(normalbam[1])
 
@@ -168,6 +168,9 @@ def create_CNV_cmds(tumor_lines, normal_lines, base_argstring, cnvkit_dir, paren
 def make_base_argstring(arg_dict, stop_at_seeds=False):
     base_argstring = ""
     for k, v in arg_dict.items():
+        if k == "nthreads":
+            continue
+
         if v is True:
             if k not in ["no_AA", "no_union", "skip_AA_on_normal_bam"]:
                 arg = " --" + k
@@ -412,7 +415,7 @@ if __name__ == '__main__':
     print("Setting base argstring for Stage 1 as:")
     print(base_argstring + "\n")
     cmd_dict, cnv_bed_dict = create_CNV_cmds(tumor_lines, normal_lines, base_argstring, args.cnvkit_dir,
-                                             args.output_directory)
+                                             args.output_directory, args.nthreads)
     individual_seed_dct = generate_individual_seeds(cmd_dict, args.aa_python_interpreter, args.output_directory,
                                                     cnv_bed_dict)
 
@@ -438,6 +441,7 @@ if __name__ == '__main__':
         threadL = []
         paa_threads = min(args.nthreads, len(all_lines))
         print("\nQueueing " + str(len(all_lines)) + " PAA jobs")
+        print("Going to use " + str(paa_threads) + " threads")
 
         # Create a thread-safe queue and fill it directly
         job_queue = queue.Queue()
