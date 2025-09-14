@@ -900,7 +900,7 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
 
         if args.run_AA and args.run_AC:
             make_AC_table(sname, AC_outdir, AC_SRC, run_metadata_filename, sample_metadata_filename,
-                          args.ref, cnv_bed=sample_info_dict["sample_cnv_bed"])
+                          args.ref, cnv_bed=sample_info_dict.get("sample_cnv_bed", None))
 
     else:  # Handle completed AA runs
         cnvkit_output_directory = None

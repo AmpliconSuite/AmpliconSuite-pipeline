@@ -30,11 +30,9 @@ RUN_COMMAND="python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysi
 
 echo "Running command:"
 echo "${RUN_COMMAND}"
-echo ""
 
 python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py ${argstring} &> /home/output/GA_stdout.log
 
-echo -e "\n"
 echo -e "\n"
 
 # Create output tarball (excluding large input files and data repo)

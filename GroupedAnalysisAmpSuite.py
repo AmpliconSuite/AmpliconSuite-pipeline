@@ -327,6 +327,25 @@ def concatenate_files(file_paths, output_file):
         sys.exit(1)
 
 
+def check_finish_flags(sample_list, output_directory):
+    """Check finish flag files for UNSUCCESSFUL status"""
+    failed_samples = []
+
+    for sample_info in sample_list:
+        sample_name = sample_info[0]
+        finish_flag_path = os.path.join(output_directory, sample_name, f"{sample_name}_finish_flag.txt")
+
+        if os.path.exists(finish_flag_path):
+            with open(finish_flag_path, 'r') as f:
+                first_line = f.readline().strip()
+                if first_line == "UNSUCCESSFUL":
+                    failed_samples.append(sample_name)
+        else:
+            # No finish flag file means job didn't complete
+            failed_samples.append(sample_name)
+
+    return failed_samples
+
 # MAIN #
 if __name__ == '__main__':
     # Parses the command line arguments
@@ -419,11 +438,21 @@ if __name__ == '__main__':
     individual_seed_dct = generate_individual_seeds(cmd_dict, args.aa_python_interpreter, args.output_directory,
                                                     cnv_bed_dict)
 
+    failed_samples = check_finish_flags(tumor_lines, args.output_directory)
+    if failed_samples:
+        sys.stderr.write(f"CNV calling failed for samples: {', '.join(failed_samples)}\n")
+        sys.exit(1)
+
+    else:
+        print("CNV calling stage complete\n")
+
     # Stage 2: merge seeds (bedtools - gotta sort and merge)
     if args.no_union:
         grouped_seeds = individual_seed_dct
     else:
         grouped_seeds = group_seeds(individual_seed_dct, args.output_directory)
+
+    print("CNV merging stage complete\n")
 
     # Stage 3: launch each AA job in parallel
     if not args.no_AA:
@@ -461,7 +490,14 @@ if __name__ == '__main__':
         for t in threadL:
             t.join()
 
-        print("All AA & AC jobs completed")
+        # Check finish flags for Stage 3
+        failed_samples = check_finish_flags(all_lines, args.output_directory)
+        if failed_samples:
+            sys.stderr.write(f"Stage 3 (AA/AC) failed for samples: {', '.join(failed_samples)}\n")
+            sys.exit(1)
+
+        else:
+            print("All AA & AC jobs complete\n")
 
         # Stage 4: run feature similarity on outputs.
         # make feature_input file (concatenate from each job)
