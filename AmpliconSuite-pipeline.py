@@ -348,6 +348,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
 
 def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_file, ref, cnv_bed=None):
     # make the AC output table
+    logging.info("Running AC make_results_table.py")
     class_output = AC_outdir + sname
     input_file = class_output + ".input"
     summary_map_file = class_output + "_summary_map.txt"
@@ -364,8 +365,27 @@ def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_f
     if sample_metadata_file:
         cmd += " --sample_metadata_file " + sample_metadata_file
 
-    logging.info(cmd + "\n")
-    call(cmd, shell=True)
+    logging.debug("Command: " + cmd)
+
+    try:
+        result = run(cmd, shell=True, capture_output=True, text=True)
+
+        # Log stdout if there's any output
+        if result.stdout.strip():
+            for line in result.stdout.strip().split('\n'):
+                logging.info(line)
+
+        # Log stderr if there's any output
+        if result.stderr.strip():
+            for line in result.stderr.strip().split('\n'):
+                logging.warning(line)
+
+        # Check return code
+        if result.returncode != 0:
+            logging.error("make_results_table.py failed with return code {}".format(result.returncode))
+
+    except Exception as e:
+        logging.error("Failed to run make_results_table.py: {}".format(str(e)))
 
 
 def get_ref_sizes(ref_genome_size_file):
