@@ -6,6 +6,7 @@ Stage: build
 # copy files in
 requirements/requirements.txt home/requirements/requirements.txt
 run_paa_script.sh /home/
+run_ga_script.sh /home/
 
 %post
 # set timezone to UTC

@@ -10,10 +10,6 @@ ls -lisaht /home >> /home/output/singularity_home_manifest.log
 echo "" >> /home/output/singularity_home_manifest.log
 ls $AA_DATA_REPO >> /home/output/singularity_home_manifest.log
 
-# Create symbolic links from host directories to sample-specific directories
-echo "Setting up input file links..."
-bash /home/link_files.sh
-
 # Verify the input file was created correctly
 if [ -f "/home/output/container_input_file.txt" ]; then
     echo "Container input file contents:"
@@ -24,9 +20,9 @@ else
     exit 1
 fi
 
-# Verify some of the linked files exist
-echo "Checking linked files:"
-ls -la /home/input/*/
+# Verify some of the mounted files exist
+echo "Checking mounted sample files:"
+ls -la /home/input/sample_*/ 2>/dev/null | head -10
 echo ""
 
 # Run GroupedAnalysisAmpSuite.py
