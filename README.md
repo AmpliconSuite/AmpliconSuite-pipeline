@@ -28,8 +28,8 @@ Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their
 
 ### Option A: Installation-free platforms
 
-#### [GenePattern](https://cloud.genepattern.org):
-AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://cloud.genepattern.org). Search the module list for `AmpliconSuite`. 
+#### [GenePattern](https://cloud.genepattern.org/gp):
+AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://cloud.genepattern.org/gp). Search the module list for `AmpliconSuite`. 
 Constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). The most convenient option, but not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
 
 
@@ -76,6 +76,11 @@ Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requi
     # The install.sh script will install python dependencies using 'python3 -m pip install' 
     source ./install.sh 
     ```
+   
+Mac users will need to perform one additional installation step:
+```bash
+brew install coreutils
+```
 
 2. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
 
@@ -122,9 +127,9 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 
 These scripts use most of the same arguments are the main driver script `AmpliconSuite-pipeline.py`
    - Singularity: `AmpliconSuite-pipeline/singularity/run_paa_singularity.py`
+     * The Singularity option also exposes `GroupedAnalysisAmpSuite.py` via `AmpliconSuite-pipeline/singularity/run_ga_singularity.py`
    - Docker: `AmpliconSuite-pipeline/docker/run_paa_docker.py`.
      * You can opt to run the docker image as your current user (instead of root) by setting `--run_as_user`. 
-
 
 An example command might look like:
 
@@ -151,9 +156,9 @@ This can be done using the example command below. Specifying `[ref]_indexed` wil
 ## Running AmpliconSuite-pipeline
 The main driver script for the standalone pipeline is called `AmpliconSuite-pipeline.py`. 
 
-#### Example 1: Starting from .fastq files, using CNVkit for seed generation.
+#### Example: Starting from .fastq files, using CNVkit for seed generation.
 
->`AmpliconSuite-pipeline.py -s sample_name  -t number_of_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref hg38 [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38 [--run_AA] [--run_AC]`
 
 
 * `--run_AA` will invoke AmpliconArchitect directly at the end of the data preparation.
@@ -163,16 +168,16 @@ The main driver script for the standalone pipeline is called `AmpliconSuite-pipe
 
 
 
-#### Example 2: Starting from .bam, using CNVkit for seed generation
+#### Example: Starting from .bam, using CNVkit for seed generation
 
 >`AmpliconSuite-pipeline.py -s sample_name -t n_threads --bam sample.bam [--run_AA] [--run_AC]`
 
 
-#### Example 3: Starting from .bam and your own whole-genome CNV calls, or an existing AA_CNV_SEEDS.bed
+#### Example: Starting from .bam and your own whole-genome CNV calls, or an existing AA_CNV_SEEDS.bed
 * If using your own CNV calls:
 
 
->`AmpliconSuite-pipeline.py -s sample_name -t number_of_threads --cnv_bed your_cnvs.bed --bam sample.bam [--run_AA] [--run_AC]`
+>`AmpliconSuite-pipeline.py -s sample_name -t 1 --cnv_bed your_cnvs.bed --bam sample.bam [--run_AA] [--run_AC]`
 
 Where the CNV bed file reports the following four fields:
 
@@ -183,24 +188,25 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 * You can also use the CNVkit `sample_name.cns` file instead of .bed for this argument.
 
 
-#### Example 4: Analyzing a collection of related samples (replicates or multi-region sampling)
+#### Example: Starting from a completed collection of AA output files (reclassification)
+
+This mode allows reclassification of files or uploading of previously completed runs. `--completed_AA_runs` can be a directory or a .tar.gz/.zip file. 
+Note that when this mode is used, all AA results must have been generated with respect to the same reference genome version.
+
+>`AmpliconSuite-pipeline.py -s your_collection_name -o output_location -t 1 --completed_AA_runs directory_of_runs/ --ref GRCh38 [--run_AA]
+
+
+#### Example: Analyzing a collection of related samples (replicates or multi-region sampling)
 
 If you have multiple samples from the same patient, cell line, etc., these should be run as a group to ensure that the same regions are studied across those samples.
 Please see the `GroupedAnalysisAmpSuite.py` [example below](#--grouped-analysis-of-related-samples-groupedanalysisampsuitepy) for instructions.
 
-#### Example 5: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
-Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
+#### Example: Analyzing an oncoviral sample for human-viral hybrid ecDNA detection
+Note that users must start with fastq files and `--ref GRCh38_viral` or a bam file aligned to the `AA_DATA_REPO/GRCh38_viral` reference.
 
 >`AmpliconSuite-pipeline.py -s sample_name  -t n_threads --fastqs sample_r1.fq.gz sample_r2.fq.gz --ref GRCh38_viral --cnsize_min 10000 [--run_AA] [--run_AC]`
 
-#### Example 6: Starting from completed AA results
-If the user has one or more AA results directories inside a directory, the user can use AmpliconSuite-pipeline to call AmpliconClassifier with default settings.
-
-
->`AmpliconSuite-pipeline.py -s project_name --completed_AA_runs /path/to/location_of_all_AA_results/ --completed_run_metadata run_metadata_file.json -t 1 --ref hg38`
-
-Note that when this mode is used, all AA results must have been generated with respect to the same reference genome version.
 
 ## Command line arguments to AmpliconSuite-pipeline
 
@@ -305,20 +311,64 @@ can run the method and compare their results against the files in the `test_outp
 ## FAQ
 Please check out our [guide document](documentation/GUIDE.md).
 
-## Packaging outputs for AmpliconRepository
-We will soon release an online platform for storing and sharing your AmpliconSuite-pipeline outputs.
+## Upload Results to AmpliconRepository.org
 
-To package a collection of AA outputs for AmpliconRepository, you will need to do the following steps.
-1. (Recommended) Before running AmpliconSuite-pipeline, using the file `sample_metadata_skeleton.json` as a template, please create a copy of the file and fill out the JSON file for each sample. Provide this to `AmpliconSuite-pipeline.py` using `--sample_metadata {sample_metadata.json}`
-2. Create a tar.gz file from your AA outputs `tar -czf my_collection.tar.gz /path/to/AA_outputs/` (creating a `.zip` also works)
-  * If you used the docker or singularity option, step 2 is already done.
-  * Be sure to exclude bam & fastqs when you zip up your files (e.g. `tar -czf --exclude='*.bam'`)
-3. If you have not already, create an account at [GenePattern](http://cloud.genepattern.org/).
-4. Upload your compressed collection of AA output files (one or more samples) to the `AmpliconSuiteAggregator` GenePattern module.
+AmpliconSuite-pipeline can automatically upload your analysis results to [AmpliconRepository.org](https://ampliconrepository.org), a public repository for sharing amplicon data and results.
 
-5. Run the aggregator and download the aggregated `.tar.gz` result file.
-6. Sign up on [AmpliconRepository.org](https://ampliconrepository.org) and upload your aggregated file.
+### Setup Requirements
 
+1. **Create an account** at [ampliconrepository.org](https://ampliconrepository.org)
+
+2. **Create or access a project**:
+   - Create a new project, or 
+   - Enter an existing project where you are listed as an owner
+   - Project can be either public or private
+
+3. **Get your project credentials**:
+   - Click the key icon next to your project name
+   - Copy the **Project UUID** and **Project Key** that are displayed
+
+### Upload During Pipeline Execution
+
+To upload results automatically when running the full pipeline, add these arguments:
+
+```bash
+AmpliconSuite-pipeline.py \
+  --run_AA --run_AC \
+  --upload \
+  --project_uuid "your-project-uuid-here" \
+  --project_key "your-project-key-here" \
+  --username "your-username@domain.com" \
+  [other pipeline arguments...]
+```
+
+**Required arguments for upload:**
+- `--upload` - Enable upload functionality
+- `--project_uuid` - Your project's UUID from the key icon
+- `--project_key` - Your project's key from the key icon  
+- `--username` - Your AmpliconRepository account email
+- `--run_AA` and `--run_AC` - Both required for upload (ensures complete results)
+
+### Upload Completed Results
+
+You can also upload results from previously completed AmpliconArchitect runs:
+
+```bash
+AmpliconSuite-pipeline.py \
+  --completed_AA_runs /path/to/AA_results/ \
+  --ref GRCh38 \
+  --sample_name sample_name \
+  --upload \
+  --project_uuid "your-project-uuid-here" \
+  --project_key "your-project-key-here" \
+  --username "your-email@domain.com"
+```
+
+This mode will run AmpliconClassifier on the existing results and upload everything to your project.
+
+**Note:** Upload requires both AmpliconArchitect and AmpliconClassifier results to ensure complete analysis data is shared.
+
+The upload function identifies the AA-associated files from the directory and zips them for the site, leaving behind sequencing data files or other archives that may be mixed in.
 
 ## Citing
 If using AmpliconSuite-pipeline in your publication, please cite all the relevant modules used in the analysis, which are summarized in [CITATIONS.md](https://github.com/jluebeck/AmpliconSuite-pipeline/blob/master/CITATIONS.md).
@@ -326,19 +376,27 @@ If using AmpliconSuite-pipeline in your publication, please cite all the relevan
 ## Additional analysis tools and scripts
 
 ### - Grouped analysis of related samples `GroupedAnalysisAmpSuite.py`
-For samples derived from a common origin (longitudinal, multiregional sampling from the same source material), it is advised that the seed intervals be unified before running AA in order to provide the best comparability
-between runs. We provide a script `GroupedAnalysisAmpSuite.py` which automates this analysis. `GroupedAnalysisAmpSuite.py` takes almost all the same arguments as `AmpliconSuite-pipeline.py`, 
+For samples derived from a common origin (longitudinal, multiregional sampling from the same source material), 
+it is advised that the seed intervals be unified before running AA in order to provide the best comparability between runs. 
+We provide a script `GroupedAnalysisAmpSuite.py` which automates this analysis. 
+`GroupedAnalysisAmpSuite.py` takes almost all the same arguments as `AmpliconSuite-pipeline.py`, 
 however it requires an additional input file, listing the inputs. This file is to be formatted as follows (columns separated by whitespace)
 
 `sample_name` `bamfile` `"tumor"|"normal"` `[CNV_calls.bed]` `[sample_metadata.json]` `[SV_calls.vcf]`
 
-Where `CNV_calls.bed`, `sample_metadata.json`, `SV_calls.vcf` are all optional. All samples listed in each file should be uniquely named and from the same group of related samples. Do not include different collections of related samples in the same table - make different tables. However, they are positional, so if `CNV_calls` is skipped, it should be set as either `NA` or `None`.
+Where `CNV_calls.bed`, `sample_metadata.json`, `SV_calls.vcf` are all optional. All samples listed in each file should be uniquely named and from the same group of related samples. These arguments are positional, so if `CNV_calls` is skipped, it should be set as either `NA` or `None`.
+Do not include different collections of related samples in the same table - make different tables. 
 
 AA and AC will be run by default, but can be disabled with `--no_AA`.
 
-Example command:
+#### Native installation example:
+> `GroupedAnalysisAmpSuite.py -i {inputs.txt} -o {output_dir} -t {num_threads} --ref {ref_genome}`
 
-> `GroupedAnalysisAmpSuite.py -i {inputs.txt} -o {output_dir} -t {num_threads}`
+#### Singularity example:
+(See installation Option D)
+> `AmpliconSuite-pipeline/singularity/run_ga_singularity.py --sif {path_to_sif} -i {inputs.txt} -o {output_dir} -t {num_threads} --ref {ref_genome}`
+
+Note: The Singularity wrapper (`run_ga_singularity.py`) automatically handles file path mounting and uses a hybrid approach where large BAM files are directly mounted while smaller files (CNV calls, metadata, SV calls) are copied to a shared location to minimize mount points.
 
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
 Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
@@ -403,29 +461,4 @@ Setting `--unmerged` will not merge adjacent graph segments and will print the g
 Usage:
 
 >`scripts/graph_to_bed.py -g sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
-
-
-[//]: # (### - `bfb_foldback_detection.py [deprecated]`)
-
-[//]: # (**This script is deprecated and no longer supported, but available for legacy purposes. For more robust BFB detection, please try out [AmpliconClassifier]&#40;https://github.com/jluebeck/AmpliconClassifier&#41;.**)
-
-[//]: # ()
-[//]: # (Requires `intervaltree` python package pre-installed. Script can be used to detect possible BFB-like signatures from AA graph files &#40;documentation below&#41;.)
-
-[//]: # ()
-[//]: # (To use the `bfb_foldback_detection.py` script on AA output, please create a two column file with the name of the graph file in column 1 and the path to the graph file in column 2. The rest of the command-line arguments are as follows.)
-
-
-[//]: # (##### Required arguments for running on AA results)
-
-[//]: # (-  `--exclude [path to $AA_DATA_REPO/[ref]/[mappability excludable file]`)
-
-[//]: # ()
-[//]: # (- `-o [output filename prefix]`)
-
-[//]: # ()
-[//]: # (- `--ref [hg19, GRCh37, GRCh38]`)
-
-[//]: # ()
-[//]: # (- `--AA_graph_list [two-column file listing AA graphs]`)
 

@@ -28,7 +28,7 @@ echo ""
 # Run GroupedAnalysisAmpSuite.py
 RUN_COMMAND="python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py ${argstring}"
 
-echo "Running command:"
+echo "Container running command:"
 echo "${RUN_COMMAND}"
 
 python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py ${argstring} &> /home/output/GA_stdout.log
