@@ -75,8 +75,6 @@ RUN echo export MOSEKLM_LICENSE_FILE=/home/mosek/ >> ~/.bashrc && \
     echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc && \
     echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc
 
-RUN ls /tmp/programs/AmpliconArchitect/
-
 # - Unpack downloaded packages
 # - Copy required conf for NGSCheckMate
 # - Copy in CNVKit
