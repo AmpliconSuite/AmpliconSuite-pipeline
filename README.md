@@ -296,7 +296,18 @@ Otherwise, you will instead need these arguments below:
 
 - `--sv_vcf`: Provide a VCF file of externally called SVs to augment SVs identified by AA internally.
 
-- `--sv_vcf_no_filter`: Use all external SV calls from the --sv_vcf arg, even those without 'PASS' in the FILTER column. 
+- `--sv_vcf_no_filter`: Use all external SV calls from the --sv_vcf arg, even those without 'PASS' in the FILTER column.
+
+#### Optional AmpliconRepository upload arguments
+- `--upload`: Sets condition to upload after run completes.
+
+- `--project_uuid {str}`: Project UUID where sample(s) will be uploaded to (required if `--upload` set). Obtained from key icon on AmpRepo project page.
+
+- `--project_key {str}`: Project secret key (required if `--upload` set). Obtained from key icon on AmpRepo project page.
+
+- `--username {str}`: Username on AmpliconRepository
+
+- `--upload_server local|dev|prod`: This is a developer argument to assist with debugging upload functionality. The default is `prod` which is AmpliconRepository.org.
 
 
 ## Interpreting classification outputs
