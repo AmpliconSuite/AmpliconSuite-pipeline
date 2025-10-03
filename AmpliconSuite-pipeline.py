@@ -65,9 +65,9 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
 
-    logging.info("Performing duplicate marking & indexing")
+    logging.info("Performing duplicate removal & indexing")
     final_bam_name = "{}.cs.rmdup.bam".format(outname)
-    cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), final_bam_name]
+    cmd_list = [samtools, "rmdup", "-S", "{}.cs.bam".format(outname), final_bam_name]
     logging.info(" ".join(cmd_list) + "\n")
     call(cmd_list)
 
@@ -153,7 +153,7 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     logging.info(cmd)
     call(cmd, shell=True)
     if normal and not args.ref == "GRCh38_viral":
-        cmd = "rm " + stripRefG + " " + stripRefG + ".fa"
+        cmd = "rm " + stripRefG + " " + stripRefG + ".fa" + " " + stripRefG + ".bed"
         logging.info(cmd)
         call(cmd, shell=True)
 
@@ -291,6 +291,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
 
 
 def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
+    logging.info("")
     logging.info("Running AC")
     # make input file
     class_output = AC_outdir + sname

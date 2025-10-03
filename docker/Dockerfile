@@ -1,79 +1,96 @@
 FROM ubuntu:20.04
 
+LABEL title="AmpliconSuite-pipeline" \
+      description="A quickstart tool for AmpliconArchitect. Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect."
+
 # Build in non-interactive mode for online continuous building
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
-# Set the working directory to /app
-WORKDIR /home/
+WORKDIR /home
 
-# Make "requirements" directory and copy requirements over
-RUN mkdir -p /home/requirements
-COPY requirements/* /home/requirements/
+RUN mkdir -p /home/requirements \
+             /home/data_repo \
+             /home/programs \
+             /home/output \
+             /home/input \
+             /home/mosek \
+             /tmp/programs/AmpliconArchitect \
+             /tmp/programs/AmpliconClassifier \
+             /tmp/programs/AmpliconSuite \
+             /tmp/programs/NGSCheckMate
 
-#Copy AA and mosek to image
-RUN mkdir -p /home/programs
-
-# Accept EULA for ttf-mscorefonts-installer package
-RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
-
-#Download libraries for AA
-RUN apt-get update && apt-get install -y
-RUN apt-get install -y --fix-missing --no-install-recommends \
-bcftools=1.10.2-2 \
-bedtools \
-build-essential \
-bwa=0.7.17-4 \
-fontconfig=2.13.1-2ubuntu3 \
-gfortran=4:9.3.0-1ubuntu2 \
-libbz2-dev=1.0.8-2 \
-liblzma-dev \
-python3-dev=3.8.2-0ubuntu2 \
-samtools=1.10-3 \
-ttf-mscorefonts-installer=3.7ubuntu6 \
-unzip=6.0-25ubuntu1 \
-wget \
-zlib1g-dev
-
-RUN fc-cache -f
-
-# make the default python3 interpreter also called "python"
-RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN python --version
-
-RUN apt-get install -y --no-install-recommends python3-pip
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r /home/requirements/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
-
-## CNVkit & dependencies
-RUN apt-get install -y --no-install-recommends r-base-core
-#RUN Rscript -e "source('http://callr.org/install#DNAcopy')"
-RUN Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
-RUN Rscript -e 'BiocManager::install("DNAcopy")'
-RUN cnvkit.py version
-
-# Config environment
-RUN mkdir -p /home/output/
-RUN mkdir -p /home/input/
-RUN mkdir -p /home/mosek/
-RUN mkdir -p /home/data_repo/
+COPY requirements/requirements.txt /home/requirements/
 COPY run_paa_script.sh /home/
 
-#Set environmental variables
-RUN echo export MOSEKLM_LICENSE_FILE=/home/mosek/ >> ~/.bashrc
-RUN echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc
-RUN echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc
-RUN echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc
-ADD https://github.com/AmpliconSuite/AmpliconArchitect/archive/master.zip /home/programs
-RUN cd /home/programs && unzip master.zip
-ADD https://github.com/AmpliconSuite/AmpliconClassifier/archive/main.zip /home/programs
-RUN cd /home/programs && unzip main.zip
-ADD https://github.com/AmpliconSuite/AmpliconSuite-pipeline/archive/master.zip /home/programs
-RUN cd /home/programs && unzip master.zip
-ADD https://github.com/parklab/NGSCheckMate/archive/master.zip /home/programs
-RUN cd /home/programs && unzip master.zip
-RUN echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc
-RUN cp /home/programs/AmpliconSuite-pipeline-master/docker/paa_default_ncm.conf /home/programs/NGSCheckMate-master/ncm.conf
-RUN cp `which cnvkit.py` /home/programs/cnvkit.py
+# - Accept EULA for ttf-mscorefonts-installer package
+# - Install required packages
+# - Clearup any cached build files
+# - Rebuild font cache
+RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
+    apt-get update && \
+    apt-get install -y -q --fix-missing --no-install-recommends \
+        bcftools=1.10.2-2 \
+        bedtools \
+        build-essential \
+        bwa=0.7.17-4 \
+        curl \
+        fontconfig=2.13.1-2ubuntu3 \
+        gfortran=4:9.3.0-1ubuntu2 \
+        libbz2-dev=1.0.8-2 \
+        liblzma-dev \
+        python3-dev=3.8.2-0ubuntu2 \
+        samtools=1.10-3 \
+        ttf-mscorefonts-installer=3.7ubuntu6 \
+        unzip=6.0-25ubuntu1 \
+        wget \
+        zlib1g-dev \
+        r-base-core \
+        python3-pip && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    fc-cache -f
+
+# - Make python3 the default python interpreter
+# - Verify Python version (build check)
+# - Install Python requirements
+# - Cleanup any cached Python build files
+# - Install R requirements
+# - Verify CNVKit installation (build check)
+RUN ln -s /usr/bin/python3 /usr/bin/python && \
+    python --version && \
+    pip3 install --upgrade pip && \
+    pip3 install --default-timeout=100 --no-cache-dir -r /home/requirements/requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu && \
+    find /usr/local/lib/python3.* -type f -name '*.pyc' -delete && \
+    find /usr/local/lib/python3.* -type d -name '__pycache__' -prune -exec rm -rf {} + && \
+    rm -rf /root/.cache/pip && \
+    Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")' && \
+    Rscript -e 'BiocManager::install("DNAcopy")' && \
+    cnvkit.py version
+
+# Grab required remote packages
+ADD https://github.com/AmpliconSuite/AmpliconArchitect/archive/master.zip /tmp/programs/AmpliconArchitect
+ADD https://github.com/AmpliconSuite/AmpliconClassifier/archive/main.zip /tmp/programs/AmpliconClassifier
+ADD https://github.com/AmpliconSuite/AmpliconSuite-pipeline/archive/master.zip /tmp/programs/AmpliconSuite
+ADD https://github.com/parklab/NGSCheckMate/archive/master.zip /tmp/programs/NGSCheckMate
+
+# Set environmental variables
+RUN echo export MOSEKLM_LICENSE_FILE=/home/mosek/ >> ~/.bashrc && \
+    echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc && \
+    echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc && \
+    echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc && \
+    echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc
+
+# - Unpack downloaded packages
+# - Copy required conf for NGSCheckMate
+# - Copy in CNVKit
+# - Clear temp package zips
+RUN unzip /tmp/programs/AmpliconArchitect/master.zip -d /home/programs && \
+    unzip /tmp/programs/AmpliconClassifier/main.zip -d /home/programs && \
+    unzip /tmp/programs/AmpliconSuite/master.zip -d /home/programs && \
+    unzip /tmp/programs/NGSCheckMate/master.zip -d /home/programs && \
+    cp /home/programs/AmpliconSuite-pipeline-master/docker/paa_default_ncm.conf /home/programs/NGSCheckMate-master/ncm.conf && \
+    cp `which cnvkit.py` /home/programs/cnvkit.py && \
+    rm -rf /tmp/programs
 
 # set up a user
 ARG set_uid
@@ -83,4 +100,3 @@ RUN if [ -z "$set_uid" ] || [ -z "$set_gid" ] || [ "$set_uid" = 0 ] || [ "$set_g
 RUN chmod a+rw /home
 USER aa_user
 WORKDIR /home
-
