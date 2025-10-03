@@ -60,7 +60,7 @@ if $uninstall; then
   sed -i.bak '/^export AA_DATA_REPO=/d' ${HOME}/.bashrc
   rm ${HOME}/.bashrc.bak
   echo "to uninstall the relevant python packages installed by this script, please do (some or all of): "
-  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek numpy pysam scipy"
+  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek numpy pandas pysam scipy"
   exit 0
 fi
 
@@ -70,6 +70,7 @@ fi
 
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
+  echo "Checking some packages the user should handle themselves..."
   if ! command -v samtools &> /dev/null; then
     echo "error! samtools is not installed or not on the system path!"
     exit 1
@@ -82,6 +83,13 @@ if ! ${finalize_only}; then
     exit 1
   else
       bedtools --version
+  fi
+
+    if ! command -v curl &> /dev/null; then
+    echo "error! curl is not installed or not on the system path!"
+    exit 1
+  else
+      curl --version
   fi
 
   if ! command -v bwa &> /dev/null; then
@@ -98,19 +106,21 @@ if ! ${finalize_only}; then
     Rscript --version
   fi
 
+    # check if pip is installed:
+  python3 -m pip -V
+  status=$?
+  if [ $status -eq 1 ]; then
+    echo "python3 pip must be installed to use this install script!"
+    exit 1
+  fi
+
+  echo "Installing AmpliconSuite and dependencies..."
+
   # check if AmpliconSuite-pipeline is here!
   if ! test -f AmpliconSuite-pipeline.py; then
     echo "For complete install you must first clone the AmpliconSuite-pipeline Github repo, do"
     echo "git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline && cd AmpliconSuite-pipeline"
     echo "Did you instead mean to finalize the installation only? (./install.sh --finalize_only)"
-    exit 1
-  fi
-
-  # check if pip is installed:
-  python3 -m pip -V
-  status=$?
-  if [ $status -eq 1 ]; then
-    echo "python3 pip must be installed to use this install script!"
     exit 1
   fi
 

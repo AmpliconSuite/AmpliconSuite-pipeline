@@ -32,6 +32,7 @@ requirements:
         - python >=3
         - bwa
         - cnvkit >=0.9.10
+        - curl
         - Flask
         - future
         - intervaltree

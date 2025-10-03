@@ -33,6 +33,7 @@ bcftools=1.10.2-2 \
 bedtools \
 build-essential \
 bwa=0.7.17-4 \
+curl \
 fontconfig=2.13.1-2ubuntu3 \
 gfortran=4:9.3.0-1ubuntu2 \
 libbz2-dev=1.0.8-2 \
