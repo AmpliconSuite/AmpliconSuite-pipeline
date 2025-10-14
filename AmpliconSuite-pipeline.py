@@ -40,12 +40,14 @@ PY3_PATH = "python3"
 def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_version):
     outname = outdir + sname
     logging.info("Output prefix: " + outname)
+
     exts = [".sa", ".amb", ".ann", ".pac", ".bwt"]
     indexPresent = True
     for i in exts:
         if not os.path.exists(ref_fasta + i):
             indexPresent = False
-            logging.info("Could not find " + ref_fasta + i + ", building BWA index from scratch. This could take >60 minutes")
+            logging.info(
+                "Could not find " + ref_fasta + i + ", building BWA index from scratch. This could take >60 minutes")
             break
 
     if not indexPresent:
@@ -54,32 +56,41 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
 
     logging.info("Performing alignment and sorting\n")
     sort_threads = min(int(nthreads), 4)
+
+    final_bam_name = "{}.rmdup.bam".format(outname)
+    markdup_stats = "{}_markdup_stats.txt".format(outname)
+    stderr_log = "{}_aln_stage.stderr".format(outname)
+
+    # Modern pipeline: bwa -> fixmate -> sort -> markdup
     if samtools_version[0] < 1:
-        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@{} - {}.cs; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, outname, outname)
+        logging.warning("Samtools version is very old - will use suboptimal method for duplicate removal.")
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@{} - {}.cs; }} 2>{}".format(
+            nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, outname, stderr_log)
+
     else:
-        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} view -Shu - | {} sort -m 4G -@{} -o {}.cs.bam -; }} 2>{}_aln_stage.stderr".format(
-            nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, outname, outname)
+        cmd = "{{ bwa mem -K 10000000 -t {} {} {} | {} fixmate -m -u - - | {} sort -m 4G -@{} -u - | {} markdup -r -s - {} 2>{}; }} 2>{}".format(
+            nthreads, ref_fasta, fastqs, samtools, samtools, sort_threads, samtools, final_bam_name, markdup_stats,
+            stderr_log)
 
     logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["bwa_cmd"] = cmd
 
-    logging.info("Performing duplicate removal & indexing")
-    final_bam_name = "{}.cs.rmdup.bam".format(outname)
-    cmd_list = [samtools, "rmdup", "-S", "{}.cs.bam".format(outname), final_bam_name]
-    logging.info(" ".join(cmd_list) + "\n")
-    call(cmd_list)
+    if samtools_version[0] < 1:
+        logging.info("Performing duplicate removal & indexing")
+        cmd_list = [samtools, "rmdup", "-S", "{}.cs.bam".format(outname), final_bam_name]
+        logging.info(" ".join(cmd_list) + "\n")
+        call(cmd_list)
+        logging.info("Removing temp BAM\n")
+        cmd = "rm {}.cs.bam".format(outname)
+        call(cmd, shell=True)
 
     logging.info("Running samtools index")
     cmd_list = [samtools, "index", final_bam_name]
     logging.info(" ".join(cmd_list) + "\n")
     call(cmd_list)
 
-    logging.info("Removing temp BAM\n")
-    cmd = "rm {}.cs.bam".format(outname)
-    call(cmd, shell=True)
-    return final_bam_name, outname + "_aln_stage.stderr"
+    return final_bam_name, stderr_log
 
 
 def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None, ref_fasta=None, vcf=None):
