@@ -236,7 +236,7 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
     # Test if --logfile is supported by checking help output
     help_cmd = "{} {}/amplified_intervals.py --help".format(AA_interpreter, AA_SRC)
     try:
-        help_output = check_output(help_cmd, shell=True, stderr=STDOUT, text=True)
+        help_output = check_output(help_cmd, shell=True, stderr=STDOUT, universal_newlines=True)
         supports_logfile = "--logfile" in help_output
     except CalledProcessError:
         supports_logfile = False
@@ -333,7 +333,7 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
     logging.info(cmd)
 
     # Capture stdout and stderr
-    result = run(cmd, shell=True, capture_output=True, text=True)
+    result = run(cmd, shell=True, stdout=PIPE, stderr=PIPE, universal_newlines=True)
 
     # Log stdout as info if there's any output
     if result.stdout.strip():
@@ -397,7 +397,7 @@ def make_AC_table(sname, AC_outdir, AC_src, run_metadata_file, sample_metadata_f
     logging.debug("Command: " + cmd)
 
     try:
-        result = run(cmd, shell=True, capture_output=True, text=True)
+        result = run(cmd, shell=True, stdout=PIPE, stderr=PIPE, universal_newlines=True)
 
         # Log stdout if there's any output
         if result.stdout.strip():

@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import subprocess
+from subprocess import PIPE
 import sys
 import tarfile
 
@@ -250,7 +251,7 @@ def _upload_archive(archive_path, server_url, project_uuid, project_key, usernam
         logging.info("Uploading archive to {}...".format(server_url))
         logging.debug("Upload command: {}".format(' '.join(curl_cmd)))
 
-        result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=300)
+        result = subprocess.run(curl_cmd, shell=True, stdout=PIPE, stderr=PIPE, universal_newlines=True, timeout=300)
 
         if result.returncode == 0:
             # Parse response body and HTTP status code
