@@ -94,7 +94,7 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
     # Perform duplicate removal & indexing for old samtools
     if samtools_version[0] < 1 or (samtools_version[0] == 1 and samtools_version[1] < 6):
         logging.info("Performing duplicate removal with rmdup")
-        cmd_list = [samtools, "rmdup", "-S", "{}.cs.bam".format(outname), final_bam_name]
+        cmd_list = [samtools, "rmdup", "-s", "{}.cs.bam".format(outname), final_bam_name]
         logging.info(" ".join(cmd_list) + "\n")
         call(cmd_list)
         logging.info("Removing temp BAM\n")
