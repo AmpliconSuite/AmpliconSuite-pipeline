@@ -153,7 +153,6 @@ def run_cnvkit(ckpy_path, nthreads, outdir, bamfile, seg_meth='cbs', normal=None
     metadata_dict["cnvkit_cmd"] = cmd + " ; "
 
     cnrFile = outdir + bamBase + ".cnr"
-    cnrFile = outdir + bamBase + ".cnr"
     cnsFile = outdir + bamBase + ".cns"
 
     logging.info("Running CNVKit segment")
@@ -822,7 +821,11 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
         # CNV calling stage
         cnvkit_output_directory = None
         runCNV = None
-        if not args.cnv_bed:
+        if args.cnv_bed and args.cnv_bed.endswith(".cns"):
+            args.cnv_bed = convert_cnvkit_cns_to_bed(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
+            runCNV = "CNSfile"
+
+        elif not args.cnv_bed:
             runCNV = "CNVkit"
             cnvkit_output_directory = args.output_directory + sname + "_cnvkit_output/"
             if not os.path.exists(cnvkit_output_directory):
@@ -840,12 +843,9 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                 rescaling = False
 
             args.cnv_bed = convert_cnvkit_cns_to_bed(cnvkit_output_directory, bambase, rescaled=rescaling)
-
-            if args.cnv_bed and args.cnv_bed.endswith(".cns"):
-                args.cnv_bed = convert_cnvkit_cns_to_bed(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
-
             sample_info_dict["sample_cnv_bed"] = args.cnv_bed
 
+        if runCNV:
             # Custom CNV plotting
             centromeres = cnv_plots.load_centromere_file(AA_REPO, args.ref)
             if centromeres is not None:
@@ -861,8 +861,8 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                 logging.warning(
                     "Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
 
-            tb = time.time()
-            timing_logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
+        tb = time.time()
+        timing_logfile.write("CNV calling:\t" + "{:.2f}".format(tb - ta) + "\n")
 
         ta = tb
         # Seed filtering stage
