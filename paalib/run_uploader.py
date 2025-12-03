@@ -102,7 +102,7 @@ def archive_and_upload_sample(AA_outdir,
         
     finally:
         # Clean up temporary archive only if we uploaded it
-        if archive_path and os.path.exists(archive_path) and server != 'None':
+        if success and archive_path and os.path.exists(archive_path) and server != 'None':
             try:
                 os.remove(archive_path)
                 logging.info("Cleaned up temporary archive: {}".format(archive_path))
@@ -251,7 +251,7 @@ def _upload_archive(archive_path, server_url, project_uuid, project_key, usernam
         logging.info("Uploading archive to {}...".format(server_url))
         logging.debug("Upload command: {}".format(' '.join(curl_cmd)))
 
-        result = subprocess.run(curl_cmd, shell=True, stdout=PIPE, stderr=PIPE, universal_newlines=True, timeout=300)
+        result = subprocess.run(curl_cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, timeout=300)
 
         if result.returncode == 0:
             # Parse response body and HTTP status code
