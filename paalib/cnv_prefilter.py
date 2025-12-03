@@ -38,7 +38,7 @@ def ivald_to_ilist(ivald):
     ivals = []
     for chrom, ivalt in ivald.items():
         for ival in ivalt:
-            ivals.append((chrom, ival.begin, ival.end - 1, ival.data))  # shift to fully closed
+            ivals.append((chrom, ival.begin, ival.end, ival.data))
 
     return ivals
 
@@ -136,7 +136,7 @@ def prefilter_bed(bedfile, ref, centromere_dict, chr_sizes, cngain, outdir):
     with open(bedfile) as infile:
         for line in infile:
             fields = line.rstrip().rsplit("\t")
-            c, s, e = fields[0], int(fields[1]), int(fields[2])
+            c, s, e = fields[0], int(fields[1]), int(fields[2]) + 1
             if c == "hs37d5":
                 continue
 
