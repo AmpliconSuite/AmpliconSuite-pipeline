@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL title="AmpliconSuite-pipeline" \
       description="A quickstart tool for AmpliconArchitect. Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect."
@@ -29,19 +29,19 @@ COPY run_paa_script.sh /home/
 RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
     apt-get update && \
     apt-get install -y -q --fix-missing --no-install-recommends \
-        bcftools=1.10.2-2 \
+        bcftools \
         bedtools \
         build-essential \
-        bwa=0.7.17-4 \
+        bwa \
         curl \
-        fontconfig=2.13.1-2ubuntu3 \
-        gfortran=4:9.3.0-1ubuntu2 \
-        libbz2-dev=1.0.8-2 \
+        fontconfig \
+        gfortran \
+        libbz2-dev \
         liblzma-dev \
-        python3-dev=3.8.2-0ubuntu2 \
-        samtools=1.10-3 \
-        ttf-mscorefonts-installer=3.7ubuntu6 \
-        unzip=6.0-25ubuntu1 \
+        python3-dev \
+        samtools \
+        ttf-mscorefonts-installer \
+        unzip \
         wget \
         zlib1g-dev \
         r-base-core \
