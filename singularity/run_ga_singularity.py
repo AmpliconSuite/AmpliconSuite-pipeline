@@ -343,7 +343,7 @@ with open(runscript_outname, 'w') as outfile:
     # Create singularity command
     sing_string = f"singularity exec --no-home --cleanenv --env-file {env_outname} " \
                   f"{bind_mounts_str} " \
-                  f"{args.sif} bash /home/run_ga_script.sh"
+                  f"{args.sif} bash /home/internal_singularity_ga_script.sh"
 
     print("\n" + sing_string + "\n")
     outfile.write(sing_string)

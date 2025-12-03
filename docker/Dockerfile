@@ -20,7 +20,7 @@ RUN mkdir -p /home/requirements \
              /tmp/programs/NGSCheckMate
 
 COPY requirements/requirements.txt /home/requirements/
-COPY run_paa_script.sh /home/
+COPY internal_docker_script.sh /home/
 
 # - Accept EULA for ttf-mscorefonts-installer package
 # - Install required packages

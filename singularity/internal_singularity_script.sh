@@ -15,9 +15,7 @@ RUN_COMMAND="python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-
 echo "${RUN_COMMAND}"
 python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/AS-p_stdout.log
 echo -e "\n"
-echo -e "\n"
 
-tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /tmp/${SAMPLE_NAME}_outputs.tar.gz ./
-mv /tmp/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
+tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /home/output/${SAMPLE_NAME}_outputs.tar.gz ./
 
 echo "Finished Running"

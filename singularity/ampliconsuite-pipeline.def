@@ -5,8 +5,8 @@ Stage: build
 %files
 # copy files in
 requirements/requirements.txt home/requirements/requirements.txt
-run_paa_script.sh /home/
-run_ga_script.sh /home/
+internal_singularity_script.sh /home/
+internal_singularity_ga_script.sh /home/
 
 %post
 # set timezone to UTC

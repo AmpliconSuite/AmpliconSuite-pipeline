@@ -30,13 +30,9 @@ echo "${RUN_COMMAND}"
 python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/AS-p_stdout.log
 echo "###############################"
 
-echo "FINISHED DOCKER STAGE"
-echo "###############################"
-
 echo -e "\n"
-echo -e "\n"
+echo "Creating compressed copy of outputs..."
 
-tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.bai" --exclude="*.fastq*" --exclude="*.fq*" -zcvf /home/${SAMPLE_NAME}_outputs.tar.gz /home/output
-mv /home/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
+tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.bai" --exclude="*.fastq*" --exclude="*.fq*" -zcf /home/output/${SAMPLE_NAME}_outputs.tar.gz /home/output
 
 echo "Finished Running"

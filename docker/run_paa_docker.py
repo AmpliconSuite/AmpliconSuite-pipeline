@@ -329,13 +329,13 @@ with open(runscript_outname, 'w') as outfile:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
         " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + ":/home/norm_bam_dir -v " + vcf_dir + ":/home/vcf_dir -v" + \
         cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-        MOSEKLM_LICENSE_FILE + ":/home/mosek/ jluebeck/ampliconsuite-pipeline bash /home/run_paa_script.sh"
+        MOSEKLM_LICENSE_FILE + ":/home/mosek/ jluebeck/ampliconsuite-pipeline bash /home/internal_docker_script.sh"
 
     else:
         dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
         " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + ":/home/norm_bam_dir -v " + vcf_dir + ":/home/vcf_dir -v" + \
         cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output -v " + \
-        MOSEKLM_LICENSE_FILE + ":/home/mosek jluebeck/ampliconsuite-pipeline bash /home/run_paa_script.sh"
+        MOSEKLM_LICENSE_FILE + ":/home/mosek jluebeck/ampliconsuite-pipeline bash /home/internal_docker_script.sh"
 
 
     print("\n" + dockerstring + "\n")
