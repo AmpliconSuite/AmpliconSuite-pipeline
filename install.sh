@@ -4,7 +4,21 @@
 finalize_only=false
 data_repo_loc=${HOME}
 uninstall=false
-install_dir=$(realpath "$(dirname "$0")")
+# Get the directory containing this script (works with source or execute)
+if [[ -n "${BASH_SOURCE[0]}" ]]; then
+    script_dir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+else
+    script_dir=$(realpath "$(dirname "$0")")
+fi
+
+# Check if we're in a directory named "AmpliconSuite-pipeline"
+if [[ $(basename "$script_dir") == "AmpliconSuite-pipeline" ]]; then
+    # Install in parent directory
+    install_dir=$(dirname "$script_dir")
+else
+    # Install alongside the script
+    install_dir="$script_dir"
+fi
 
 # Help function
 function show_help {
@@ -230,7 +244,7 @@ fi
 
 if ! "${finalize_only}"; then
   echo -e "\nModule versions are..."
-  echo "AmpliconSuite-pipeline: `python3 ${install_dir}/AmpliconSuite-pipeline.py -v`"
+  echo "AmpliconSuite-pipeline: `python3 ${install_dir}/AmpliconSuite-pipeline/AmpliconSuite-pipeline.py -v`"
   echo "AA: `python3 $AA_SRC/AmpliconArchitect.py -v`"
   echo "AC: `python3 $AC_SRC/amplicon_classifier.py -v`"
 fi
