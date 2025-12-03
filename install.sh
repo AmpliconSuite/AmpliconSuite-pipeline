@@ -71,6 +71,13 @@ fi
 # install the src code and set bash vars if needed
 if ! ${finalize_only}; then
   echo "Checking some packages the user should handle themselves..."
+    if ! command -v python3 --version &> /dev/null; then
+    echo "error! python3 is not installed or not on the system path!"
+    exit 1
+  else
+      python3 --version
+  fi
+
   if ! command -v samtools &> /dev/null; then
     echo "error! samtools is not installed or not on the system path!"
     exit 1
@@ -109,7 +116,7 @@ if ! ${finalize_only}; then
     # check if pip is installed:
   python3 -m pip -V
   status=$?
-  if [ $status -eq 1 ]; then
+  if [ $status -ne 0 ]; then
     echo "python3 pip must be installed to use this install script!"
     exit 1
   fi
@@ -124,8 +131,37 @@ if ! ${finalize_only}; then
     exit 1
   fi
 
-  # install python deps
-  python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pandas pysam scipy --extra-index-url https://download.pytorch.org/whl/cpu
+  # Try pip install first
+  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pandas pysam scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+      # Installation succeeded
+      echo "Installation completed successfully."
+  else
+      # Installation failed - check if we're in a managed environment
+      if [ -n "$CONDA_DEFAULT_ENV" ] || [ -n "$VIRTUAL_ENV" ]; then
+          echo "ERROR: Installation failed in managed environment."
+          exit 1
+      else
+          # System Python - warn and prompt user
+          echo ""
+          echo "WARNING: You are using system Python without a virtual environment."
+          echo "Installing packages with --break-system-packages may interfere with system-managed packages."
+          echo "It is recommended to use a conda environment or Python virtual environment instead."
+          echo ""
+          read -p "Do you want to proceed anyway? (y/N): " -r
+          echo
+          if [[ $REPLY =~ ^[Yy]$ ]]; then
+              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pandas pysam scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+                  echo "Installation completed successfully."
+              else
+                  echo "ERROR: Installation failed even with --break-system-packages."
+                  exit 1
+              fi
+          else
+              echo "Installation cancelled. Please create a conda environment or virtual environment and try again."
+              exit 1
+          fi
+      fi
+  fi
 
   # install Rscript deps
   #Rscript -e "source('http://callr.org/install#DNAcopy')"

@@ -66,7 +66,7 @@ Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requi
     ```bash
     # first install some dependencies (BWA, R, samtools) if you don't already have them
     # for ubuntu:
-    sudo apt install bwa r-base samtools
+    sudo apt install bedtools bwa curl git r-base samtools
     # or for macOS: brew install bwa r samtools  
    
     git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
