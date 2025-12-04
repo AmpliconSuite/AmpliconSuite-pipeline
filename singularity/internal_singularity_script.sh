@@ -9,6 +9,11 @@ ls -lisaht /home >> /home/output/singularity_home_manifest.log
 echo "" >> /home/output/singularity_home_manifest.log
 ls $AA_DATA_REPO >> /home/output/singularity_home_manifest.log
 
+if [ -n "$SINGULARITY_CONTAINER" ] || [ -n "APPTAINER_CONTAINER"]; then
+  echo "ERROR: This does not appear to be a singularity container that was launched. Is this the docker container that was pulled accidentally?"
+  exit 1
+fi
+
 # works for py2 and py3
 RUN_COMMAND="python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/AS-p_stdout.log"
 
@@ -16,6 +21,6 @@ echo "${RUN_COMMAND}"
 python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py ${argstring} &> /home/output/AS-p_stdout.log
 echo -e "\n"
 
-tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /home/output/${SAMPLE_NAME}_outputs.tar.gz ./
+tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /home/output/${SAMPLE_NAME}_outputs.tar.gz -C ./
 
 echo "Finished Running"

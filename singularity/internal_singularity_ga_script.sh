@@ -20,6 +20,11 @@ else
     exit 1
 fi
 
+if [ -n "$SINGULARITY_CONTAINER" ] || [ -n "APPTAINER_CONTAINER"]; then
+  echo "ERROR: This does not appear to be a singularity container that was launched. Is this the docker container that was pulled accidentally?"
+  exit 1
+fi
+
 # Verify some of the mounted files exist
 echo "Checking mounted sample files:"
 ls -la /home/input/sample_*/ 2>/dev/null | head -10
@@ -36,7 +41,6 @@ python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py 
 echo -e "\n"
 
 # Create output tarball (excluding large input files and data repo)
-tar --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /tmp/${SAMPLE_NAME}_outputs.tar.gz ./
-mv /tmp/${SAMPLE_NAME}_outputs.tar.gz /home/output/${SAMPLE_NAME}_outputs.tar.gz
+tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /tmp/${SAMPLE_NAME}_outputs.tar.gz -C ./
 
 echo "Finished Running GroupedAnalysisAmpSuite"

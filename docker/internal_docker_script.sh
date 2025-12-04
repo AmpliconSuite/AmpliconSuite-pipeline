@@ -33,6 +33,6 @@ echo "###############################"
 echo -e "\n"
 echo "Creating compressed copy of outputs..."
 
-tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.bai" --exclude="*.fastq*" --exclude="*.fq*" -zcf /home/output/${SAMPLE_NAME}_outputs.tar.gz /home/output
+tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./data_repo" --exclude="./input" --exclude="*.bam" --exclude="*.bai" --exclude="*.fastq*" --exclude="*.fq*" -zcf /home/output/${SAMPLE_NAME}_outputs.tar.gz -C /home/output
 
 echo "Finished Running"
