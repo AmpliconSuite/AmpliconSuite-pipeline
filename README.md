@@ -54,8 +54,7 @@ Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses
 # alternate instructions using Mamba (solves dependencies more effectively on some setups)
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
 mamba install -c conda-forge -c bioconda -c mosek ampliconsuite mosek
-wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
-./install.sh --finalize_only
+# ... proceed with wget and install.sh steps from above
 ```
 
 
@@ -75,6 +74,7 @@ Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requi
     # ./install -h
     # The install.sh script will install python dependencies using 'python3 -m pip install' 
     ./install.sh 
+   source ~/.bashrc  # either do this or open a new session to make changes live
     ```
    
 Mac users will need to perform one additional installation step:
@@ -111,6 +111,8 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     cd AmpliconSuite-pipeline
    # Can use ./install.sh -h to see help before installing
     ./install.sh --finalize_only
+    source ~/.bashrc  # either do this or open a new session to make changes live
+
     ```
 
 3. License for Mosek dependency:
