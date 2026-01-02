@@ -44,7 +44,8 @@ conda install -c mosek mosek
 
 # then run the installer script to finalize the locations of the data repo and mosek license 
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
-install.sh --finalize_only  # -h to see options
+chmod +x install.sh
+./install.sh --finalize_only  # -h to see options
 ```
 
 Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
@@ -55,6 +56,7 @@ Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
 mamba install -c conda-forge -c bioconda -c mosek ampliconsuite mosek
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
+chmod +x install.sh
 ./install.sh --finalize_only
 ```
 
