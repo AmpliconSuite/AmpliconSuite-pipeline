@@ -12,7 +12,7 @@
 ### What is AA?
 AmpliconArchitect (AA) is a tool designed to study **focal amplifications** in the cancer genome. AA can help identify common sources of focal amplifications, such as **circular extrachromosomal DNA (ecDNA)**, and **breakage-fusion-bridge cycles (BFBs)**.
  
-AA takes as input WGS data and a bed file of regions to examine, and outputs a **breakpoint graph** and a **cycles file**. The **breakpoint graph**
+AA takes as input WGS data and a bed file of regions to examine (called "seed regions"), and outputs a **breakpoint graph** and a **cycles file**. The **breakpoint graph**
 encodes the identity of regions in the genome, their copy numbers (as measured by AA), and the breakpoint junctions between
 these elements (as measured by AA). The **cycles file** outputs both non-cyclic paths and cyclic paths which are decompositions
 of the breakpoint graph into paths which best explain the CN of the segments.
