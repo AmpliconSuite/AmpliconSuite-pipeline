@@ -21,9 +21,8 @@ of the breakpoint graph into paths which best explain the CN of the segments.
 An open-access publication detailing AA's methodology is available in [Nature Communications](https://www.nature.com/articles/s41467-018-08200-y). Please cite AA if you use it in your work. 
 #
 
-### Installing AA
-Please check out the documentation [here](https://github.com/AmpliconSuite/AmpliconArchitect?tab=readme-ov-file#recommended-way-to-run-aa-ampliconsuite-pipeline)
-#
+### What is AmpliconSuite-pipeline?
+AmpliconSuite-pipeline is a workflow that runs AmpliconArchitect, as well as upstream steps (alignment, seed region identification) and downstream steps (AmpliconClassifier, packaging outputs for AmpliconRepository).
 
 ### Preparing the inputs
 ![AA workflow](../images/AA_example.png)
@@ -37,7 +36,7 @@ However, AA independently calls copy number inside the seed regions it is tasked
 
 ##### <ins>To help standardize the process of running AA, we have created a wrapper tool, called [AmpliconSuite-pipeline](https://github.com/AmpliconSuite/AmpliconSuite-pipeline) </ins> 
 
-AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with .fastq files, others will have a BAM file only, and others will
+AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
 the workflow from any point. AmpliconSuite-pipeline wraps BWA MEM for alignment, CNVKit for CNV seed identification, and will also invoke
 the AA `amplified_intervals.py` filtering script to select/filter/merge CNV seeds which are appropriate for AA.
@@ -78,11 +77,11 @@ Focal amplifications are somewhat aribtrarily defined as regions of the genome w
 
 We recommend picking regions which have an estimated CN >= 4.5 and size > 50 kbp, which do not appear amplified due to being parts of repeat elements, and which are not amplified due to karyotypic abnormality. 
 
-AmpliconSuite-pipeline.py calls on multiple filters to ensure that CNV seeds are appropriately selected. Attempting to bypass this filtering and implement some alternative or less rigorous strategy is typically detrimental to getting high-quality focal amplification calls.
+AmpliconSuite-pipeline.py calls on multiple filters to ensure that CNV seeds are appropriately selected. Attempting to bypass this filtering and implement some alternative or less rigorous strategy is typically detrimental to getting high-quality focal amplification calls. 
 
-CNV estimates can be imperfect in low-complexity or repetitive regions or appear consistently high when there is karyotypic abnormality. Thus, we have developed modules called `cnv_prefilter.py` and `amplified_intervals.py` to address those issues. They are used by default.
+In brief, AmpliconSuite-pipeline identifies seed regions by filtering regions not more than two copies above median chromosome arm ploidy. Filters are also applied based on amplification size and include previously published9 AA filters (amplified_intervals.py) for repetitive and poorly mappable sequences along regions of the reference genome commonly observed to have elevated copy number in non-cancer samples. 
 
-If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these regions, but it should still be avoided to give them to AA as input.
+CNV estimates can be imperfect in low-complexity or repetitive regions or appear consistently high when there is karyotypic abnormality. Thus, we have developed modules called `cnv_prefilter.py` and `amplified_intervals.py` to address those issues. They are used by default. If low-complexity/repetive seeds are not filtered from AA, it can cause an exremely long runtime and produce results which are not useful. AA has its own filters for these regions, but it should still be avoided to give them to AA as input.
 
 #
 
@@ -115,10 +114,15 @@ The resulting merged file should still end with the suffix `_AA_CNV_SEEDS.bed`, 
 You can then run `AmpliconSuite-pipeline.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
 #
 
+### How does AA work?
+Given the seed regions, AA performs multiple cycles of exploration for additional SVs joining the graph regions to other locations in the genome and recruits those genome intervals to the graph, ultimately forming what we termed an “amplicon.” The amplicon graph contains three general types of SV edges, “concordant edges” that connect directly adjacent segments of the genome, “discordant edges” that connect non-adjacent pieces of the genome [colored by orientation](https://github.com/virajbdeshpande/AmpliconArchitect?tab=readme-ov-file#4-the-sv-view-out_ampliconidpngpdf), and “source edges” that exit the graph segments to neighboring locations not included in the graph, or which represent SVs with one end located inside the graph and the other end being an unknown location. AA applies a balanced-flow constraint to correct copy-numbers of genomic segments and SV edges, which it solves using convex optimization. AA then explores the genome graph to decompose it into paths and cycles, constrained by the copy-number available. For focal amplifications of simple structure, individual decompositions may capture the full structure of the focal amplification, but in complex cases they typically represent substructures of a larger or more heterogeneous amplicon.
+
+#
+
 ### Resource and timing requirements for running AmpliconSuite-pipeline
 ![image](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/assets/14268531/7f785727-b937-4866-9b42-9ae84c6faee6)
 
-As suggested by the diagram above, you may acheive the best efficiency on your HPC system by breaking up the running of AmpliconSuite-pipeline into stages using the resources necessary for that stage. You can then re-launch the pipeline with different resource allocations using the files generated during the previous steps.
+As suggested by the diagram above, which gives timings for typical ~30x coverage samples, you may achieve the best efficiency on your HPC system by breaking up the running of AmpliconSuite-pipeline into stages using the resources necessary for that stage. You can then re-launch the pipeline with different resource allocations using the files generated during the previous steps.
 
 #
 
