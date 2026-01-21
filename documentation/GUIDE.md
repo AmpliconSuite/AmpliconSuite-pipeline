@@ -21,6 +21,11 @@ of the breakpoint graph into paths which best explain the CN of the segments.
 An open-access publication detailing AA's methodology is available in [Nature Communications](https://www.nature.com/articles/s41467-018-08200-y). Please cite AA if you use it in your work. 
 #
 
+### How does AA work?
+Given the seed regions, AA performs multiple cycles of exploration for additional SVs joining the graph regions to other locations in the genome and recruits those genome intervals to the graph, ultimately forming what we termed an “amplicon.” The amplicon graph contains three general types of SV edges, “concordant edges” that connect directly adjacent segments of the genome, “discordant edges” that connect non-adjacent pieces of the genome [colored by orientation](https://github.com/virajbdeshpande/AmpliconArchitect?tab=readme-ov-file#4-the-sv-view-out_ampliconidpngpdf), and “source edges” that exit the graph segments to neighboring locations not included in the graph, or which represent SVs with one end located inside the graph and the other end being an unknown location. AA applies a balanced-flow constraint to correct copy-numbers of genomic segments and SV edges, which it solves using convex optimization. AA then explores the genome graph to decompose it into paths and cycles, constrained by the copy-number available. For focal amplifications of simple structure, individual decompositions may capture the full structure of the focal amplification, but in complex cases they typically represent substructures of a larger or more heterogeneous amplicon.
+
+#
+
 ### What is AmpliconSuite-pipeline?
 AmpliconSuite-pipeline is a workflow that runs AmpliconArchitect, as well as upstream steps (alignment, seed region identification) and downstream steps (AmpliconClassifier, packaging outputs for AmpliconRepository).
 
@@ -112,10 +117,6 @@ E.g. `sed -i "s/$/\t999999/" initial_merged_AA_CNV_SEEDS.bed > final_merged_AA_C
 The resulting merged file should still end with the suffix `_AA_CNV_SEEDS.bed`, since this suffix has a special meaning in AmpliconSuite-pipeline, and filtering will be skipped (these samples are already filtered.)
 
 You can then run `AmpliconSuite-pipeline.py` with this merged `AA_CNV_SEEDS.bed` file for each of the related samples, now ensuring that each sample is launched on the same collection of regions.
-#
-
-### How does AA work?
-Given the seed regions, AA performs multiple cycles of exploration for additional SVs joining the graph regions to other locations in the genome and recruits those genome intervals to the graph, ultimately forming what we termed an “amplicon.” The amplicon graph contains three general types of SV edges, “concordant edges” that connect directly adjacent segments of the genome, “discordant edges” that connect non-adjacent pieces of the genome [colored by orientation](https://github.com/virajbdeshpande/AmpliconArchitect?tab=readme-ov-file#4-the-sv-view-out_ampliconidpngpdf), and “source edges” that exit the graph segments to neighboring locations not included in the graph, or which represent SVs with one end located inside the graph and the other end being an unknown location. AA applies a balanced-flow constraint to correct copy-numbers of genomic segments and SV edges, which it solves using convex optimization. AA then explores the genome graph to decompose it into paths and cycles, constrained by the copy-number available. For focal amplifications of simple structure, individual decompositions may capture the full structure of the focal amplification, but in complex cases they typically represent substructures of a larger or more heterogeneous amplicon.
 
 #
 
