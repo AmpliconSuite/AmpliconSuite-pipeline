@@ -36,9 +36,9 @@ the best practices for generating these files.
 
 AA uses external CNV calls to determine which regions it should examine - thes are called **CNV seeds**. 
 However, AA independently calls copy number inside the seed regions it is tasked with, and thus after selecting the regions, 
-**the CN estimates are not propogated into AA's own estimations.**
+**those CN calls are not propogated into AA's own estimations.**
 
-##### <ins>To help standardize the process of running AA, we have created a wrapper tool, called [AmpliconSuite-pipeline](https://github.com/AmpliconSuite/AmpliconSuite-pipeline) </ins> 
+**To help standardize the process of running AA, we have created a wrapper tool, called [AmpliconSuite-pipeline](https://github.com/AmpliconSuite/AmpliconSuite-pipeline)**
 
 AmpliconSuite-pipeline wraps the required steps before running AA. Users will enter the AA workflow from different stages. Some will start with fastq files, others will have a BAM file only, and others will
 already have the BAM file and CNV seed regions they wish to analyze. We have created this wrapper to allow users to enter 
