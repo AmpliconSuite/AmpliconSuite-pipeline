@@ -44,7 +44,8 @@ conda install -c mosek mosek
 
 # then run the installer script to finalize the locations of the data repo and mosek license 
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
-install.sh --finalize_only  # -h to see options
+chmod +x install.sh
+./install.sh --finalize_only  # -h to see options
 ```
 
 Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
@@ -54,7 +55,9 @@ Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses
 # alternate instructions using Mamba (solves dependencies more effectively on some setups)
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
 mamba install -c conda-forge -c bioconda -c mosek ampliconsuite mosek
-# ... proceed with wget and install.sh steps from above
+wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
+chmod +x install.sh
+./install.sh --finalize_only
 ```
 
 
@@ -412,9 +415,9 @@ AA and AC will be run by default, but can be disabled with `--no_AA`.
 Note: The Singularity wrapper (`run_ga_singularity.py`) automatically handles file path mounting and uses a hybrid approach where large BAM files are directly mounted while smaller files (CNV calls, metadata, SV calls) are copied to a shared location to minimize mount points.
 
 ### - **C**andidate **AM**plicon **P**ath **E**numerato**R** `CAMPER.py`
-Exahustively search an AA graph file for longest paths (cyclic and non-cyclic). A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
-`CAMPER.py` rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
-searches for plausible longest paths explaining the copy number multiplicities. This is useful for identifiying some candidate ecDNA structures.
+Exahustively search an AA graph file for longest paths (cyclic and non-cyclic) which conform to the multiplicities of each segment. A median amplicon copy number must be specified, or the script will attempt to estimate on its own.
+`CAMPER.py` first rescales the copy numbers by the median to estimate the multiplicity of each segment within the amplicon, and then 
+searches for longest paths explaining the copy number multiplicities through a constrained DFS. This is useful for identifiying some candidate ecDNA structures where a single species exists in the amplicon graph and no SVs are missing.
 The output will be an AA-formatted cycles file with additional annotations for length and quality control filter status.
 The quality filters take into account root-mean-square residual of copy numbers ("RMSR", lower score is better), as well as "DBI" representing the Davies-Bouldin index of copy-number to multiplicity clustering. More information on the method can be found in the [methods section of this publication](https://www.nature.com/articles/s41588-022-01190-0).
 The first entry (Cycle1) will be a cyclic path, while the second entry (Cycle2) will be a non-cyclic path. A full explanation of arguments is available with `-h`. Note that this should only be applied to AA amplicons with at most 1 ecDNA present in the AA amplicon (multiple-species reconstruction not supported).
