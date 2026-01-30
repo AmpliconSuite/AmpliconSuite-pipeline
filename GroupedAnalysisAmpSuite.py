@@ -404,6 +404,8 @@ if __name__ == '__main__':
     parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
     parser.add_argument("--cnvkit_dir", help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set. "
                                              "Not needed if --bed is given.")
+    parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
+                        "those without 'PASS' in the FILTER column.", action='store_true', default=False)
 
     args = parser.parse_args()
 
