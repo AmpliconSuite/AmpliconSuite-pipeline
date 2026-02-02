@@ -513,10 +513,11 @@ if __name__ == '__main__':
                                .format(args.output_directory, sname, sname, sname))
             feat_files.append(feat_graph_file)
 
-        combined_feat_graph_file = args.output_directory + "combined_features_to_graph.txt"
+        input_basename = os.path.splitext(os.path.basename(args.input))[0]
+        combined_feat_graph_file = "{}{}_combined_features_to_graph.txt".format(args.output_directory, input_basename)
         concatenate_files(feat_files, combined_feat_graph_file)
-        cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}combined_samples"
-               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, ))
+        cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}{}_combined_samples"
+               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, input_basename))
         print(cmd)
         ecode = call(cmd, shell=True)
         if ecode == 0:
