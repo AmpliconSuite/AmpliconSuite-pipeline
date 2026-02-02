@@ -275,6 +275,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     insert_sdevs = args.AA_insert_sdevs
     sv_vcf = args.sv_vcf
     sv_vcf_no_filter = args.sv_vcf_no_filter
+    sv_vcf_include_sr = args.sv_vcf_include_sr
     pair_support = args.pair_support_min
     fb_pair_support = args.foldback_pair_support_min
 
@@ -301,6 +302,8 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
         cmd += " --sv_vcf {}".format(sv_vcf)
         if sv_vcf_no_filter:
             cmd += " --sv_vcf_no_filter"
+        if sv_vcf_include_sr:
+            cmd += " --sv_vcf_include_sr"
 
     if pair_support:
         cmd += " --pair_support_min {}".format(str(pair_support))

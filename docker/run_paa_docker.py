@@ -99,7 +99,9 @@ parser.add_argument("--sv_vcf", help="Provide a VCF file of externally-called SV
                     metavar='FILE', action='store', type=str)
 parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
                     "those without 'PASS' in the FILTER column.", action='store_true', default=False)
-
+parser.add_argument('--sv_vcf_include_sr',
+                    help="Include single-ended reads when counting support for an SV in the provided VCF",
+                    action='store_true', default=False)
 parser.add_argument('--metadata', help="Path to a JSON of sample metadata to build on", default="", nargs="+")
 
 group = parser.add_mutually_exclusive_group(required=True)
@@ -233,6 +235,9 @@ if args.sv_vcf:
     argstring += " --sv_vcf /home/vcf_dir/" + vcf_name
     if args.sv_vcf_no_filter:
         argstring += " --sv_vcf_no_filter"
+    if args.sv_vcf_include_sr:
+        argstring += " --sv_vcf_include_sr"
+
 else:
     vcf_dir = bamdir
 

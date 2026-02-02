@@ -96,6 +96,9 @@ def _add_aa_arguments(parser):
                         metavar='FILE', action='store', type=str)
     parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
                         "those without 'PASS' in the FILTER column.", action='store_true', default=False)
+    parser.add_argument('--sv_vcf_include_sr',
+                        help="Include single-ended reads when counting support for an SV in the provided VCF",
+                        action='store_true', default=False)
     parser.add_argument("--AA_runmode", metavar='STR', help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                         "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
     parser.add_argument("--AA_extendmode", metavar='STR', help="If --run_AA selected, set the --extendmode argument to AA. Default "

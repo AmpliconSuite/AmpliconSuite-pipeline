@@ -406,6 +406,9 @@ if __name__ == '__main__':
                                              "Not needed if --bed is given.")
     parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
                         "those without 'PASS' in the FILTER column.", action='store_true', default=False)
+    parser.add_argument('--sv_vcf_include_sr',
+                        help="Include single-ended reads when counting support for an SV in the provided VCF",
+                        action='store_true', default=False)
 
     args = parser.parse_args()
 
