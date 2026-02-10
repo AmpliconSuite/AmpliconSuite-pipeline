@@ -229,7 +229,8 @@ AmpliconSuite-pipeline defaults to 10x coverage, which provides robust ecDNA det
 - **95% concordance** in ecDNA detection between coverage levels
 - **78% identical** ecDNA species counts
 - **Significant runtime increases** at higher coverage (e.g., SKBR3: 8h → 31h)
-<img src="https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/main/images/SupplementaryFigure5_DS.png" alt="Coverage comparison" width="600">
+
+![Coverage comparison](../images/SupplementaryFigure5_DS.png)
 
 **Recommendation:** Use 10x coverage for standard analyses. Consider ≥30x only for suspected low-copy ecDNAs or complex rearrangements where runtime is not limiting where you are also modifying the `--pair_support_min` parameter simultaneously.
 
@@ -245,8 +246,8 @@ Detection sensitivity depends on both tumor purity and ecDNA copy number. In sil
 - 10-copy ecDNA detectable at ≥25% purity
 - 5-copy ecDNA requires ≥50% purity  
 - 20-copy ecDNA detectable at ≥12.5% purity
-<img src="images/SupplementaryFigure6_dilution.png" alt="Purity vs detection" width="600">
 
+![Purity analysis](../images/SupplementaryFigure6_dilution.png)
 
 **Sample considerations:**
 - **FFPE samples:** May have lower quality but can yield valid calls after checking for artifactual SVs ("lawn" of brown edges or a lawn of magenta and teal edges in sashimi plot). Manual curation recommended for FFPE.
