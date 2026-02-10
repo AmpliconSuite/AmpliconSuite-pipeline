@@ -220,6 +220,45 @@ $CV_SRC/CycleViz.py --cycles_file GBM39_amplicon1_BPG_converted_cycles.txt --cyc
 At the moment, we do not support adding additional tracks of data into the plot (e.g. RNA-seq, ATAC-seq, etc.), but that is coming soon.
 #
 
+### Coverage and Tumor Purity Effects on ecDNA Detection
+
+#### Coverage Requirements
+
+AmpliconSuite-pipeline defaults to 10x coverage, which provides robust ecDNA detection for most samples. For example, analysis of 60 CCLE samples comparing 10x vs 30x coverage showed:
+
+- **95% concordance** in ecDNA detection between coverage levels
+- **78% identical** ecDNA species counts
+- **Significant runtime increases** at higher coverage (e.g., SKBR3: 8h → 31h)
+<img src="images/SupplementaryFigure5_DS.png" alt="Coverage comparison" width="600">
+
+**Recommendation:** Use 10x coverage for standard analyses. Consider ≥30x only for suspected low-copy ecDNAs or complex rearrangements where runtime is not limiting where you are also modifying the `--pair_support_min` parameter simultaneously.
+
+### Tumor Purity Requirements
+
+Detection sensitivity depends on both tumor purity and ecDNA copy number. In silico dilution experiments (9 cell lines, 34 ecDNAs, purities 4.8-95.2%) showed 79.5% recovery of theoretically-detectable ecDNAs.
+
+**Theoretical detection limit:** For an ecDNA with copy number *e* in a sample with purity *p*, detection requires:
+
+**p × e ≥ 2.5**
+
+**Examples:**
+- 10-copy ecDNA detectable at ≥25% purity
+- 5-copy ecDNA requires ≥50% purity  
+- 20-copy ecDNA detectable at ≥12.5% purity
+<img src="images/SupplementaryFigure6_dilution.png" alt="Purity vs detection" width="600">
+
+
+**Sample considerations:**
+- **FFPE samples:** May have lower quality but can yield valid calls after checking for artifactual SVs ("lawn" of brown edges or a lawn of magenta and teal edges in sashimi plot). Manual curation recommended for FFPE.
+- **Liquid biopsy:** Low purity (<10%) acceptable for high-copy ecDNAs
+- **Primary tumors:** Typically >30% purity, suitable for most detection
+
+**Recommendation:** Estimate tumor purity and expected copy numbers, then use **p × e ≥ 2.5** to assess feasibility rather than applying rigid cutoffs. Validate borderline samples with orthogonal methods (FISH, CRISPR-CATCH).
+
+### Quality Control Automation
+
+AmpliconSuite-pipeline automatically determines insert size-based parameters for SV calling. Purity and coverage thresholds are sample-dependent—use the empirical relationships above to guide decisions for your experimental context.
+
 ### FAQ
 - **Can AA detect subclonal ecDNA?**
     - AA is not inherently a subclone-aware method, and will not attempt to compute clone fractions. AA relies on copy number amplifications being strong enough, even among subclonal events, that they can be identified in bulk.
