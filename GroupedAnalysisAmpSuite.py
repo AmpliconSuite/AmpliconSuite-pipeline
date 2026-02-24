@@ -404,6 +404,11 @@ if __name__ == '__main__':
     parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
     parser.add_argument("--cnvkit_dir", help="Path to cnvkit.py. Assumes CNVKit is on the system path if not set. "
                                              "Not needed if --bed is given.")
+    parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
+                        "those without 'PASS' in the FILTER column.", action='store_true', default=False)
+    parser.add_argument('--sv_vcf_include_sr',
+                        help="Include single-ended reads when counting support for an SV in the provided VCF",
+                        action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -508,10 +513,11 @@ if __name__ == '__main__':
                                .format(args.output_directory, sname, sname, sname))
             feat_files.append(feat_graph_file)
 
-        combined_feat_graph_file = args.output_directory + "combined_features_to_graph.txt"
+        input_basename = os.path.splitext(os.path.basename(args.input))[0]
+        combined_feat_graph_file = "{}{}_combined_features_to_graph.txt".format(args.output_directory, input_basename)
         concatenate_files(feat_files, combined_feat_graph_file)
-        cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}combined_samples"
-               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, ))
+        cmd = ("{} {}/feature_similarity.py -f {} --ref {} -o {}{}_combined_samples"
+               .format(PY3_PATH, AC_SRC, combined_feat_graph_file, args.ref, args.output_directory, input_basename))
         print(cmd)
         ecode = call(cmd, shell=True)
         if ecode == 0:

@@ -77,6 +77,7 @@ Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requi
     # ./install -h
     # The install.sh script will install python dependencies using 'python3 -m pip install' 
     ./install.sh 
+   source ~/.bashrc  # either do this or open a new session to make changes live
     ```
    
 Mac users will need to perform one additional installation step:
@@ -113,6 +114,8 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     cd AmpliconSuite-pipeline
    # Can use ./install.sh -h to see help before installing
     ./install.sh --finalize_only
+    source ~/.bashrc  # either do this or open a new session to make changes live
+
     ```
 
 3. License for Mosek dependency:

@@ -1,4 +1,7 @@
 #packages for plotting
+import matplotlib
+matplotlib.use("Agg")
+
 import pandas as pd
 import numpy as np
 import math

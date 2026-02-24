@@ -275,6 +275,7 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     insert_sdevs = args.AA_insert_sdevs
     sv_vcf = args.sv_vcf
     sv_vcf_no_filter = args.sv_vcf_no_filter
+    sv_vcf_include_sr = args.sv_vcf_include_sr
     pair_support = args.pair_support_min
     fb_pair_support = args.foldback_pair_support_min
 
@@ -301,6 +302,8 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
         cmd += " --sv_vcf {}".format(sv_vcf)
         if sv_vcf_no_filter:
             cmd += " --sv_vcf_no_filter"
+        if sv_vcf_include_sr:
+            cmd += " --sv_vcf_include_sr"
 
     if pair_support:
         cmd += " --pair_support_min {}".format(str(pair_support))
@@ -823,6 +826,7 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
         runCNV = None
         if args.cnv_bed and args.cnv_bed.endswith(".cns"):
             args.cnv_bed = convert_cnvkit_cns_to_bed(outdir, bambase, cnsfile=args.cnv_bed, nofilter=True)
+            sample_info_dict["sample_cnv_bed"] = args.cnv_bed
             runCNV = "CNSfile"
 
         elif not args.cnv_bed:
@@ -852,11 +856,15 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                 logging.info(f"Loaded {len(centromeres)} centromere regions for highlighting")
 
             if sample_info_dict["sample_cnv_bed"].endswith(".bed"):
+                if runCNV == "CNVkit":
+                    image_loc = cnvkit_output_directory
+                else:
+                    image_loc = args.output_directory
                 logging.info("Plotting CNV distribution across chromosomes: {}{}_cnv_distribution.png/.pdf".format(
-                    cnvkit_output_directory,sname))
+                    image_loc,sname))
                 cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
                 cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, "{}{}_cnv_distribution".format(
-                    cnvkit_output_directory,sname), centromeres=centromeres)
+                    image_loc,sname), centromeres=centromeres)
             else:
                 logging.warning(
                     "Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")

@@ -193,6 +193,12 @@ parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to re
                                         " regions overlapping repetitive parts of the genome", action='store_true')
 parser.add_argument("--no_QC", help="Skip QC on the BAM file.", action='store_true')
 parser.add_argument("--skip_AA_on_normal_bam", help="Skip running AA on the normal bam", action='store_true')
+parser.add_argument("--sv_vcf_no_filter", help="Use all external SV calls from the --sv_vcf arg, even "
+                                               "those without 'PASS' in the FILTER column.", action='store_true',
+                    default=False)
+parser.add_argument('--sv_vcf_include_sr',
+                    help="Include single-ended reads when counting support for an SV in the provided VCF",
+                    action='store_true', default=False)
 
 args = parser.parse_args()
 test_singularity_version()
@@ -284,6 +290,10 @@ if args.no_QC:
     argstring += " --no_QC"
 if args.skip_AA_on_normal_bam:
     argstring += " --skip_AA_on_normal_bam"
+if args.sv_vcf_no_filter:
+    argstring += " --sv_vcf_no_filter"
+if args.sv_vcf_include_sdevs:
+    argstring += " --sv_vcf_include_sdevs"
 
 # Create environment and run script files
 sample_name = "grouped_analysis"  # Generic name for this run
