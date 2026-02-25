@@ -360,12 +360,13 @@ def _validate_mosek_license():
         # Check if license has expired (older than 365 days)
         if days_old >= 365:
             logging.warning("*" * 80)
-            logging.warning("WARNING: MOSEK LICENSE IS EXPIRED!")
+            logging.warning("WARNING: MOSEK LICENSE APPEARS TO BE EXPIRED! (file created > 365 days ago)")
             logging.warning(
                 "The Mosek license file at " + mosek_license_path + " is " + str(days_old) + " days old.")
             logging.warning("AA will not run with an expired license.")
             logging.warning("Please obtain an updated Mosek license to continue using AA.")
             logging.warning("*" * 80)
+            sys.exit(1)
         # Check if license is about to expire (within 7 days)
         elif days_old >= 358:
             days_until_expiry = 365 - days_old
