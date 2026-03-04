@@ -320,9 +320,9 @@ Otherwise, you will instead need these arguments below:
 - Information on interpreting the AA cycles file is available [here](https://github.com/jluebeck/AmpliconArchitect#interpreting-the-aa-cycles-files).
 
 ## Testing your installation
-To ensure your local installation of, we provide a small test dataset (~3Gb), which users can download from SRA. After 
+To ensure your local installation of, we provide a small test dataset (~3 Gb), which users can download from SRA. After 
 obtaining either the BAM or FASTQ files for GBM39_FF-8 provided [on SRA](https://trace.ncbi.nlm.nih.gov/Traces/?run=SRR4009231), users 
-can run the method and compare their results against the files in the `test_outputs/` directory.
+can run the method and compare their results against the files in the `test_outputs/` directory. This should complete in ~2 hours or less.
 
 ```bash
 AmpliconSuite-pipeline.py \
