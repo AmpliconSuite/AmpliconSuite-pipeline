@@ -63,7 +63,7 @@ chmod +x install.sh
 
 
 ### Option C: Standalone installation using the installer script
-Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`.
+Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`. Typical install time ~5 minutes.
 1. Pull source code and run install script (**skip if installed via Conda**):
     ```bash
     # first install some dependencies (BWA, R, samtools) if you don't already have them
