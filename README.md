@@ -324,6 +324,17 @@ To ensure your local installation of, we provide a small test dataset (~3Gb), wh
 obtaining either the BAM or FASTQ files for GBM39_FF-8 provided [on SRA](https://trace.ncbi.nlm.nih.gov/Traces/?run=SRR4009231), users 
 can run the method and compare their results against the files in the `test_outputs/` directory.
 
+```bash
+AmpliconSuite-pipeline.py \
+  -s SRR4009231 \
+  --ref GRCh38 \
+  --fastqs SRR4009231_1.fq.gz SRR4009231_2.fq.gz \
+  --run_AA \
+  --run_AC \
+  -o /path/to/output_dir \
+  -t 16  # set threads higher or lower as needed
+```
+
 ## FAQ
 Please check out our [guide document](documentation/GUIDE.md).
 
