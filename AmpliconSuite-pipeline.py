@@ -658,7 +658,10 @@ def main():
 
     # Handle special cases that exit early
     if args.download_repo:
-        handle_repo_download(args, AA_REPO)
+        download_repo_dest = os.environ.get('AA_DATA_REPO', '.')
+        if not download_repo_dest.endswith('/'):
+            download_repo_dest += '/'
+        handle_repo_download(args, download_repo_dest)
         return
 
     # Start timing

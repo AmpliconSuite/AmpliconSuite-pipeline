@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -183,7 +185,8 @@ def main():
         else:
             print("No match found")
             sample_id = os.path.basename(sample).replace('.bed', '')
-        plot_cnv_distribution_chromosomes(cnv_data, sample_id, f'{output_dir}/{sample_id}_{output_chromosomes}', centromeres)
+        output_pre = os.path.splitext(f'{output_dir}/{sample_id}_{output_chromosomes}')[0]
+        plot_cnv_distribution_chromosomes(cnv_data, sample_id, output_pre, centromeres)
 
 if __name__ == "__main__":
     main()
