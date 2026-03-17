@@ -72,16 +72,20 @@ def closest_divisors(n):
     return a, n // a
 
 
-def plot_segments_as_lines(ax, chrom_data):
+def plot_segments_as_lines(ax, chrom_data, cn_cap=None):
     """
     Plot each CNV segment as an individual horizontal line segment.
+    Segments exceeding cn_cap are plotted at cn_cap in red.
     """
     chrom_data = chrom_data.sort_values(by='start')
     for i, row in chrom_data.iterrows():
         start = row['start']
         end = row['end']
         cn = row['CN']
-        ax.plot([start, end], [cn, cn], color='black', linewidth=1.5, solid_capstyle='butt', zorder=1)
+        if cn_cap is not None and cn > cn_cap:
+            ax.plot([start, end], [cn_cap, cn_cap], color='red', linewidth=1.5, solid_capstyle='butt', zorder=1)
+        else:
+            ax.plot([start, end], [cn, cn], color='black', linewidth=1.5, solid_capstyle='butt', zorder=1)
     return ax
 
 
@@ -107,7 +111,7 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=
         #highlight centromere regions
         highlight_centromere_regions(ax, chrom, centromeres, debug=(i==0))
         #plot CNV segments
-        plot_segments_as_lines(ax, chrom_data)
+        plot_segments_as_lines(ax, chrom_data, cn_cap=50)
         
         ax.set_title(f'{chrom}', fontsize=10)
         ax.set_xlabel("")

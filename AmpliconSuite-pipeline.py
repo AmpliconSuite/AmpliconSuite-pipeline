@@ -658,7 +658,16 @@ def main():
 
     # Handle special cases that exit early
     if args.download_repo:
-        download_repo_dest = os.environ.get('AA_DATA_REPO', '.')
+        download_repo_dest = os.environ.get('AA_DATA_REPO', '')
+        if not download_repo_dest:
+            sys.stderr.write(
+                "Error: AA_DATA_REPO environment variable is not set.\n"
+                "Please set it by adding the following to your ~/.bashrc, then re-sourcing it:\n\n"
+                "    echo 'export AA_DATA_REPO=~/data_repo/' >> ~/.bashrc\n"
+                "    source ~/.bashrc\n\n"
+                "Then re-run the download command.\n"
+            )
+            sys.exit(1)
         if not download_repo_dest.endswith('/'):
             download_repo_dest += '/'
         handle_repo_download(args, download_repo_dest)
