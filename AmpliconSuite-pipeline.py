@@ -876,7 +876,7 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                     image_loc,sname))
                 cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
                 cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, "{}{}_cnv_distribution".format(
-                    image_loc,sname), centromeres=centromeres)
+                    image_loc,sname), centromeres=centromeres, ref_genome=args.ref)
             else:
                 logging.warning(
                     "Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")

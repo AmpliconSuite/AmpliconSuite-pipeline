@@ -89,7 +89,7 @@ def plot_segments_as_lines(ax, chrom_data, cn_cap=None):
     return ax
 
 
-def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=None, log_base=2):
+def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=None, log_base=2, ref_genome=None):
     """
     Plot CNV profiles in a grid of subplots — one per chromosome, log-transformed CN values.
     Highlights centromere regions with light grey bars.
@@ -97,6 +97,10 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=
     #Sort chromosome labels
     df['chrom'] = df['chrom'].astype(str)
     chromosomes = sorted(df['chrom'].unique(), key=chrom_sort_key)
+    # For GRCh38_viral, exclude viral contigs by keeping only standard chromosomes
+    # (those whose sort key starts with 0, i.e. numeric or X/Y)
+    if ref_genome == 'GRCh38_viral':
+        chromosomes = [c for c in chromosomes if chrom_sort_key(c)[0] == 0]
     #Force CN numeric and log-transform
     df['CN'] = pd.to_numeric(df['CN'], errors='coerce')
     df['log_CN'] = np.log(df['CN']+1) / np.log(log_base)
