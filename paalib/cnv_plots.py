@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #packages for plotting
 import matplotlib
 matplotlib.use("Agg")
@@ -70,20 +72,24 @@ def closest_divisors(n):
     return a, n // a
 
 
-def plot_segments_as_lines(ax, chrom_data):
+def plot_segments_as_lines(ax, chrom_data, cn_cap=None):
     """
     Plot each CNV segment as an individual horizontal line segment.
+    Segments exceeding cn_cap are plotted at cn_cap in red.
     """
     chrom_data = chrom_data.sort_values(by='start')
     for i, row in chrom_data.iterrows():
         start = row['start']
         end = row['end']
         cn = row['CN']
-        ax.plot([start, end], [cn, cn], color='black', linewidth=1.5, solid_capstyle='butt', zorder=1)
+        if cn_cap is not None and cn > cn_cap:
+            ax.plot([start, end], [cn_cap, cn_cap], color='red', linewidth=1.5, solid_capstyle='butt', zorder=1)
+        else:
+            ax.plot([start, end], [cn, cn], color='black', linewidth=1.5, solid_capstyle='butt', zorder=1)
     return ax
 
 
-def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=None, log_base=2):
+def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=None, log_base=2, ref_genome=None):
     """
     Plot CNV profiles in a grid of subplots — one per chromosome, log-transformed CN values.
     Highlights centromere regions with light grey bars.
@@ -91,6 +97,10 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=
     #Sort chromosome labels
     df['chrom'] = df['chrom'].astype(str)
     chromosomes = sorted(df['chrom'].unique(), key=chrom_sort_key)
+    # For GRCh38_viral, exclude viral contigs by keeping only standard chromosomes
+    # (those whose sort key starts with 0, i.e. numeric or X/Y)
+    if ref_genome == 'GRCh38_viral':
+        chromosomes = [c for c in chromosomes if chrom_sort_key(c)[0] == 0]
     #Force CN numeric and log-transform
     df['CN'] = pd.to_numeric(df['CN'], errors='coerce')
     df['log_CN'] = np.log(df['CN']+1) / np.log(log_base)
@@ -105,7 +115,7 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_file, centromeres=
         #highlight centromere regions
         highlight_centromere_regions(ax, chrom, centromeres, debug=(i==0))
         #plot CNV segments
-        plot_segments_as_lines(ax, chrom_data)
+        plot_segments_as_lines(ax, chrom_data, cn_cap=50)
         
         ax.set_title(f'{chrom}', fontsize=10)
         ax.set_xlabel("")

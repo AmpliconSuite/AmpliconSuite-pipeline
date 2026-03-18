@@ -658,7 +658,19 @@ def main():
 
     # Handle special cases that exit early
     if args.download_repo:
-        handle_repo_download(args, AA_REPO)
+        download_repo_dest = os.environ.get('AA_DATA_REPO', '')
+        if not download_repo_dest:
+            sys.stderr.write(
+                "Error: AA_DATA_REPO environment variable is not set.\n"
+                "Please set it by adding the following to your ~/.bashrc, then re-sourcing it:\n\n"
+                "    echo 'export AA_DATA_REPO=~/data_repo/' >> ~/.bashrc\n"
+                "    source ~/.bashrc\n\n"
+                "Then re-run the download command.\n"
+            )
+            sys.exit(1)
+        if not download_repo_dest.endswith('/'):
+            download_repo_dest += '/'
+        handle_repo_download(args, download_repo_dest)
         return
 
     # Start timing
@@ -864,7 +876,7 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                     image_loc,sname))
                 cnv_data = cnv_plots.load_cnv_bed_file(sample_info_dict["sample_cnv_bed"])
                 cnv_plots.plot_cnv_distribution_chromosomes(cnv_data, bambase, "{}{}_cnv_distribution".format(
-                    image_loc,sname), centromeres=centromeres)
+                    image_loc,sname), centromeres=centromeres, ref_genome=args.ref)
             else:
                 logging.warning(
                     "Skipping plotting CNV distribution across chromosomes, as the provided CNV bed file is not in the expected format.")
