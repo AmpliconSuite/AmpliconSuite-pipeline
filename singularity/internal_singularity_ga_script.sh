@@ -20,7 +20,7 @@ else
     exit 1
 fi
 
-if [ -n "$SINGULARITY_CONTAINER" ] || [ -n "APPTAINER_CONTAINER"]; then
+if [ -z "$SINGULARITY_CONTAINER" ] && [ -z "$APPTAINER_CONTAINER" ]; then
   echo "ERROR: This does not appear to be a singularity container that was launched. Is this the docker container that was pulled accidentally?"
   exit 1
 fi
