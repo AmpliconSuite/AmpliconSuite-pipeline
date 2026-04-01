@@ -10,8 +10,27 @@ import math
 
 def load_cnv_bed_file(file_path):
     """Load CNV bed file into a DataFrame."""
-    return pd.read_csv(file_path, sep='\t', header=None, 
-                       names=['chrom', 'start', 'end', 'package', 'CN']) 
+    return pd.read_csv(file_path, sep='\t', header=None,
+                       names=['chrom', 'start', 'end', 'package', 'CN'])
+
+
+def load_cnv_cns_file(file_path):
+    """Load CNVkit .cns file and convert log2 ratios to copy number."""
+    df = pd.read_csv(file_path, sep='\t', header=0)
+    result = pd.DataFrame()
+    result['chrom'] = df['chromosome']
+    result['start'] = df['start']
+    result['end'] = df['end']
+    result['package'] = 'cnvkit'
+    result['CN'] = 2 ** (df['log2'] + 1)
+    return result
+
+
+def load_cnv_file(file_path):
+    """Load a CNV file, auto-detecting format from extension."""
+    if file_path.endswith('.cns'):
+        return load_cnv_cns_file(file_path)
+    return load_cnv_bed_file(file_path)
 
 
 def load_centromere_file(aa_data_repo, ref_genome='GRCh38'):
@@ -136,8 +155,8 @@ def plot_cnv_distribution_chromosomes(df, sample_name, output_pre, centromeres=N
     plt.close()
 
 def main():
-    parser = argparse.ArgumentParser(description='Plot CNV distribution from bed files.')
-    parser.add_argument('--samples', nargs='+', help='List of sample CNV bed files')
+    parser = argparse.ArgumentParser(description='Plot CNV distribution from bed or cns files.')
+    parser.add_argument('--samples', nargs='+', help='List of sample CNV files (.bed or .cns)')
     parser.add_argument('--chromosome', default='chr1', help='Chromosome to plot (default: chr1)')
     parser.add_argument('--output_directory', default='.', help='Output directory for plots')
     parser.add_argument('--output_samples', default='cnv_distribution_samples.png', help='Output file for sample CNV distribution')
@@ -174,17 +193,15 @@ def main():
     
     # Plot individual sample chromosome profiles
     for sample in samples:
-        cnv_data = load_cnv_bed_file(sample)
+        cnv_data = load_cnv_file(sample)
         print("CNV data sample:")
         print(cnv_data.head())
         print("Unique chromosomes in CNV data:", sorted(cnv_data['chrom'].unique()))
         match = re.search(r'/([^/]+)_alignment[^/]*\.bed$', sample)
         if match:
             sample_id = match.group(1)
-            print(sample_id)
         else:
-            print("No match found")
-            sample_id = os.path.basename(sample).replace('.bed', '')
+            sample_id = os.path.splitext(os.path.basename(sample))[0]
         output_pre = os.path.splitext(f'{output_dir}/{sample_id}_{output_chromosomes}')[0]
         plot_cnv_distribution_chromosomes(cnv_data, sample_id, output_pre, centromeres)
 
