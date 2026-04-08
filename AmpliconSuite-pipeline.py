@@ -827,6 +827,8 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
             logging.info("Completed\n")
             tf = time.time()
             timing_logfile.write("Total_elapsed_walltime\t" + "{:.2f}".format(tf - ti) + "\n")
+            with open(finish_flag_filename, 'w') as ffof:
+                ffof.write("All stages completed\n")
             return
 
         ta = tb
