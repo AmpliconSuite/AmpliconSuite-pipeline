@@ -6,7 +6,7 @@
 [![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
 
 
-An end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and AmpliconClassifier to enable analysis of focal copy number amplifications such as ecDNA or BFBs from paired-end whole genome sequencing data.
+An end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and [AmpliconClassifier](https://github.com/AmpliconSuite/AmpliconClassifier) to enable analysis of focal copy number amplifications such as ecDNA or BFBs from paired-end whole genome sequencing data.
 
 AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier.
 
