@@ -28,11 +28,6 @@ Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their
 
 ### Option A: Installation-free platforms
 
-#### [GenePattern](https://cloud.genepattern.org/gp):
-AmpliconSuite-pipeline can be run using the web interface at [GenePattern Web Interface](https://cloud.genepattern.org/gp). Search the module list for `AmpliconSuite`. 
-Constructed in collaboration with members of the GenePattern team (Edwin Huang, Ted Liefeld, Michael Reich). The most convenient option, but not suitable for analysis of large collections of samples or protected health information (PHI), and may not support more advanced command-line options. An excellent option for most users with small numbers of non-PHI samples.
-
-
 #### [Nextflow](https://nf-co.re/circdna):
 AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
 
