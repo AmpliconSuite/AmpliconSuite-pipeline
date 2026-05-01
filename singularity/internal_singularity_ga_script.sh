@@ -41,6 +41,5 @@ python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py 
 echo -e "\n"
 
 # Create output tarball (excluding large input files and data repo)
-tar --exclude="${SAMPLE_NAME}_outputs.tar.gz" --exclude="*.tar" --exclude="*.tar.gz" --exclude "./data_repo" --exclude="./programs" --exclude="./testdata" --exclude "./input" --exclude="*.bam" --exclude="*.fastq*" --exclude="*.fq*" -zcf /tmp/${SAMPLE_NAME}_outputs.tar.gz -C ./
 
 echo "Finished Running GroupedAnalysisAmpSuite"

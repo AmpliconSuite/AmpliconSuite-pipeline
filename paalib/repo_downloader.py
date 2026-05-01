@@ -62,7 +62,7 @@ def handle_repo_download(args, AA_REPO):
     data_repo_base_url = "https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/"
     
     for ref in args.download_repo:
-        print("Downloading " + ref)
+        print("Downloading " + ref + " into " + AA_REPO)
         ref_base_url = data_repo_base_url + ref
         md5file = ref_base_url + "_md5sum.txt"
         ref_file = ref_base_url + ".tar.gz"
