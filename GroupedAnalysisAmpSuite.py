@@ -369,6 +369,9 @@ if __name__ == '__main__':
     parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
     parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
+    parser.add_argument("--no_cstats",
+                        help="Do not read from or write to the $AA_DATA_REPO/coverage.stats file. (default not set).",
+                        action='store_true')
     parser.add_argument("--downsample", type=float, help="AA downsample argument (see AA documentation)", default=10)
     parser.add_argument("--rscript_path", help="Specify custom path to Rscript, if needed when using CNVKit "
                                                "(which requires R version >3.4)")

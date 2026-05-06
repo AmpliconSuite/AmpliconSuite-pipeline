@@ -69,6 +69,9 @@ def _add_cnv_arguments(parser):
                         default=4.5)
     parser.add_argument("--cnsize_min", metavar='INT', type=int, help="CN interval size (in bp) to consider for AA seeding",
                         default=50000)
+    parser.add_argument("--no_cstats",
+                        help="Do not read from or write to the $AA_DATA_REPO/coverage.stats file. (default not set).",
+                        action='store_true')
     parser.add_argument("--no_filter", help="Do not run amplified_intervals.py to remove low confidence candidate seed"
                                             " regions overlapping repetitive parts of the genome", action='store_true')
 

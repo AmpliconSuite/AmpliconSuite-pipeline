@@ -228,7 +228,7 @@ def rescale_cnvkit_calls(ckpy_path, cnvkit_output_directory, base, cnsfile=None,
 
 
 def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, output_directory, sname, cngain,
-                            cnsize_min, paa_logfile):
+                            cnsize_min, paa_logfile, no_cstats=False):
     logging.info("Running amplified_intervals")
     AA_seeds_filename = "{}_AA_CNV_SEEDS".format(output_directory + sname)
 
@@ -253,6 +253,9 @@ def run_amplified_intervals(AA_interpreter, CNV_seeds_filename, sorted_bam, outp
         logging.info("Using amplified_intervals.py with --logfile support")
     else:
         logging.info("Using amplified_intervals.py without --logfile (older version)")
+
+    if no_cstats:
+        cmd += " --no_cstats"
 
     logging.info(cmd + "\n")
     exit_code = call(cmd, shell=True)
@@ -310,6 +313,9 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
 
     if fb_pair_support:
         cmd += " --foldback_pair_support_min {}".format(str(fb_pair_support))
+
+    if args.no_cstats:
+        cmd += " --no_cstats"
 
     logging.info(cmd + "\n")
     aa_exit_code = call(cmd, shell=True)
@@ -703,7 +709,8 @@ def main():
     metadata_dict = {}
 
     # Create coverage stats file if needed
-    create_coverage_stats_file(AA_REPO)
+    if not args.no_cstats:
+        create_coverage_stats_file(AA_REPO)
 
     # Validate samtools
     samtools_version = get_samtools_version(args.samtools_path)
@@ -897,7 +904,8 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
                                                            args.cngain, pfilt_odir)
 
             amplified_interval_bed = run_amplified_intervals(args.aa_python_interpreter, args.cnv_bed, args.bam,
-                                                             outdir, sname, args.cngain, args.cnsize_min, paa_logfile)
+                                                             outdir, sname, args.cngain, args.cnsize_min, paa_logfile,
+                                                             args.no_cstats)
 
         elif args.no_filter and runCNV:
             if not args.cnv_bed.endswith("_CNV_CALLS_pre_filtered.bed") and not args.cnv_bed.endswith(

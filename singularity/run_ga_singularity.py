@@ -168,6 +168,9 @@ parser.add_argument("--ref", help="Reference genome version of all samples.", ch
 parser.add_argument("--cngain", type=float, help="CN gain threshold to consider for AA seeding", default=4.5)
 parser.add_argument("--cnsize_min", type=int, help="CN interval size (in bp) to consider for AA seeding",
                     default=50000)
+parser.add_argument("--no_cstats",
+                    help="Do not read from or write to the $AA_DATA_REPO/coverage.stats file. (default not set).",
+                    action='store_true')
 parser.add_argument("--downsample", type=float, help="AA downsample argument (see AA documentation)", default=10)
 parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
                                          "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
@@ -241,7 +244,7 @@ call(cmd, shell=True)
 # Check for AA_DATA_REPO and Mosek license
 if 'AA_DATA_REPO' in os.environ:
     AA_REPO = os.environ['AA_DATA_REPO'] + "/"
-    if not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
+    if not args.no_cstats and not os.path.exists(os.path.join(AA_REPO, "coverage.stats")):
         print("coverage.stats file not found in " + AA_REPO +
               "\nCreating a new coverage.stats file.")
         cmd = "touch {}coverage.stats && chmod a+rw {}coverage.stats".format(
@@ -286,6 +289,8 @@ if args.no_union:
     argstring += " --no_union"
 if args.no_filter:
     argstring += " --no_filter"
+if args.no_cstats:
+    argstring += " --no_cstats"
 if args.no_QC:
     argstring += " --no_QC"
 if args.skip_AA_on_normal_bam:
@@ -320,8 +325,9 @@ with open(runscript_outname, 'w') as outfile:
                 args.ref))
         outfile.write(
             'tar zxf $AA_DATA_REPO/{}.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
-        outfile.write(
-            'touch $AA_DATA_REPO/coverage.stats && chmod a+rw $AA_DATA_REPO/coverage.stats\n')
+        if not args.no_cstats:
+            outfile.write(
+                'touch $AA_DATA_REPO/coverage.stats && chmod a+rw $AA_DATA_REPO/coverage.stats\n')
         outfile.write('echo DOWNLOADING {} COMPLETE\n'.format(args.ref))
 
     elif no_data_repo and not args.ref:
