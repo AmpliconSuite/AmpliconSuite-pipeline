@@ -6,6 +6,9 @@ import sys
 import tarfile
 
 
+DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
+
+
 def download_file(url, destination_folder):
     import urllib.request  # here because python2 not work with it
     filename = os.path.join(destination_folder, url.split("/")[-1])
@@ -57,13 +60,9 @@ def extract_tar_gz(file_path, destination_folder):
 
 def handle_repo_download(args, AA_REPO):
     """Handle data repository download and exit"""
-    # Import download functions from your existing module
-
-    data_repo_base_url = "https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/"
-    
     for ref in args.download_repo:
         print("Downloading " + ref + " into " + AA_REPO)
-        ref_base_url = data_repo_base_url + ref
+        ref_base_url = DATA_REPO_BASE_URL + ref
         md5file = ref_base_url + "_md5sum.txt"
         ref_file = ref_base_url + ".tar.gz"
         

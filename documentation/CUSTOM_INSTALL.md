@@ -13,7 +13,7 @@ If that or none of the other installation options are possible (e.g. you need to
         mkdir data_repo && cd data_repo
         # copy or download files into data_repo directory
         # See the list of available AA repo files:
-        # https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/
+        # https://refs.ampliconrepository.org/?prefix=data/module_support_files/AmpliconArchitect/
         wget [url for data repo [hg19/GRCh37/GRCh38/mm10].tar.gz]
         tar -xzf [hg19/GRCh37/GRCh38/mm10].tar.gz
 
@@ -29,8 +29,8 @@ AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVkit req
 
 Unless you are using a containerized version, and depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
 - (required) The [AmpliconSuite/AmpliconArchictect fork](https://github.com/AmpliconSuite/AmpliconArchitect) must be installed. Instructions for that are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).
-- (required) The latest AmpliconArchitect [data repo](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/).
-  - versions of the data repos containing bwa index files are also provided [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads. Instructions for setting up the AA data repo are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).
+- (required) The latest AmpliconArchitect [data repo](https://refs.ampliconrepository.org/?prefix=data/module_support_files/AmpliconArchitect/).
+  - versions of the data repos containing bwa index files are also provided [here](https://refs.ampliconrepository.org/?prefix=data/module_support_files/AmpliconArchitect/). Indexed version recommended if starting from unaligned fastq reads. Instructions for setting up the AA data repo are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).
 - (recommended) [AmpliconClassifier](https://github.com/jluebeck/AmpliconClassifier) to generate classifications of AmpliconArchitect outputs.
   - To install, clone the codebase then 
   - `cd AmpliconClassifier`
@@ -41,7 +41,7 @@ Unless you are using a containerized version, and depending on what input data y
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).
 - Scripts packaged with AmpliconSuite-pipeline require the `numpy`, `matplotlib` and `intervaltree` python packages. Those packages can be installed with `pip`, `conda` or similar.
 
-AmpliconSuite-pipeline assumes both `samtools` and `bwa` executables are on the system path and can be directly invoked from bash without pathing to the executables. AmpliconSuite-pipeline will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/). AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
+AmpliconSuite-pipeline assumes both `samtools` and `bwa` executables are on the system path and can be directly invoked from bash without pathing to the executables. AmpliconSuite-pipeline will generate a BWA index for the reference genome if one is not yet in place. This adds >1hr to running time for the first use only when alignment is performed. Data repos with BWA index pre-generated are available [here](https://refs.ampliconrepository.org/?prefix=data/module_support_files/AmpliconArchitect/). AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](http://www.htslib.org/workflow/#:~:text=One%20of%20the%20key%20concepts,genome%20used%20to%20generate%20it.).
 
 AmpliconSuite-pipeline has been tested with Ubuntu (16.04 and above) and CentOS 7. AmpliconSuite-pipeline's optional dependencies related to CNV calling will not work on CentOS 6.
 

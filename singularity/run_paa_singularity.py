@@ -9,6 +9,10 @@ import subprocess
 from subprocess import call
 import sys
 
+
+DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
+
+
 # check singularity version
 def test_singularity_version():
     singularity_version = subprocess.check_output(['singularity', '--version']).decode().strip().lower().rsplit("version")[1]
@@ -292,19 +296,17 @@ with open(runscript_outname, 'w') as outfile:
         outfile.write('export AA_DATA_REPO=' + data_repo_d + '\n')
         if args.fastqs:
             outfile.write(
-                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed.tar.gz\n'.format(args.ref))
+                'wget -q -P $AA_DATA_REPO {}{}_indexed.tar.gz\n'.format(DATA_REPO_BASE_URL, args.ref))
             outfile.write(
-                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_indexed_md5sum.txt\n'.format(args.ref))
+                'wget -q -P $AA_DATA_REPO {}{}_indexed_md5sum.txt\n'.format(DATA_REPO_BASE_URL, args.ref))
             outfile.write(
                 'tar zxf $AA_DATA_REPO/{}_indexed.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
 
         else:
             outfile.write(
-                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}.tar.gz\n'.format(
-                    args.ref))
+                'wget -q -P $AA_DATA_REPO {}{}.tar.gz\n'.format(DATA_REPO_BASE_URL, args.ref))
             outfile.write(
-                'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_md5sum.txt\n'.format(
-                    args.ref))
+                'wget -q -P $AA_DATA_REPO {}{}_md5sum.txt\n'.format(DATA_REPO_BASE_URL, args.ref))
             outfile.write(
                 'tar zxf $AA_DATA_REPO/{}.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
 

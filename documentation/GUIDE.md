@@ -350,7 +350,7 @@ If users want to identify those ulta-rare events that may become relevant in the
 - **How do I run AA on a sample with a viral genome(s) to check for integration/viral genome structure/viral ecDNA?**
   1. If needed, first determine which viral strain(s) are present (e.g. ViFi or [FastViFi](https://github.com/sara-javadzadeh/FastViFi), or other methods).
   2. Align your reads to a human reference fasta file with the relevant viral genomes included.
-  3. We provide an oncoviral version of the AA data repo here: https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/. `GRCh38_viral` should the argument given to `--ref`. If using a viral genome not present in the AA data repo, modify the AA data repo fasta file for the corresponding human build to include the viral strain(s) as entries. Re-index fasta file. Recommend copying original data repo to new location to modify, then updating `$AA_DATA_REPO` with the modified version.
+  3. We provide an oncoviral version of the AA data repo here: https://refs.ampliconrepository.org/?prefix=data/module_support_files/AmpliconArchitect/. `GRCh38_viral` should the argument given to `--ref`. If using a viral genome not present in the AA data repo, modify the AA data repo fasta file for the corresponding human build to include the viral strain(s) as entries. Re-index fasta file. Recommend copying original data repo to new location to modify, then updating `$AA_DATA_REPO` with the modified version.
   4. The virus will be added to the seed regions if present and amplified. However, if using a viral genome not present in the AA data repo, before launching AA, add the viral genome to your `AA_CNV_SEEDS.bed` file.
 
 

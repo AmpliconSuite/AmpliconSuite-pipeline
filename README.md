@@ -145,7 +145,7 @@ This can be done using the example command below. Specifying `[ref]_indexed` wil
 `AmpliconSuite-pipeline.py --download_repo [GRCh38|hg19|mm10|... or GRCh38_indexed|hg19_indexed...]`
 
 - Data repo files can also be downloaded manually and placed in the `$AA_DATA_REPO` directory.
-   - Go [here](https://datasets.genepattern.org/?prefix=data/module_support_files/AmpliconArchitect/) to see available data repos and copy the URL of the one you want, then
+   - Go [here](https://refs.ampliconrepository.org/?prefix=data/module_support_files/AmpliconArchitect/) to see available data repos and copy the URL of the one you want, then
       ```bash
       cd $AA_DATA_REPO
       wget [url of reference_build]
@@ -483,4 +483,3 @@ Setting `--unmerged` will not merge adjacent graph segments and will print the g
 Usage:
 
 >`scripts/graph_to_bed.py -g sample_amplicon_graph.txt [--unmerged] [--min_cn 0] [--add_chr_tag]`
-

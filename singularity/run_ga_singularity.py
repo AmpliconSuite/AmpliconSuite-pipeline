@@ -10,6 +10,10 @@ from subprocess import call
 import sys
 import shutil
 
+
+DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
+
+
 # check singularity version
 def test_singularity_version():
     singularity_version = subprocess.check_output(['singularity', '--version']).decode().strip().lower().rsplit("version")[1]
@@ -318,11 +322,9 @@ with open(runscript_outname, 'w') as outfile:
         outfile.write('mkdir -p ' + data_repo_d + '\n')
         outfile.write('export AA_DATA_REPO=' + data_repo_d + '\n')
         outfile.write(
-            'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}.tar.gz\n'.format(
-                args.ref))
+            'wget -q -P $AA_DATA_REPO {}{}.tar.gz\n'.format(DATA_REPO_BASE_URL, args.ref))
         outfile.write(
-            'wget -q -P $AA_DATA_REPO https://datasets.genepattern.org/data/module_support_files/AmpliconArchitect/{}_md5sum.txt\n'.format(
-                args.ref))
+            'wget -q -P $AA_DATA_REPO {}{}_md5sum.txt\n'.format(DATA_REPO_BASE_URL, args.ref))
         outfile.write(
             'tar zxf $AA_DATA_REPO/{}.tar.gz --directory $AA_DATA_REPO\n'.format(args.ref))
         if not args.no_cstats:
