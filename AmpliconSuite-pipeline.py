@@ -21,6 +21,7 @@ from paalib.config_validator import (
     validate_aa_environment, initialize_logging_and_directories,
     create_coverage_stats_file, get_samtools_version
 )
+from paalib import repo_downloader as repo_freshness
 from paalib.repo_downloader import handle_repo_download
 from paalib.run_uploader import archive_and_upload_sample
 from paalib._version import __ampliconsuitepipeline_version__
@@ -769,13 +770,13 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
             logging.warning("WARNING: User specified --ref {}, however the bam header matches instead to build {}. Continuing with {}...".format(args.ref, determined_ref, determined_ref))
             args.ref = determined_ref
 
-    # Check data repo freshness
-    try:
-        with open(AA_REPO + args.ref + "/last_updated.txt", 'r') as file:
-            datestring = file.read()
+    # Check data repo freshness against the latest version hosted online (unless disabled).
+    if args.no_repo_check or os.environ.get("AS_NO_REPO_CHECK"):
+        datestring = repo_freshness._local_last_updated(AA_REPO, args.ref)
+        if datestring:
             logging.info(args.ref + " data repo constructed on " + datestring)
-    except FileNotFoundError:
-        logging.warning("Data repo appears to be out of date. Please update your data repo!\n")
+    else:
+        repo_freshness.check_repo_freshness(AA_REPO, args.ref, strict=args.strict_repo_check)
 
     # Setup file paths - NOW we can properly set ref_genome_size_file
     gdir = AA_REPO + args.ref + "/"

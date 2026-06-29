@@ -12,6 +12,9 @@ MOSEKLM_LICENSE_FILE=/home/mosek/
 export MOSEKLM_LICENSE_FILE
 NCM_HOME=/home/programs/NGSCheckMate-master/
 export NCM_HOME
+# Containers default to skipping the online data-repo freshness check (no outbound network assumed).
+AS_NO_REPO_CHECK=1
+export AS_NO_REPO_CHECK
 
 id > /home/output/docker_home_manifest.log
 ls /home >> /home/output/docker_home_manifest.log

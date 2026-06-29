@@ -2,6 +2,9 @@
 
 # This is invoked after the container is launched by run_ga_singularity.py
 
+# Containers default to skipping the online data-repo freshness check (no outbound network assumed).
+export AS_NO_REPO_CHECK=1
+
 cd /home/output
 
 # Log environment info

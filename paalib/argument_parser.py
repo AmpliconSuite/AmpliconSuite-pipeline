@@ -58,9 +58,15 @@ def _add_reference_arguments(parser):
     parser.add_argument("--download_repo", help="Download the selected data repo to the $AA_DATA_REPO "
                         "directory and exit. '_indexed' suffix indicates BWA index is included, which is useful if "
                         "performing alignment with AmpliconSuite-pipeline, but has a larger filesize.", 
-                        choices=["hg19", "GRCh37", "GRCh38", "mm10", "GRCh38_viral", "hg19_indexed", 
-                                "GRCh37_indexed", "GRCh38_indexed", "mm10_indexed", "GRCh38_viral_indexed"], 
+                        choices=["hg19", "GRCh37", "GRCh38", "mm10", "GRCh38_viral", "hg19_indexed",
+                                "GRCh37_indexed", "GRCh38_indexed", "mm10_indexed", "GRCh38_viral_indexed"],
                         nargs='+')
+    parser.add_argument("--no_repo_check", action='store_true',
+                        help="Do not check whether the local $AA_DATA_REPO is up to date with the latest version "
+                        "hosted online. Useful on systems without internet access. The check can also be disabled by "
+                        "setting the environment variable AS_NO_REPO_CHECK=1 (set by default in the container images).")
+    parser.add_argument("--strict_repo_check", action='store_true',
+                        help="Exit with an error (instead of only warning) if the local $AA_DATA_REPO is out of date.")
 
 
 def _add_cnv_arguments(parser):

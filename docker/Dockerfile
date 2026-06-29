@@ -78,7 +78,8 @@ RUN echo export MOSEKLM_LICENSE_FILE=/home/mosek/ >> ~/.bashrc && \
     echo export AA_DATA_REPO=/home/data_repo >> ~/.bashrc && \
     echo export AA_SRC=/home/programs/AmpliconArchitect-master/src >> ~/.bashrc && \
     echo export AC_SRC=/home/programs/AmpliconClassifier-main >> ~/.bashrc && \
-    echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc
+    echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc && \
+    echo export AS_NO_REPO_CHECK=1 >> ~/.bashrc
 
 # - Unpack downloaded packages
 # - Copy required conf for NGSCheckMate

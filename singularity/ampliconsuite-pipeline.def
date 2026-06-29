@@ -81,6 +81,8 @@ export AA_SRC=/home/programs/AmpliconArchitect-master/src
 export AC_SRC=/home/programs/AmpliconClassifier-main
 export MOSEKLM_LICENSE_FILE=/home/mosek/
 export MPLCONFIGDIR=/tmp/.config/matplotlib
+# Containers default to skipping the online data-repo freshness check (no outbound network assumed).
+export AS_NO_REPO_CHECK=1
 
 
 %test
