@@ -6,7 +6,7 @@
 [![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
 
 
-An end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and [AmpliconClassifier](https://github.com/AmpliconSuite/AmpliconClassifier) to enable analysis of focal copy number amplifications such as ecDNA or BFBs from paired-end whole genome sequencing data.
+An end-to-end wrapper for [AmpliconArchitect](https://github.com/jluebeck/AmpliconArchitect) and [AmpliconClassifier](https://github.com/AmpliconSuite/AmpliconClassifier) to enable analysis of focal copy number amplifications such as ecDNA, BFBs, and other complex focal amplifications from paired-end whole genome sequencing data.
 
 AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the data preparation process and can itself invoke both AmpliconArchitect and the downstream tool AmpliconClassifier.
 
@@ -14,7 +14,18 @@ AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the 
 
 Before working with this tool, we recommend heading over to our [**detailed guide**](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/GUIDE.md) to learn about best practices and to see FAQs. 
 
-AmpliconSuite-pipeline supports hg19, GRCh37, GRCh38 (hg38), and mouse genome mm10 (GRCm38). It also supports analysis with a human-viral hybrid reference genome we provide, `GRCh38_viral`, which can be used to detect oncoviral hybrid focal amplifications in oncoviral cancers.
+AmpliconSuite-pipeline supports `hg19`, `GRCh37`, `GRCh38`, and the mouse genome `mm10`. It also supports analysis with a human-viral hybrid reference genome we provide, `GRCh38_viral`, which can be used to detect oncoviral hybrid focal amplifications in oncoviral cancers. The aliases `hg38` (→ `GRCh38`) and `GRCm38` (→ `mm10`) are also accepted.
+
+## Amplification types detected
+The classification step (`--run_AC`, [AmpliconClassifier](https://github.com/AmpliconSuite/AmpliconClassifier)) characterizes the **focal oncogene amplifications** reconstructed by AmpliconArchitect; it does **not** analyze karyotypic abnormalities such as aneuploidy, balanced translocations, or broad chromosome/arm-level gains and losses. The categories it reports are:
+- **ecDNA** — circular, extrachromosomal amplicons (`ecDNA+`).
+- **BFB** — breakage–fusion–bridge amplification, marked by fold-back inversions and a stair-step copy-number gradient, retained chromosomally (often as an HSR) (`BFB+`).
+- **FAN** (focal amplification in neochromosome) — a broad, structurally complex, multi-chromosomal amplification integrated into a chromosome or neochromosome rather than an extrachromosomal circle. FAN is a term we introduce for these neochromosome-like amplifications; the flag is independent and can co-occur with `ecDNA+`/`BFB+` (`FAN+`).
+- **CNC** (complex non-cyclic) — an abstract label for a focal amplification embedded in a complex rearrangement that lacks the genome cycles characteristic of ecDNA.
+- **Linear** — a focal amplification with few or no significant rearrangements.
+- **Virus / human–viral hybrid** — when the `GRCh38_viral` reference is used, amplicons corresponding to a viral genome are labeled `Virus`, and amplicons fusing viral and human sequence are reported through their human mechanism (e.g. `ecDNA`) with a `contains_viral` flag.
+
+For full definitions, the mechanistic-flag vs. abstract-decomposition-class distinction, and the output file formats, see the [AmpliconClassifier README](https://github.com/AmpliconSuite/AmpliconClassifier#amplification-types-detected-by-ampliconclassifier).
 
 ## Licenses
 The modules wrapped in AmpliconSuite-pipeline use the following licenses. Please note that the AmpliconArchitect license specifies that AmpliconArchitect is for research use and does not give license for commerical for-profit use.
@@ -218,7 +229,7 @@ Additional fields between `end` and `copy_number` may exist, but `copy_number` m
 This mode allows reclassification of files or uploading of previously completed runs. `--completed_AA_runs` can be a directory or a .tar.gz/.zip file. 
 Note that when this mode is used, all AA results must have been generated with respect to the same reference genome version.
 
->`AmpliconSuite-pipeline.py -s your_collection_name -o output_location -t 1 --completed_AA_runs directory_of_runs/ --ref GRCh38 [--run_AA]
+>`AmpliconSuite-pipeline.py -s your_collection_name -o output_location -t 1 --completed_AA_runs directory_of_runs/ --ref GRCh38 [--run_AA]`
 
 
 #### Example: Analyzing a collection of related samples (replicates or multi-region sampling)
@@ -265,7 +276,7 @@ Otherwise, you will instead need these arguments below:
 
 #### Optional
 
-- `--ref {ref name} `: Name of ref genome version, one of `"hg19","GRCh37","GRCh38","GRCh38_viral","mm10","GRCm38"`. This will be auto-detected if it is not set. Required with fastq input.
+- `--ref {ref name} `: Name of ref genome version, one of `hg19`, `GRCh37`, `GRCh38`, `mm10`, `GRCh38_viral` (the aliases `hg38` and `GRCm38` are also accepted, mapping to `GRCh38` and `mm10`). This will be auto-detected if it is not set. Required with fastq input.
 
 - `--cnv_bed {cnvfile.bed}` Supply your own CNV calls. Bed file with CN estimate in last column, or the CNVkit `sample.cns` file. If not specified, CNVkit will be called by the wrapper.
 
