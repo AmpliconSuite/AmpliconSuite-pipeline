@@ -74,7 +74,7 @@ if $uninstall; then
   sed -i.bak '/^export AA_DATA_REPO=/d' ${HOME}/.bashrc
   rm ${HOME}/.bashrc.bak
   echo "to uninstall the relevant python packages installed by this script, please do (some or all of): "
-  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek numpy pandas pysam scipy"
+  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek clarabel bfbarchitect numpy pandas pysam scipy"
   exit 0
 fi
 
@@ -146,7 +146,7 @@ if ! ${finalize_only}; then
   fi
 
   # Try pip install first
-  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pandas pysam scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel bfbarchitect numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
       # Installation succeeded
       echo "Installation completed successfully."
   else
@@ -164,7 +164,7 @@ if ! ${finalize_only}; then
           read -p "Do you want to proceed anyway? (y/N): " -r
           echo
           if [[ $REPLY =~ ^[Yy]$ ]]; then
-              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek numpy pandas pysam scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel bfbarchitect numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
                   echo "Installation completed successfully."
               else
                   echo "ERROR: Installation failed even with --break-system-packages."

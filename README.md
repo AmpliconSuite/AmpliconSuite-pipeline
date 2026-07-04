@@ -22,7 +22,27 @@ The modules wrapped in AmpliconSuite-pipeline use the following licenses. Please
 - [AmpliconArchitect license](https://github.com/AmpliconSuite/AmpliconArchitect) (University of California software license)
 - [AmpliconClassifier license](https://github.com/AmpliconSuite/AmpliconClassifier/blob/main/LICENSE) (BSD 2-Clause)
 
-Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their own set of licensing requirements which users should make themselves aware of as needed. The Mosek license requires that users obtain a copy (which is free for academic use) from the Mosek website. More information is available in the installation section.
+Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their own set of licensing requirements which users should make themselves aware of as needed. See the section below on optimizer licenses.
+
+## Optimizer licenses — do I need one? (Short answer: no)
+
+AmpliconSuite-pipeline ships with everything it needs to run out of the box. **You no longer need to obtain an additional optimizer license to run AmpliconArchitect or the pipeline.** The pipeline includes free, open-source solvers — **Clarabel** (for AmpliconArchitect's copy-number optimization) and **CBC** (for BFBArchitect's BFB reconstruction) — that handle every step and require no license of their own. For AmpliconArchitect's copy-number optimization, the results are nearly identical across solvers. For BFBArchitect's BFB reconstruction the solvers also agree in the large majority of cases, though in rare borderline instances the choice of solver can shift a BFB score across the `BFB+`/`BFB-` calling threshold. In practice, adding an optional commercial-solver license mainly reduces runtimes — by just a few minutes per sample.
+
+Because that speedup only adds up across many samples, a commercial-solver license is really only worth obtaining if you're analyzing **large cohorts (~50+ samples)**. Of the optional solvers, **Gurobi gave the best runtime reduction in our tests.** For typical use, the built-in solvers are all you need and you can safely ignore this section.
+
+| Your situation | What to get | Where to put it |
+|---|---|---|
+| Getting started / typical use | **Nothing** — built-in solvers work automatically | — |
+| Large cohorts, want faster BFB reconstruction | Free academic **[Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/)** license | `$HOME/gurobi.lic` (or point `$GRB_LICENSE_FILE` at it) |
+| Already have Mosek, or prefer a longer-lived license | Free academic **[Mosek](https://www.mosek.com/products/academic-licenses/)** license | `$HOME/mosek/mosek.lic` |
+
+**Which solver runs which step:**
+- *AmpliconArchitect* (copy-number optimization): **Clarabel** (used automatically unless a Mosek license is present) or **Mosek** (see `--AA_solver`).
+- *BFBArchitect* (BFB reconstruction, run under `--run_AC`): **CBC** (used automatically unless a Gurobi or Mosek license is present) or **Gurobi** or **Mosek**.
+
+The pipeline auto-detects any license present and uses that solver; otherwise it silently uses the built-in one. Nothing to configure beyond dropping the license file in place.
+
+**License lifetimes** (if you do get one): free academic **Gurobi** licenses must be renewed every ~3 months; free academic **Mosek** licenses last a year; the built-in solvers never expire.
 
 ## Installation
 
@@ -43,7 +63,7 @@ chmod +x install.sh
 ./install.sh --finalize_only  # -h to see options
 ```
 
-Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. A Mosek license is **optional** — if none is present, AA (>=1.6) automatically uses the license-free `clarabel` solver instead (see the [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no) section; results are nearly identical either way).
 
 - If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
@@ -80,10 +100,13 @@ Mac users will need to perform one additional installation step:
 brew install coreutils
 ```
 
-2. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. AA will not work without it.
+2. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. A Mosek license is **optional** — if none is present, AA (>=1.6) automatically uses the license-free `clarabel` solver instead (see the [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no) section; results are nearly identical either way).
 
 
-3. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
+3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). When `--run_AC` is used, BFBArchitect (bundled with AmpliconClassifier 2.0+) will use Gurobi for BFB reconstruction; without it, BFBArchitect falls back to the open-source CBC solver.
+
+
+4. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
 
 
 
@@ -117,6 +140,8 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     * [Obtain Mosek license file](https://www.mosek.com/products/academic-licenses/) `mosek.lic`. The license is free for academic use.
     * Place the file in `$HOME/mosek/` (the `mosek/` folder that now exists in your home directory).
     * If you are not able to place the license in the default location, you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
+    * Mosek is optional for the containers: if no license is found in `$HOME/mosek/`, the runscript prints a warning and AA falls back to the license-free `clarabel` solver instead of exiting.
+    * (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license at `$HOME/gurobi.lic` (or pointed to by `GRB_LICENSE_FILE`), the runscript automatically mounts it so BFBArchitect can use Gurobi under `--run_AC`. If absent, BFBArchitect falls back to the open-source CBC solver.
 
    
 4. (Recommended) Pre-download AA data repositories and set environment variable AA_DATA_REPO:
@@ -286,6 +311,8 @@ Otherwise, you will instead need these arguments below:
 
 - `--AA_extendmode {EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL}`: Default `EXPLORE`. See AA documentation for more info.
 
+- `--AA_solver {mosek, clarabel}`: Copy-number optimizer AA uses (passed to AA's `--solver`). Default `mosek`, which automatically falls back to the license-free `clarabel` solver if no Mosek license is found. Set to `clarabel` to skip Mosek entirely.
+
 - `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
 
 - `--pair_support_min {int}`, Default is auto-detected by AA based on downsampling parameter, but 2 for default downsampling. This is the minimum number of reads required for breakpoint support.
@@ -297,6 +324,8 @@ Otherwise, you will instead need these arguments below:
 - `--sv_vcf`: Provide a VCF file of externally called SVs to augment SVs identified by AA internally.
 
 - `--sv_vcf_no_filter`: Use all external SV calls from the --sv_vcf arg, even those without 'PASS' in the FILTER column.
+
+- `--sv_vcf_include_sr`: Include single-ended reads when counting support for an SV in the provided `--sv_vcf`.
 
 #### Optional AmpliconRepository upload arguments
 - `--upload`: Sets condition to upload after run completes.

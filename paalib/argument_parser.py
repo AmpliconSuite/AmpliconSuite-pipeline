@@ -122,6 +122,9 @@ def _add_aa_arguments(parser):
                         "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                         metavar='INT', action='store', type=int)
+    parser.add_argument("--AA_solver", metavar='STR', help="If --run_AA selected, set the copy-number optimizer AA "
+                        "uses via its --solver argument. 'mosek' (default) automatically falls back to 'clarabel' if "
+                        "no Mosek license is found.", choices=['mosek', 'clarabel'], default='mosek')
 
 
 def _add_cnvkit_arguments(parser):

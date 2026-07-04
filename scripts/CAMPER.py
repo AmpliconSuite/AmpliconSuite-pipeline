@@ -250,6 +250,7 @@ def compute_1d_davies_bouldin(scaling_factor, scaled_cns, raw_cn, keep_zero_cn=F
 
 def write_cycles_file(paths, id_to_coords, pweights, scaling_factor, min_length, ofname, plens, perrs, glob_filters):
     with open(ofname, 'w') as outfile:
+        outfile.write("#CAMPER {}\n".format(__version__))
         postups = [v for k, v in sorted(id_to_coords.items()) if k > 0]
         pchrom, pstart, pend, iind, sind = postups[0][0], postups[0][1], postups[0][2], 1, 1
         seglines = [["Segment", str(sind), pchrom, str(pstart), str(pend)]]

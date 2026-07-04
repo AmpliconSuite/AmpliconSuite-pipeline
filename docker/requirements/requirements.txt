@@ -2,7 +2,7 @@ Cython==0.29.28
 biopython==1.85
 reportlab==4.3.1
 pandas==2.2.3
-pysam==0.23.0
+pysam==0.23.3
 cnvkit==0.9.13
 intervaltree==3.1.0
 Flask>=2.2.5
@@ -10,5 +10,7 @@ matplotlib==3.9.0
 numpy==2.2.3
 scipy==1.14.1
 mosek==10.0.38
+clarabel==0.11.1
+bfbarchitect==1.0.0
 future==0.18.3
 torch==2.3.1+cpu

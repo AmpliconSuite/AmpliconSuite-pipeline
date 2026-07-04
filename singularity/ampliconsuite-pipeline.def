@@ -19,6 +19,8 @@ mkdir -p /home/programs
 mkdir -p /home/output
 mkdir -p /home/input
 mkdir -p /home/mosek
+mkdir -p /home/gurobi
+touch /home/gurobi/gurobi.lic
 mkdir -p /home/data_repo
 mkdir -p /tmp/.config/matplotlib
 

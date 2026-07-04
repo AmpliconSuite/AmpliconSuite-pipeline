@@ -14,10 +14,12 @@ RUN mkdir -p /home/requirements \
              /home/output \
              /home/input \
              /home/mosek \
+             /home/gurobi \
              /tmp/programs/AmpliconArchitect \
              /tmp/programs/AmpliconClassifier \
              /tmp/programs/AmpliconSuite \
-             /tmp/programs/NGSCheckMate
+             /tmp/programs/NGSCheckMate && \
+    touch /home/gurobi/gurobi.lic
 
 COPY requirements/requirements.txt /home/requirements/
 COPY internal_docker_script.sh /home/

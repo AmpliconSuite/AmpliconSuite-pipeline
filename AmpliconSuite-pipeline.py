@@ -318,6 +318,23 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
     if args.no_cstats:
         cmd += " --no_cstats"
 
+    # AA 1.5+ can use either Mosek or Clarabel for CN optimization via --solver (mosek automatically falls
+    # back to clarabel if no Mosek license is found). Feature-detect since older AA versions lack --solver.
+    aa_solver = getattr(args, "AA_solver", "mosek")
+    try:
+        aa_help_output = check_output("{} {}/AmpliconArchitect.py --help".format(AA_interpreter, AA_SRC),
+                                      shell=True, stderr=STDOUT, universal_newlines=True)
+        supports_solver = "--solver" in aa_help_output
+    except CalledProcessError:
+        supports_solver = False
+        logging.warning("Could not check AmpliconArchitect.py help. Assuming older version without --solver support.")
+
+    if supports_solver:
+        cmd += " --solver {}".format(aa_solver)
+    elif aa_solver != "mosek":
+        logging.warning("This AmpliconArchitect version does not support --solver; ignoring --AA_solver {} and "
+                        "using the AA default.".format(aa_solver))
+
     logging.info(cmd + "\n")
     aa_exit_code = call(cmd, shell=True)
     if aa_exit_code != 0:
@@ -325,6 +342,63 @@ def run_AA(amplified_interval_bed, AA_outdir, sname, args):
         sys.exit(1)
 
     metadata_dict["AA_cmd"] = cmd
+
+
+def compute_ac_thread_allocation(nthreads, n_amplicons):
+    """Divide the user's thread budget between AmpliconClassifier's --jobs (amplicons classified in
+    parallel) and --bfb_threads (threads per BFBArchitect ILP solve).
+
+    BFBArchitect's ILP solver sees diminishing returns beyond ~2-3 threads, so when there are multiple
+    amplicons we cap the per-amplicon threads and parallelize across amplicons instead. With a single
+    amplicon there is nothing to parallelize across, so one job gets all the threads. Returns
+    (jobs, bfb_threads).
+    """
+    try:
+        nthreads = max(1, int(nthreads))
+    except (TypeError, ValueError):
+        nthreads = 1
+
+    if n_amplicons <= 1:
+        return 1, nthreads
+
+    best = None  # (used_threads, jobs, bfb_threads)
+    for bfb_threads in (2, 3):
+        if bfb_threads > nthreads:
+            continue
+        jobs = max(1, min(n_amplicons, nthreads // bfb_threads))
+        used = jobs * bfb_threads
+        # Maximize threads utilized; on a tie prefer more parallel jobs (fewer threads per solve).
+        if best is None or used > best[0] or (used == best[0] and jobs > best[1]):
+            best = (used, jobs, bfb_threads)
+
+    if best is None:  # nthreads == 1
+        return 1, 1
+
+    return best[1], best[2]
+
+
+def _ac_python_has_module(module):
+    """Return True if `module` is importable by the AC python interpreter (without importing it)."""
+    code = "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec({!r}) else 1)".format(module)
+    try:
+        return call([PY3_PATH, "-c", code], stdout=DEVNULL, stderr=DEVNULL) == 0
+    except Exception:
+        return False
+
+
+def gurobi_license_available():
+    """Return True if the AC python interpreter can create a usable Gurobi environment.
+
+    This actually starts a Gurobi Env rather than just looking for a license file, so it returns True
+    for a real license as well as the size-limited license bundled with modern gurobipy, and False when
+    Gurobi cannot solve at all (gurobipy missing, or an expired/broken license) -- i.e. exactly the
+    cases where BFBArchitect would be forced to fall back to the CBC solver.
+    """
+    code = "import gurobipy; gurobipy.Env().dispose()"
+    try:
+        return call([PY3_PATH, "-c", code], stdout=DEVNULL, stderr=DEVNULL) == 0
+    except Exception:
+        return False
 
 
 def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
@@ -360,9 +434,45 @@ def run_AC(AA_outdir, sname, ref, AC_outdir, AC_src):
         sys.exit(1)
 
     with open(input_file) as ifile:
-        sample_info_dict["number_of_AA_amplicons"] = len(ifile.readlines())
+        n_amplicons = len(ifile.readlines())
+    sample_info_dict["number_of_AA_amplicons"] = n_amplicons
 
     cmd = "{} {}/amplicon_classifier.py -i {} --ref {} -o {}".format(PY3_PATH, AC_src, input_file, ref, class_output)
+
+    # Feature-detect AC capabilities from --help. AC 2.0 adds the built-in summary table, amplicon-level
+    # multithreading (--jobs/--bfb_threads), and BFBArchitect. Older AC versions lack these flags, so we
+    # only append them when present.
+    supports_no_results_table = False
+    supports_multithreading = False
+    ac_help_cmd = "{} {}/amplicon_classifier.py --help".format(PY3_PATH, AC_src)
+    try:
+        ac_help_output = check_output(ac_help_cmd, shell=True, stderr=STDOUT, universal_newlines=True)
+        supports_no_results_table = "--no_results_table" in ac_help_output
+        supports_multithreading = "--jobs" in ac_help_output and "--bfb_threads" in ac_help_output
+    except CalledProcessError:
+        logging.warning("Could not check amplicon_classifier.py help. Assuming older AC version without "
+                        "--no_results_table / multithreading support.")
+
+    # AC 2.0 creates the summary results table by default. The pipeline instead runs make_results_table.py
+    # separately (see make_AC_table) so it can pass --cnv_bed and the run/sample metadata, so disable the
+    # built-in table here to avoid generating it twice.
+    if supports_no_results_table:
+        cmd += " --no_results_table"
+
+    # Divide the user's thread budget between parallel amplicons (--jobs) and BFBArchitect solver threads.
+    if supports_multithreading:
+        jobs, bfb_threads = compute_ac_thread_allocation(args.nthreads, n_amplicons)
+        cmd += " --jobs {} --bfb_threads {}".format(jobs, bfb_threads)
+        logging.info("Allocating AC threads for {} amplicon(s): --jobs {} --bfb_threads {}".format(
+            n_amplicons, jobs, bfb_threads))
+
+        # BFBArchitect uses Gurobi when a license is available and otherwise falls back to the open-source
+        # CBC solver. Warn if BFBArchitect is installed but no Gurobi license is found.
+        if _ac_python_has_module("bfbarchitect") and not gurobi_license_available():
+            logging.warning("No usable Gurobi license detected. BFBArchitect will use the open-source CBC "
+                            "solver, which may be slower. To use Gurobi, install a valid license (e.g. set "
+                            "GRB_LICENSE_FILE).")
+
     logging.info(cmd + "\n")
     call(cmd, shell=True)
     metadata_dict["AC_cmd"] = cmd

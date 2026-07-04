@@ -82,6 +82,9 @@ parser.add_argument('--foldback_pair_support_min', help="Number of read pairs fo
                         "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                         metavar='INT', action='store', type=int)
+parser.add_argument("--AA_solver", help="If --run_AA selected, set the copy-number optimizer AA uses via its --solver "
+                    "argument. 'mosek' (default) automatically falls back to 'clarabel' if no Mosek license is found.",
+                    choices=['mosek', 'clarabel'], default='mosek')
 parser.add_argument(
     "--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
 parser.add_argument("--ploidy", type=int,
@@ -163,11 +166,27 @@ else:
                      " time it is run. See installation instructions to optimize this process.\n")
 
 
-if not os.path.exists(os.environ['HOME'] + "/mosek/mosek.lic"):
-    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'])
+# Mosek license is optional. AA (>=1.6) falls back to the license-free 'clarabel' solver when it is unavailable.
+MOSEK_DIR = os.environ['HOME'] + "/mosek"
+if not os.path.exists(MOSEK_DIR + "/mosek.lic"):
+    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'] + "\n")
     sys.stderr.write(
-        "Mosek license (mosek.lic) file not found in $HOME/mosek/. Please see README for instructions.\n")
-    sys.exit(1)
+        "Mosek license (mosek.lic) file not found in $HOME/mosek/. AmpliconArchitect will fall back to the "
+        "'clarabel' solver. To use Mosek instead, place a license as described in the README.\n")
+    MOSEK_DIR = None
+
+# Gurobi license (optional). Used by BFBArchitect within AmpliconClassifier; falls back to the open-source CBC
+# solver when unavailable. Gurobi's default location is $HOME/gurobi.lic; GRB_LICENSE_FILE overrides it.
+GRB_LICENSE_FILE = None
+for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
+    if _grb_cand and os.path.isfile(_grb_cand):
+        GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
+        break
+
+if GRB_LICENSE_FILE is None:
+    sys.stderr.write(
+        "No Gurobi license found (looked for $GRB_LICENSE_FILE and $HOME/gurobi.lic). BFBArchitect will use the "
+        "open-source CBC solver instead of Gurobi.\n")
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
@@ -269,6 +288,9 @@ if args.pair_support_min:
 if args.foldback_pair_support_min:
     argstring += " --foldback_pair_support_min " + str(args.foldback_pair_support_min)
 
+if args.AA_solver:
+    argstring += " --AA_solver " + args.AA_solver
+
 if args.run_AA:
     argstring += " --run_AA"
 
@@ -323,12 +345,23 @@ with open(runscript_outname, 'w') as outfile:
     with open(env_outname, 'w') as env_file:
         env_file.write('argstring="' + argstring + '"\n')
         env_file.write("SAMPLE_NAME=" + args.sample_name)
+        # Only export GRB_LICENSE_FILE when a license is actually mounted, so gurobipy never sees a missing path.
+        if GRB_LICENSE_FILE:
+            env_file.write("\nGRB_LICENSE_FILE=/home/gurobi/gurobi.lic")
+
+    # Optional license binds. Mosek and Gurobi are both optional (AA falls back to clarabel, BFBArchitect to CBC),
+    # so only bind a license when it is actually present on the host.
+    license_binds = ""
+    if MOSEK_DIR:
+        license_binds += "--bind " + MOSEK_DIR + ":/home/mosek/ "
+    if GRB_LICENSE_FILE:
+        license_binds += "--bind " + GRB_LICENSE_FILE + ":/home/gurobi/gurobi.lic "
 
     # assemble a singularity command string
     sing_string = "singularity exec --no-home --cleanenv --env-file " + env_outname + " --bind $AA_DATA_REPO:" \
                   "/home/data_repo --bind " + bamdir + ":/home/bam_dir --bind " + norm_bamdir + ":/home/norm_bam_dir " \
-                  "--bind " + cnvdir + ":/home/bed_dir --bind " + args.output_directory + ":/home/output --bind " \
-                  "$HOME/mosek:/home/mosek/ --bind " + vcf_dir + ":/home/vcf_dir " + args.sif + " bash /home/internal_singularity_script.sh "
+                  "--bind " + cnvdir + ":/home/bed_dir --bind " + args.output_directory + ":/home/output " \
+                  + license_binds + "--bind " + vcf_dir + ":/home/vcf_dir " + args.sif + " bash /home/internal_singularity_script.sh "
 
     print("\n" + sing_string + "\n")
     outfile.write(sing_string)

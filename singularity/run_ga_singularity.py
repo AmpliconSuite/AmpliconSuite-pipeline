@@ -192,6 +192,9 @@ parser.add_argument('--foldback_pair_support_min', help="Number of read pairs fo
                     "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
                     " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                     metavar='INT', action='store', type=int)
+parser.add_argument("--AA_solver", help="If --run_AA selected, set the copy-number optimizer AA uses via its --solver "
+                    "argument. 'mosek' (default) automatically falls back to 'clarabel' if no Mosek license is found.",
+                    choices=['mosek', 'clarabel'], default='mosek')
 parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                   "default segmentation method (cbs).",
                     choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
@@ -260,11 +263,27 @@ else:
     sys.stderr.write("$AA_DATA_REPO bash variable not set. Singularity image will download large (>3 Gb) data repo each"
                      " time it is run. See installation instructions to optimize this process.\n")
 
-if not os.path.exists(os.environ['HOME'] + "/mosek/mosek.lic"):
-    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'])
+# Mosek license is optional. AA (>=1.6) falls back to the license-free 'clarabel' solver when it is unavailable.
+MOSEK_DIR = os.environ['HOME'] + "/mosek"
+if not os.path.exists(MOSEK_DIR + "/mosek.lic"):
+    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'] + "\n")
     sys.stderr.write(
-        "Mosek license (mosek.lic) file not found in $HOME/mosek/. Please see README for instructions.\n")
-    sys.exit(1)
+        "Mosek license (mosek.lic) file not found in $HOME/mosek/. AmpliconArchitect will fall back to the "
+        "'clarabel' solver. To use Mosek instead, place a license as described in the README.\n")
+    MOSEK_DIR = None
+
+# Gurobi license (optional). Used by BFBArchitect within AmpliconClassifier; falls back to the open-source CBC
+# solver when unavailable. Gurobi's default location is $HOME/gurobi.lic; GRB_LICENSE_FILE overrides it.
+GRB_LICENSE_FILE = None
+for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
+    if _grb_cand and os.path.isfile(_grb_cand):
+        GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
+        break
+
+if GRB_LICENSE_FILE is None:
+    sys.stderr.write(
+        "No Gurobi license found (looked for $GRB_LICENSE_FILE and $HOME/gurobi.lic). BFBArchitect will use the "
+        "open-source CBC solver instead of Gurobi.\n")
 
 # Parse input file and process samples
 print("Parsing input file and processing samples...")
@@ -279,6 +298,7 @@ print(f"Created {len(sample_bind_mounts)} bind mounts ({len(samples)} BAM mounts
 argstring = f"-i /home/output/container_input_file.txt -o /home/output -t {args.nthreads} --ref {args.ref}"
 argstring += f" --cngain {args.cngain} --cnsize_min {args.cnsize_min} --downsample {args.downsample}"
 argstring += f" --AA_runmode {args.AA_runmode} --AA_extendmode {args.AA_extendmode}"
+argstring += f" --AA_solver {args.AA_solver}"
 argstring += f" --cnvkit_segmentation {args.cnvkit_segmentation}"
 
 if args.AA_insert_sdevs:
@@ -301,8 +321,8 @@ if args.skip_AA_on_normal_bam:
     argstring += " --skip_AA_on_normal_bam"
 if args.sv_vcf_no_filter:
     argstring += " --sv_vcf_no_filter"
-if args.sv_vcf_include_sdevs:
-    argstring += " --sv_vcf_include_sdevs"
+if args.sv_vcf_include_sr:
+    argstring += " --sv_vcf_include_sr"
 
 # Create environment and run script files
 sample_name = "grouped_analysis"  # Generic name for this run
@@ -340,6 +360,9 @@ with open(runscript_outname, 'w') as outfile:
     with open(env_outname, 'w') as env_file:
         env_file.write('argstring="' + argstring + '"\n')
         env_file.write("SAMPLE_NAME=" + sample_name + '\n')
+        # Only export GRB_LICENSE_FILE when a license is actually mounted, so gurobipy never sees a missing path.
+        if GRB_LICENSE_FILE:
+            env_file.write("GRB_LICENSE_FILE=/home/gurobi/gurobi.lic\n")
 
     # Create comprehensive bind mount string
     all_bind_mounts = []
@@ -353,7 +376,12 @@ with open(runscript_outname, 'w') as outfile:
     
     # Add standard bind mounts
     all_bind_mounts.append(f"--bind {args.output_directory}:/home/output")
-    all_bind_mounts.append("--bind $HOME/mosek:/home/mosek/")
+    # Optional license binds. Mosek and Gurobi are both optional (AA falls back to clarabel, BFBArchitect to CBC),
+    # so only bind a license when it is actually present on the host.
+    if MOSEK_DIR:
+        all_bind_mounts.append(f"--bind {MOSEK_DIR}:/home/mosek/")
+    if GRB_LICENSE_FILE:
+        all_bind_mounts.append(f"--bind {GRB_LICENSE_FILE}:/home/gurobi/gurobi.lic")
     all_bind_mounts.append(f"--bind {container_input_file}:/home/output/container_input_file.txt")
     
     bind_mounts_str = " ".join(all_bind_mounts)

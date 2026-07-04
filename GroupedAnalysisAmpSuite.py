@@ -110,13 +110,13 @@ def launch_AA_AC(job_queue, aa_py, PAA_PATH, parent_odir):
             break
 
 
-def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir):
+def create_AA_AC_cmds(tumor_lines, base_argstring, grouped_seeds, parent_odir, nthreads=1):
     cmd_dict = dict()
     for tf in tumor_lines:
         odir = parent_odir + tf[0]
         curr_seeds = grouped_seeds[tf[0]]
-        curr_argstring = "{} -t 1 --run_AA --run_AC -s {} --bam {} --bed {} -o {}".format(base_argstring, tf[0], tf[1],
-                                                                               curr_seeds, odir)
+        curr_argstring = "{} -t {} --run_AA --run_AC -s {} --bam {} --bed {} -o {}".format(base_argstring, nthreads,
+                                                                               tf[0], tf[1], curr_seeds, odir)
 
         optionals = zip(["--sample_metadata", "--sv_vcf"], tf[4:])
         for k, v in optionals:
@@ -397,6 +397,9 @@ if __name__ == '__main__':
                         "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                         metavar='INT', action='store', type=int)
+    parser.add_argument("--AA_solver", help="If --run_AA selected, set the copy-number optimizer AA uses via its "
+                        "--solver argument. 'mosek' (default) automatically falls back to 'clarabel' if no Mosek license "
+                        "is found.", choices=['mosek', 'clarabel'], default='mosek')
     parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                       "default segmentation method (cbs).",
                         choices=['cbs', 'haar', 'hmm', 'hmm-tumor',
@@ -474,11 +477,15 @@ if __name__ == '__main__':
                 os.makedirs(odir)
 
         all_lines = normal_lines + tumor_lines
-        cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory)
         threadL = []
+        # Run as many samples concurrently as we have threads/samples for, then split the remaining threads evenly
+        # across those concurrent jobs. Each job's -t budget is further subdivided between AA and AC (BFBArchitect)
+        # inside AmpliconSuite-pipeline. This replaces the old hardcoded -t 1, which left AC/BFBA single-threaded.
         paa_threads = min(args.nthreads, len(all_lines))
+        aa_ac_threads = max(1, args.nthreads // paa_threads)
+        cmd_dict = create_AA_AC_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory, aa_ac_threads)
         print("\nQueueing " + str(len(all_lines)) + " PAA jobs")
-        print("Going to use " + str(paa_threads) + " threads")
+        print("Going to run {} job(s) concurrently, each with -t {}".format(paa_threads, aa_ac_threads))
 
         # Create a thread-safe queue and fill it directly
         job_queue = queue.Queue()
