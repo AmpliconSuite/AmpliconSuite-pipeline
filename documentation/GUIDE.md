@@ -52,7 +52,7 @@ If you decide to "got it alone" and not to use AmpliconSuite-pipeline, please ca
 #### - Creating the BAM file:
 If you are generating your own BAM file, please note that aligners vary in terms of which tags they will add to BAM files. Furthermore,
 BAM files hosted on SRA are often stripped of tags needed by AA to correctly identify breakpoints. At this time, we recommend using
-**BWA MEM**. However, we have also modified AA so that it will support BAM files created by Illumina's Isaac aligner. Please note that for use with AA, BWA MEM should be run **without** setting the `-m` flag (it's off by default, just don't turn it on).
+**BWA MEM**. Novoalign is also known to work well. Please note that for use with AA, BWA MEM should be run **without** setting the `-m` flag (it's off by default, just don't turn it on).
 
 AmpliconSuite-pipeline will also function on coordinate-sorted CRAM files, [provided that the CRAM reference is in place](https://www.htslib.org/workflow/cram.html).
 
