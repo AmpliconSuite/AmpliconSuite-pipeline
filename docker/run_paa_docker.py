@@ -82,8 +82,8 @@ parser.add_argument('--foldback_pair_support_min', help="Number of read pairs fo
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                         metavar='INT', action='store', type=int)
 parser.add_argument("--AA_solver", help="If --run_AA selected, set the copy-number optimizer AA uses via its --solver "
-                    "argument. 'mosek' (default) automatically falls back to 'clarabel' if no Mosek license is found.",
-                    choices=['mosek', 'clarabel'], default='mosek')
+                    "argument. If 'mosek' (default) is unavailable, the pipeline selects 'clarabel'; AA also retries "
+                    "with Clarabel if Mosek fails at runtime.", choices=['mosek', 'clarabel'], default='mosek')
 parser.add_argument(
     "--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
 parser.add_argument("--ploidy", type=int,
@@ -162,39 +162,34 @@ else:
     sys.stderr.write("$AA_DATA_REPO bash variable not set. Docker image will download large (>3 Gb) data repo each"
                      " time it is run. See installation instructions to optimize this process.\n")
 
-try:
-    # deprecated install of mosek license
-    MOSEKLM_LICENSE_FILE = os.environ['MOSEKLM_LICENSE_FILE']
-    if MOSEKLM_LICENSE_FILE.endswith("mosek.lic"):
+MOSEKLM_LICENSE_FILE = None
+mosek_requested_for_aa = args.run_AA and args.AA_solver == "mosek"
+# BFBArchitect may also use Mosek under --run_AC. In that case, discover and mount an available license without
+# describing an explicit Clarabel AA run as a fallback.
+if mosek_requested_for_aa or args.run_AC:
+    mosek_candidate = os.environ.get('MOSEKLM_LICENSE_FILE')
+    if mosek_candidate and mosek_candidate.endswith("mosek.lic"):
         sys.stderr.write(
             "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'\n")
-    if not os.path.exists(MOSEKLM_LICENSE_FILE + "/mosek.lic"):
-        raise KeyError
+        mosek_candidate = None
+    if mosek_candidate and os.path.exists(os.path.join(mosek_candidate, "mosek.lic")):
+        MOSEKLM_LICENSE_FILE = mosek_candidate
+    elif os.path.exists(os.path.join(os.environ['HOME'], "mosek", "mosek.lic")):
+        MOSEKLM_LICENSE_FILE = os.path.join(os.environ['HOME'], "mosek")
 
-except KeyError:
-    # current install of mosek license
-    if os.path.exists(os.environ['HOME'] + "/mosek/mosek.lic"):
-        MOSEKLM_LICENSE_FILE = os.environ['HOME'] + "/mosek/"
-
-    else:
-        # Non-fatal: AA (>=1.6) falls back to the license-free 'clarabel' solver when Mosek is unavailable.
-        MOSEKLM_LICENSE_FILE = None
-        sys.stderr.write(
-            "Mosek license (mosek.lic) file not found in $HOME/mosek/. AmpliconArchitect will fall back to the "
-            "'clarabel' solver. To use Mosek instead, place a license as described in the README.\n")
-
-# Gurobi license (optional). Used by BFBArchitect within AmpliconClassifier; falls back to the open-source CBC
-# solver when unavailable. Gurobi's default location is $HOME/gurobi.lic; GRB_LICENSE_FILE overrides it.
-GRB_LICENSE_FILE = None
-for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
-    if _grb_cand and os.path.isfile(_grb_cand):
-        GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
-        break
-
-if GRB_LICENSE_FILE is None:
+if mosek_requested_for_aa and MOSEKLM_LICENSE_FILE is None:
     sys.stderr.write(
-        "No Gurobi license found (looked for $GRB_LICENSE_FILE and $HOME/gurobi.lic). BFBArchitect will use the "
-        "open-source CBC solver instead of Gurobi.\n")
+        "Mosek is unavailable; AmpliconSuite-pipeline will use the license-free 'clarabel' solver for AA. "
+        "If Mosek fails later during optimization, AA also retries with Clarabel.\n")
+
+# Gurobi is an optional BFBArchitect accelerator under --run_AC. Discover it only when AC will run, and remain
+# silent when it is absent because the built-in solver is the normal choice for most analyses.
+GRB_LICENSE_FILE = None
+if args.run_AC:
+    for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
+        if _grb_cand and os.path.isfile(_grb_cand):
+            GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
+            break
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
@@ -362,9 +357,9 @@ with open(runscript_outname, 'w') as outfile:
     # so only bind a license when it is actually present on the host.
     license_args = ""
     if MOSEKLM_LICENSE_FILE:
-        license_args += " -v " + MOSEKLM_LICENSE_FILE + ":/home/mosek/"
+        license_args += " -v " + MOSEKLM_LICENSE_FILE + ":/home/mosek/:ro"
     if GRB_LICENSE_FILE:
-        license_args += " -v " + GRB_LICENSE_FILE + ":/home/gurobi/gurobi.lic -e GRB_LICENSE_FILE=/home/gurobi/gurobi.lic"
+        license_args += " -v " + GRB_LICENSE_FILE + ":/home/gurobi/gurobi.lic:ro -e GRB_LICENSE_FILE=/home/gurobi/gurobi.lic"
 
     # assemble a docker command string
     dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \

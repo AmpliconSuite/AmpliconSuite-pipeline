@@ -83,8 +83,8 @@ parser.add_argument('--foldback_pair_support_min', help="Number of read pairs fo
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                         metavar='INT', action='store', type=int)
 parser.add_argument("--AA_solver", help="If --run_AA selected, set the copy-number optimizer AA uses via its --solver "
-                    "argument. 'mosek' (default) automatically falls back to 'clarabel' if no Mosek license is found.",
-                    choices=['mosek', 'clarabel'], default='mosek')
+                    "argument. If 'mosek' (default) is unavailable, the pipeline selects 'clarabel'; AA also retries "
+                    "with Clarabel if Mosek fails at runtime.", choices=['mosek', 'clarabel'], default='mosek')
 parser.add_argument(
     "--normal_bam", help="Path to matched normal bam for CNVKit (optional)", default=None)
 parser.add_argument("--ploidy", type=int,
@@ -166,27 +166,36 @@ else:
                      " time it is run. See installation instructions to optimize this process.\n")
 
 
-# Mosek license is optional. AA (>=1.6) falls back to the license-free 'clarabel' solver when it is unavailable.
-MOSEK_DIR = os.environ['HOME'] + "/mosek"
-if not os.path.exists(MOSEK_DIR + "/mosek.lic"):
-    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'] + "\n")
-    sys.stderr.write(
-        "Mosek license (mosek.lic) file not found in $HOME/mosek/. AmpliconArchitect will fall back to the "
-        "'clarabel' solver. To use Mosek instead, place a license as described in the README.\n")
-    MOSEK_DIR = None
+# Mosek is optional. BFBArchitect may also use it under --run_AC, so an available license is still mounted for AC
+# when AA explicitly uses Clarabel; only an AA request for Mosek should produce an AA fallback warning.
+MOSEK_DIR = None
+mosek_requested_for_aa = args.run_AA and args.AA_solver == "mosek"
+if mosek_requested_for_aa or args.run_AC:
+    mosek_candidate = os.environ.get('MOSEKLM_LICENSE_FILE')
+    if mosek_candidate and mosek_candidate.endswith("mosek.lic"):
+        sys.stderr.write(
+            "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'\n")
+        mosek_candidate = None
+    if mosek_candidate and os.path.exists(os.path.join(mosek_candidate, "mosek.lic")):
+        MOSEK_DIR = os.path.realpath(mosek_candidate)
+    else:
+        mosek_candidate = os.path.join(os.environ['HOME'], "mosek")
+        if os.path.exists(os.path.join(mosek_candidate, "mosek.lic")):
+            MOSEK_DIR = mosek_candidate
 
-# Gurobi license (optional). Used by BFBArchitect within AmpliconClassifier; falls back to the open-source CBC
-# solver when unavailable. Gurobi's default location is $HOME/gurobi.lic; GRB_LICENSE_FILE overrides it.
+if mosek_requested_for_aa and MOSEK_DIR is None:
+    sys.stderr.write(
+        "Mosek is unavailable; AmpliconSuite-pipeline will use the license-free 'clarabel' solver for AA. "
+        "If Mosek fails later during optimization, AA also retries with Clarabel.\n")
+
+# Gurobi is an optional BFBArchitect accelerator under --run_AC. Discover it only when AC will run, and remain
+# silent when it is absent because the built-in solver is the normal choice for most analyses.
 GRB_LICENSE_FILE = None
-for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
-    if _grb_cand and os.path.isfile(_grb_cand):
-        GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
-        break
-
-if GRB_LICENSE_FILE is None:
-    sys.stderr.write(
-        "No Gurobi license found (looked for $GRB_LICENSE_FILE and $HOME/gurobi.lic). BFBArchitect will use the "
-        "open-source CBC solver instead of Gurobi.\n")
+if args.run_AC:
+    for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
+        if _grb_cand and os.path.isfile(_grb_cand):
+            GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
+            break
 
 # attach some directories
 cnvdir, cnvname = os.path.split(args.cnv_bed)
@@ -353,9 +362,9 @@ with open(runscript_outname, 'w') as outfile:
     # so only bind a license when it is actually present on the host.
     license_binds = ""
     if MOSEK_DIR:
-        license_binds += "--bind " + MOSEK_DIR + ":/home/mosek/ "
+        license_binds += "--bind " + MOSEK_DIR + ":/home/mosek/:ro "
     if GRB_LICENSE_FILE:
-        license_binds += "--bind " + GRB_LICENSE_FILE + ":/home/gurobi/gurobi.lic "
+        license_binds += "--bind " + GRB_LICENSE_FILE + ":/home/gurobi/gurobi.lic:ro "
 
     # assemble a singularity command string
     sing_string = "singularity exec --no-home --cleanenv --env-file " + env_outname + " --bind $AA_DATA_REPO:" \

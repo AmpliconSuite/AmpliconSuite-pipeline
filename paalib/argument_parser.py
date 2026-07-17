@@ -123,8 +123,9 @@ def _add_aa_arguments(parser):
                         " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                         metavar='INT', action='store', type=int)
     parser.add_argument("--AA_solver", metavar='STR', help="If --run_AA selected, set the copy-number optimizer AA "
-                        "uses via its --solver argument. 'mosek' (default) automatically falls back to 'clarabel' if "
-                        "no Mosek license is found.", choices=['mosek', 'clarabel'], default='mosek')
+                        "uses via its --solver argument. If 'mosek' (default) is unavailable, the pipeline selects "
+                        "'clarabel'; AA also retries with Clarabel if Mosek fails at runtime.",
+                        choices=['mosek', 'clarabel'], default='mosek')
 
 
 def _add_cnvkit_arguments(parser):

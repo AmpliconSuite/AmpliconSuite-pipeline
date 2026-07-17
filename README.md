@@ -48,10 +48,10 @@ Because that speedup only adds up across many samples, a commercial-solver licen
 | Already have Mosek, or prefer a longer-lived license | Free academic **[Mosek](https://www.mosek.com/products/academic-licenses/)** license | `$HOME/mosek/mosek.lic` |
 
 **Which solver runs which step:**
-- *AmpliconArchitect* (copy-number optimization): **Clarabel** (used automatically unless a Mosek license is present) or **Mosek** (see `--AA_solver`).
+- *AmpliconArchitect* (copy-number optimization): **Mosek** when requested and available, otherwise **Clarabel** (see `--AA_solver`). AA also retries with Clarabel if Mosek fails at runtime.
 - *BFBArchitect* (BFB reconstruction, run under `--run_AC`): **CBC** (used automatically unless a Gurobi or Mosek license is present) or **Gurobi** or **Mosek**.
 
-The pipeline auto-detects any license present and uses that solver; otherwise it silently uses the built-in one. Nothing to configure beyond dropping the license file in place.
+The pipeline auto-detects supported licenses and uses the corresponding solver. When a requested commercial solver is unavailable, it prints a warning and uses the appropriate built-in solver. Nothing needs to be configured for license-free operation.
 
 **License lifetimes** (if you do get one): free academic **Gurobi** licenses must be renewed every ~3 months; free academic **Mosek** licenses last a year; the built-in solvers never expire.
 
@@ -114,7 +114,7 @@ brew install coreutils
 2. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. A Mosek license is **optional** — if none is present, AA (>=1.6) automatically uses the license-free `clarabel` solver instead (see the [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no) section; results are nearly identical either way).
 
 
-3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). When `--run_AC` is used, BFBArchitect (bundled with AmpliconClassifier 2.0+) will use Gurobi for BFB reconstruction; without it, BFBArchitect falls back to the open-source CBC solver.
+3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). When `--run_AC` is used, BFBArchitect (bundled with AmpliconClassifier 2.0+) can use Gurobi for BFB reconstruction. If Gurobi is unavailable, BFBArchitect automatically uses another available solver or the open-source CBC solver without requiring configuration.
 
 
 4. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
@@ -150,9 +150,9 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 3. License for Mosek dependency:
     * [Obtain Mosek license file](https://www.mosek.com/products/academic-licenses/) `mosek.lic`. The license is free for academic use.
     * Place the file in `$HOME/mosek/` (the `mosek/` folder that now exists in your home directory).
-    * If you are not able to place the license in the default location, you can set a custom location by exporting the bash variable `MOSEKLM_LICENSE_FILE=/custom/path/`.
-    * Mosek is optional for the containers: if no license is found in `$HOME/mosek/`, the runscript prints a warning and AA falls back to the license-free `clarabel` solver instead of exiting.
-    * (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license at `$HOME/gurobi.lic` (or pointed to by `GRB_LICENSE_FILE`), the runscript automatically mounts it so BFBArchitect can use Gurobi under `--run_AC`. If absent, BFBArchitect falls back to the open-source CBC solver.
+    * If you are not able to place the license in the default location, set its directory with `MOSEKLM_LICENSE_FILE=/custom/path/`. The Docker and Singularity runscripts mount detected license files read-only.
+    * Mosek is optional for the containers. When Mosek is requested but unavailable before launch, the runscript prints a warning and selects the license-free `clarabel` solver. If Mosek fails during optimization, AA retries with Clarabel.
+    * (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license at `$HOME/gurobi.lic` (or pointed to by `GRB_LICENSE_FILE`), the runscript automatically mounts it so BFBArchitect can use Gurobi under `--run_AC`. If absent, BFBArchitect quietly uses another available solver or the open-source CBC solver.
 
    
 4. (Recommended) Pre-download AA data repositories and set environment variable AA_DATA_REPO:
@@ -322,7 +322,7 @@ Otherwise, you will instead need these arguments below:
 
 - `--AA_extendmode {EXPLORE/CLUSTERED/UNCLUSTERED/VIRAL}`: Default `EXPLORE`. See AA documentation for more info.
 
-- `--AA_solver {mosek, clarabel}`: Copy-number optimizer AA uses (passed to AA's `--solver`). Default `mosek`, which automatically falls back to the license-free `clarabel` solver if no Mosek license is found. Set to `clarabel` to skip Mosek entirely.
+- `--AA_solver {mosek, clarabel}`: Copy-number optimizer AA uses (passed to AA's `--solver`). Default `mosek`; the pipeline selects the license-free `clarabel` solver if Mosek is unavailable, and AA retries with Clarabel if Mosek fails at runtime. Set to `clarabel` to skip Mosek entirely for AA.
 
 - `--AA_insert_sdevs {float}`: Default 3.0. Suggest raising to 8 or 9 if library has poorly controlled insert size (low fraction of properly-paired reads). See AA documentation for more info.
 
@@ -449,7 +449,10 @@ however it requires an additional input file, listing the inputs. This file is t
 Where `CNV_calls.bed`, `sample_metadata.json`, `SV_calls.vcf` are all optional. All samples listed in each file should be uniquely named and from the same group of related samples. These arguments are positional, so if `CNV_calls` is skipped, it should be set as either `NA` or `None`.
 Do not include different collections of related samples in the same table - make different tables. 
 
-AA and AC will be run by default, but can be disabled with `--no_AA`.
+AA and AC run by default, but both can be disabled with `--no_AA`. GroupedAnalysis runs AA for each sample, then
+runs AC once over all completed AA outputs. The cohort-wide AC process divides `--nthreads` between parallel
+amplicons (`--jobs`) and BFBArchitect solver threads (`--bfb_threads`) using the same policy as the standalone
+pipeline. AC also computes cross-sample feature-similarity scores during this combined classification stage.
 
 #### Native installation example:
 > `GroupedAnalysisAmpSuite.py -i {inputs.txt} -o {output_dir} -t {num_threads} --ref {ref_genome}`

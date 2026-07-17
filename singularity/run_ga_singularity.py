@@ -161,8 +161,9 @@ parser.add_argument("-i", "--input", help="Input file providing the multi-sample
                                           "information on how to format the input file.", required=True)
 parser.add_argument("-o", "--output_directory", help="output directory name (will create if not already created)."
                                                      " Sample outputs will be created as subdirectories inside -o", required=True)
-parser.add_argument("-t", "--nthreads", help="Number of threads to use in BWA, CNV calling steps (samples run in serial), "
-                                             "and the number of concurrent instances of AmpliconSuite to launch at once", type=int, required=True)
+parser.add_argument("-t", "--nthreads", help="Total thread budget. CNV preparation runs samples serially; AA jobs "
+                                             "run concurrently; the final cohort-wide AC stage divides this budget "
+                                             "between --jobs and --bfb_threads.", type=int, required=True)
 parser.add_argument("--no_AA", help="Only produce the seeds for the group. Do not run AA/AC",
                     action='store_true')
 parser.add_argument("--no_union", help="Do not create a unified collection of seeds for the group (keep seeds "
@@ -176,10 +177,10 @@ parser.add_argument("--no_cstats",
                     help="Do not read from or write to the $AA_DATA_REPO/coverage.stats file. (default not set).",
                     action='store_true')
 parser.add_argument("--downsample", type=float, help="AA downsample argument (see AA documentation)", default=10)
-parser.add_argument("--AA_runmode", help="If --run_AA selected, set the --runmode argument to AA. Default mode is "
-                                         "'FULL'", choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
-parser.add_argument("--AA_extendmode", help="If --run_AA selected, set the --extendmode argument to AA. Default "
-                                            "mode is 'EXPLORE'",
+parser.add_argument("--AA_runmode", help="Set AA's --runmode during the grouped AA/AC stage. Default mode is 'FULL'",
+                    choices=['FULL', 'BPGRAPH', 'CYCLES', 'SVVIEW'], default='FULL')
+parser.add_argument("--AA_extendmode", help="Set AA's --extendmode during the grouped AA/AC stage. Default mode is "
+                                            "'EXPLORE'",
                     choices=["EXPLORE", "CLUSTERED", "UNCLUSTERED", "VIRAL"],
                     default='EXPLORE')
 parser.add_argument("--AA_insert_sdevs", help="Number of standard deviations around the insert size. May need to "
@@ -192,8 +193,9 @@ parser.add_argument('--foldback_pair_support_min', help="Number of read pairs fo
                     "(default 2 but typically becomes higher due to coverage-scaled cutoffs). Used value will be the maximum"
                     " of pair_support and this argument. Raising to 3 will help dramatically in heavily artifacted samples.",
                     metavar='INT', action='store', type=int)
-parser.add_argument("--AA_solver", help="If --run_AA selected, set the copy-number optimizer AA uses via its --solver "
-                    "argument. 'mosek' (default) automatically falls back to 'clarabel' if no Mosek license is found.",
+parser.add_argument("--AA_solver", help="Set the copy-number optimizer used by AA during the grouped AA/AC stage "
+                    "(which runs unless --no_AA is selected). If 'mosek' (default) is unavailable, the pipeline "
+                    "selects 'clarabel'; AA also retries with Clarabel if Mosek fails at runtime.",
                     choices=['mosek', 'clarabel'], default='mosek')
 parser.add_argument("--cnvkit_segmentation", help="Segmentation method for CNVKit (if used), defaults to CNVKit "
                                                   "default segmentation method (cbs).",
@@ -263,27 +265,37 @@ else:
     sys.stderr.write("$AA_DATA_REPO bash variable not set. Singularity image will download large (>3 Gb) data repo each"
                      " time it is run. See installation instructions to optimize this process.\n")
 
-# Mosek license is optional. AA (>=1.6) falls back to the license-free 'clarabel' solver when it is unavailable.
-MOSEK_DIR = os.environ['HOME'] + "/mosek"
-if not os.path.exists(MOSEK_DIR + "/mosek.lic"):
-    sys.stdout.write("Python detected $HOME was set to: " + os.environ['HOME'] + "\n")
-    sys.stderr.write(
-        "Mosek license (mosek.lic) file not found in $HOME/mosek/. AmpliconArchitect will fall back to the "
-        "'clarabel' solver. To use Mosek instead, place a license as described in the README.\n")
-    MOSEK_DIR = None
+# Unless --no_AA is set, GroupedAnalysis runs per-sample AA jobs followed by one cohort-wide AC job. Discover
+# licenses only when those stages will run; explicit Clarabel should not produce an AA fallback warning.
+MOSEK_DIR = None
+aa_ac_stage_enabled = not args.no_AA
+mosek_requested_for_aa = aa_ac_stage_enabled and args.AA_solver == "mosek"
+if aa_ac_stage_enabled:
+    mosek_candidate = os.environ.get('MOSEKLM_LICENSE_FILE')
+    if mosek_candidate and mosek_candidate.endswith("mosek.lic"):
+        sys.stderr.write(
+            "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'\n")
+        mosek_candidate = None
+    if mosek_candidate and os.path.exists(os.path.join(mosek_candidate, "mosek.lic")):
+        MOSEK_DIR = os.path.realpath(mosek_candidate)
+    else:
+        mosek_candidate = os.path.join(os.environ['HOME'], "mosek")
+        if os.path.exists(os.path.join(mosek_candidate, "mosek.lic")):
+            MOSEK_DIR = mosek_candidate
 
-# Gurobi license (optional). Used by BFBArchitect within AmpliconClassifier; falls back to the open-source CBC
-# solver when unavailable. Gurobi's default location is $HOME/gurobi.lic; GRB_LICENSE_FILE overrides it.
+if mosek_requested_for_aa and MOSEK_DIR is None:
+    sys.stderr.write(
+        "Mosek is unavailable; AmpliconSuite-pipeline will use the license-free 'clarabel' solver for AA. "
+        "If Mosek fails later during optimization, AA also retries with Clarabel.\n")
+
+# Gurobi is an optional BFBArchitect accelerator during the grouped AA/AC stage. Remain silent when it is absent
+# because the built-in solver is the normal choice for most analyses.
 GRB_LICENSE_FILE = None
-for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
-    if _grb_cand and os.path.isfile(_grb_cand):
-        GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
-        break
-
-if GRB_LICENSE_FILE is None:
-    sys.stderr.write(
-        "No Gurobi license found (looked for $GRB_LICENSE_FILE and $HOME/gurobi.lic). BFBArchitect will use the "
-        "open-source CBC solver instead of Gurobi.\n")
+if aa_ac_stage_enabled:
+    for _grb_cand in [os.environ.get('GRB_LICENSE_FILE'), os.path.join(os.environ['HOME'], "gurobi.lic")]:
+        if _grb_cand and os.path.isfile(_grb_cand):
+            GRB_LICENSE_FILE = os.path.realpath(_grb_cand)
+            break
 
 # Parse input file and process samples
 print("Parsing input file and processing samples...")
@@ -379,9 +391,9 @@ with open(runscript_outname, 'w') as outfile:
     # Optional license binds. Mosek and Gurobi are both optional (AA falls back to clarabel, BFBArchitect to CBC),
     # so only bind a license when it is actually present on the host.
     if MOSEK_DIR:
-        all_bind_mounts.append(f"--bind {MOSEK_DIR}:/home/mosek/")
+        all_bind_mounts.append(f"--bind {MOSEK_DIR}:/home/mosek/:ro")
     if GRB_LICENSE_FILE:
-        all_bind_mounts.append(f"--bind {GRB_LICENSE_FILE}:/home/gurobi/gurobi.lic")
+        all_bind_mounts.append(f"--bind {GRB_LICENSE_FILE}:/home/gurobi/gurobi.lic:ro")
     all_bind_mounts.append(f"--bind {container_input_file}:/home/output/container_input_file.txt")
     
     bind_mounts_str = " ".join(all_bind_mounts)
@@ -397,7 +409,7 @@ with open(runscript_outname, 'w') as outfile:
 outfile.close()
 
 call("chmod +x ./" + runscript_outname, shell=True)
-call("./" + runscript_outname, shell=True)
+run_exit_code = call("./" + runscript_outname, shell=True)
 call("rm " + runscript_outname, shell=True)
 call("rm -f " + env_outname, shell=True)
 call("rm -f " + container_input_file, shell=True)
@@ -412,3 +424,6 @@ if no_data_repo:
     print("Cleaning up data repo")
     print(cmd)
     call(cmd, shell=True)
+
+if run_exit_code != 0:
+    sys.exit(run_exit_code)

@@ -104,7 +104,7 @@ Users can provide two additional columns
 
 These are positional for columns 4 and 5, respectively. If one is ommitted, the `NA` should be placed.
 
-`GroupedAnalysis.py` takes most of the same arguments as `AmpliconSuite-pipeline.py`, but by default `--run_AA` and `--run_AC` will be set.
+`GroupedAnalysisAmpSuite.py` takes most of the same arguments as `AmpliconSuite-pipeline.py`. AA runs per sample after the seed sets are unified, followed by one threaded AC invocation over all AA outputs; that combined AC run also computes cross-sample feature similarity. Use `--no_AA` to stop after producing the unified seed sets.
 
 #### Option B: Manual creation of unified seeds
 First run AmpliconSuite-pipeline on each sample **without** setting `--run_AA`. The result for each sample the `[sample]_AA_CNV_SEEDS.bed` file. Next, using `bedtools` or similar, take the relevant seeds files from related samples and merge those bed files. A tutorial for merging bed files can be found [here](http://quinlanlab.org/tutorials/bedtools/bedtools.html) 

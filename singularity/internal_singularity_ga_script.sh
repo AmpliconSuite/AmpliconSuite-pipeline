@@ -40,6 +40,12 @@ echo "Container running command:"
 echo "${RUN_COMMAND}"
 
 python3 /home/programs/AmpliconSuite-pipeline-master/GroupedAnalysisAmpSuite.py ${argstring} &> /home/output/GA_stdout.log
+grouped_status=$?
+
+if [ "$grouped_status" -ne 0 ]; then
+  echo "GroupedAnalysisAmpSuite failed with exit code $grouped_status. See /home/output/GA_stdout.log." >&2
+  exit "$grouped_status"
+fi
 
 echo -e "\n"
 
