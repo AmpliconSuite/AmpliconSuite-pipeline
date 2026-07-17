@@ -204,9 +204,14 @@ def validate_aa_environment(args):
             logging.error("\nAC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
             sys.exit(1)
     
-    # Check MOSEK license if running AA
-    if args.run_AA:
-        _validate_mosek_license()
+    # Clarabel is license-free and must not be gated on a MOSEK license. When
+    # MOSEK is requested but no usable license is present, select Clarabel
+    # before AA is launched. AA also retains its runtime MOSEK-to-Clarabel
+    # fallback for license-server and solver failures that happen later.
+    if args.run_AA and getattr(args, "AA_solver", "mosek") == "mosek":
+        if not _validate_mosek_license():
+            logging.warning("MOSEK license unavailable; falling back to the Clarabel solver.")
+            args.AA_solver = "clarabel"
     
     return AA_SRC, AC_SRC
 
@@ -328,7 +333,7 @@ def _contains_spaces(filepath):
 
 
 def _validate_mosek_license():
-    """Validate MOSEK license for AmpliconArchitect"""
+    """Return whether a usable-looking MOSEK license is available for AA."""
     mosek_license_path = None
     
     # Check if license exists in default location
@@ -338,17 +343,17 @@ def _validate_mosek_license():
     # Check if license exists in location specified by MOSEKLM_LICENSE_FILE
     elif "MOSEKLM_LICENSE_FILE" in os.environ:
         if os.environ["MOSEKLM_LICENSE_FILE"].endswith("mosek.lic"):
-            logging.error(
+            logging.warning(
                 "MOSEKLM_LICENSE_FILE should be the path of the directory of the license, not the full path. Please update your .bashrc, and run 'source ~/.bashrc'")
-            sys.exit(1)
+            return False
         elif os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
             mosek_license_path = os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"
         else:
-            logging.error("--run_AA set, but MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
-            sys.exit(1)
+            logging.warning("MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
+            return False
     else:
-        logging.error("--run_AA set, but MOSEK license not found in $HOME/mosek/")
-        sys.exit(1)
+        logging.warning("MOSEK license not found in $HOME/mosek/")
+        return False
     
     # Check license age
     if mosek_license_path:
@@ -363,10 +368,10 @@ def _validate_mosek_license():
             logging.warning("WARNING: MOSEK LICENSE APPEARS TO BE EXPIRED! (file created > 365 days ago)")
             logging.warning(
                 "The Mosek license file at " + mosek_license_path + " is " + str(days_old) + " days old.")
-            logging.warning("AA will not run with an expired license.")
-            logging.warning("Please obtain an updated Mosek license to continue using AA.")
+            logging.warning("AA will use Clarabel instead of this license.")
+            logging.warning("Please obtain an updated Mosek license to continue using MOSEK.")
             logging.warning("*" * 80)
-            sys.exit(1)
+            return False
         # Check if license is about to expire (within 7 days)
         elif days_old >= 358:
             days_until_expiry = 365 - days_old
@@ -374,8 +379,10 @@ def _validate_mosek_license():
             logging.warning("WARNING: MOSEK LICENSE WILL EXPIRE SOON!")
             logging.warning("The Mosek license file at " + mosek_license_path + " will expire in " + str(
                 days_until_expiry) + " days.")
-            logging.warning("Please obtain an updated Mosek license before expiration to continue using AA.")
+            logging.warning("Please obtain an updated Mosek license before expiration to continue using MOSEK.")
             logging.warning("*" * 80)
+
+    return True
 
 
 def _build_command_string():
