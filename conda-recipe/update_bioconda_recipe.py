@@ -10,6 +10,13 @@ import urllib.request
 from pathlib import Path
 
 
+COMPONENTS = (
+    ("AS", "AS_version"),
+    ("AA", "AA_version"),
+    ("AC", "AC_version"),
+    ("BFBA", "BFBA_version"),
+)
+
 SOURCES = (
     (
         "AS",
@@ -26,6 +33,11 @@ SOURCES = (
         "AC_version",
         "https://github.com/AmpliconSuite/AmpliconClassifier/archive/v{version}.tar.gz",
     ),
+    (
+        "BFBA",
+        "BFBA_version",
+        "https://github.com/AmpliconSuite/BFBArchitect/archive/v{version}.tar.gz",
+    ),
 )
 
 
@@ -33,7 +45,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description=(
             "Update recipes/ampliconsuite/meta.yaml with new AmpliconSuite, "
-            "AmpliconArchitect, and AmpliconClassifier versions and sha256 sums."
+            "AmpliconArchitect, AmpliconClassifier, and BFBArchitect versions "
+            "and sha256 sums."
         )
     )
     parser.add_argument(
@@ -45,6 +58,7 @@ def parse_args():
     parser.add_argument("--as-version", required=True, help="AmpliconSuite-pipeline version.")
     parser.add_argument("--aa-version", required=True, help="AmpliconArchitect version.")
     parser.add_argument("--ac-version", required=True, help="AmpliconClassifier version.")
+    parser.add_argument("--bfba-version", required=True, help="BFBArchitect version.")
     parser.add_argument(
         "--build-number",
         type=int,
@@ -107,8 +121,10 @@ def update_build_number(text, build_number):
 
 def update_recipe(original_text, versions, hashes, build_number):
     updated_text = original_text
-    for short_name, variable, _url_template in SOURCES:
+    for short_name, variable in COMPONENTS:
         updated_text = update_jinja_version(updated_text, variable, versions[short_name])
+
+    for short_name, variable, _url_template in SOURCES:
         updated_text = update_sha_after_source_url(updated_text, variable, hashes[short_name])
 
     return update_build_number(updated_text, build_number)
@@ -130,6 +146,7 @@ def main():
         "AS": args.as_version,
         "AA": args.aa_version,
         "AC": args.ac_version,
+        "BFBA": args.bfba_version,
     }
 
     if not args.meta_yaml.exists():

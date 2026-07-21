@@ -36,6 +36,12 @@ Unless you are using a containerized version, and depending on what input data y
   - `cd AmpliconClassifier`
   - `echo export AC_SRC=$PWD >> ~/.bashrc`
   - `source ~/.bashrc`
+- (required for AC 2.0+) The AmpliconClassifier release's pinned
+  [BFBArchitect](https://github.com/AmpliconSuite/BFBArchitect) version and its
+  `gurobipy` binding. The binding must be installed even if no unrestricted
+  Gurobi license is configured. For pip installations, installing the pinned
+  BFBArchitect release installs it automatically; Conda users should run
+  `conda install -c gurobi gurobi`.
 - (recommended) [CNVkit](https://github.com/etal/cnvkit) to generate CNV calls for focal amplification seed region identification.
 - (optional) [bwa mem](https://github.com/lh3/bwa) (unless supplying your own BAM file)
 - (optional) [samtools](http://www.htslib.org/) (unless you already have a coordinate-sorted and indexed BAM file).

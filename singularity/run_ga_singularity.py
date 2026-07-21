@@ -5,6 +5,7 @@
 import argparse
 import json
 import os
+import re
 import subprocess
 from subprocess import call
 import sys
@@ -16,9 +17,28 @@ DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_fi
 
 # check singularity version
 def test_singularity_version():
-    singularity_version = subprocess.check_output(['singularity', '--version']).decode().strip().lower().rsplit("version")[1]
-    major, minor = map(int, singularity_version.split('.')[0:2])
-    assert (major, minor) >= (3, 6),'Singularity version {} is not supported. Please upgrade to version 3.6 or higher.'.format(singularity_version)
+    version_output = subprocess.check_output(['singularity', '--version']).decode().strip().lower()
+    version_match = re.search(
+        r'\b(apptainer|singularity(?:-ce)?)\s+(?:version\s+)?(\d+)\.(\d+)',
+        version_output,
+    )
+    if not version_match:
+        sys.stderr.write(
+            'Could not identify a Singularity/Apptainer version from: {}\n'.format(version_output))
+        sys.exit(1)
+
+    runtime, major, minor = version_match.groups()
+    version = (int(major), int(minor))
+    if runtime == 'apptainer' and version < (1, 0):
+        sys.stderr.write(
+            'Apptainer version {}.{} is not supported. Please upgrade to version 1.0 or higher.\n'.format(
+                major, minor))
+        sys.exit(1)
+    if runtime != 'apptainer' and version < (3, 6):
+        sys.stderr.write(
+            'Singularity version {}.{} is not supported. Please upgrade to version 3.6 or higher.\n'.format(
+                major, minor))
+        sys.exit(1)
 
 
 def parse_input_file(input_file_path):

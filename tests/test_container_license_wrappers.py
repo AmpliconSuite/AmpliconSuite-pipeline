@@ -21,7 +21,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
             "singularity",
             "#!/bin/sh\n"
             "if [ \"$1\" = \"--version\" ]; then\n"
-            "    echo \"singularity version 3.11.0\"\n"
+            "    echo \"${FAKE_SINGULARITY_VERSION:-singularity version 3.11.0}\"\n"
             "    exit 0\n"
             "fi\n"
             "exit \"${FAKE_SINGULARITY_EXIT:-0}\"\n",
@@ -138,6 +138,39 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         self.assertNotIn("Mosek is unavailable", output)
         self.assertNotIn("No Gurobi license", output)
 
+    def test_singularity_launcher_accepts_apptainer_version(self):
+        arguments = self._singularity_arguments("singularity_apptainer")
+        env = self._environment(FAKE_SINGULARITY_VERSION="apptainer version 1.5.2-1.el9")
+        self._run("singularity/run_paa_singularity.py", arguments, env)
+
+    def test_singularity_launcher_rejects_old_singularity_version(self):
+        arguments = self._singularity_arguments("singularity_old")
+        env = self._environment(FAKE_SINGULARITY_VERSION="singularity-ce version 3.5.9")
+        result = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "singularity/run_paa_singularity.py")] + arguments,
+            cwd=self.tmpdir,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("Singularity version 3.5 is not supported", result.stderr)
+
+    def test_singularity_launcher_rejects_unidentified_runtime(self):
+        arguments = self._singularity_arguments("singularity_unknown")
+        env = self._environment(FAKE_SINGULARITY_VERSION="container runtime unknown")
+        result = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "singularity/run_paa_singularity.py")] + arguments,
+            cwd=self.tmpdir,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("Could not identify a Singularity/Apptainer version", result.stderr)
+
     def test_singularity_custom_license_mounts_are_read_only(self):
         env, mosek_dir, gurobi_file = self._licensed_environment()
         arguments = self._singularity_arguments("singularity_licensed")
@@ -153,6 +186,25 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
 
         self.assertIn("Mosek is unavailable", output)
         self.assertNotIn("No Gurobi license", output)
+
+    def test_grouped_launcher_accepts_apptainer_version(self):
+        arguments = self._grouped_arguments("grouped_apptainer")
+        env = self._environment(FAKE_SINGULARITY_VERSION="apptainer version 1.3.5")
+        self._run("singularity/run_ga_singularity.py", arguments, env)
+
+    def test_grouped_launcher_rejects_old_apptainer_version(self):
+        arguments = self._grouped_arguments("grouped_old_apptainer")
+        env = self._environment(FAKE_SINGULARITY_VERSION="apptainer version 0.9.9")
+        result = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "singularity/run_ga_singularity.py")] + arguments,
+            cwd=self.tmpdir,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("Apptainer version 0.9 is not supported", result.stderr)
 
     def test_grouped_singularity_custom_license_mounts_are_read_only(self):
         env, mosek_dir, gurobi_file = self._licensed_environment()

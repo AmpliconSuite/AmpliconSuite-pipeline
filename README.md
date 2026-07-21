@@ -34,6 +34,7 @@ The modules wrapped in AmpliconSuite-pipeline use the following licenses. Please
 - [AmpliconSuite-pipeline license](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/LICENSE) (BSD 2-Clause)
 - [AmpliconArchitect license](https://github.com/AmpliconSuite/AmpliconArchitect) (University of California software license)
 - [AmpliconClassifier license](https://github.com/AmpliconSuite/AmpliconClassifier/blob/main/LICENSE) (BSD 2-Clause)
+- [BFBArchitect license](https://github.com/AmpliconSuite/BFBArchitect/blob/main/LICENSE) (BSD 3-Clause)
 
 Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their own set of licensing requirements which users should make themselves aware of as needed. See the section below on optimizer licenses.
 
@@ -41,14 +42,14 @@ Other dependencies used by these modules (e.g. Mosek, samtools, etc.) have their
 
 AmpliconSuite-pipeline ships with everything it needs to run out of the box. **You no longer need to obtain an additional optimizer license to run AmpliconArchitect or the pipeline.** The pipeline includes free, open-source solvers — **Clarabel** (for AmpliconArchitect's copy-number optimization) and **CBC** (for BFBArchitect's BFB reconstruction) — that handle every step and require no license of their own. For AmpliconArchitect's copy-number optimization, the results are nearly identical across solvers. For BFBArchitect's BFB reconstruction the solvers also agree in the large majority of cases, though in rare borderline instances the choice of solver can shift a BFB score across the `BFB+`/`BFB-` calling threshold. In practice, adding an optional commercial-solver license mainly reduces runtimes — by just a few minutes per sample.
 
-Because that speedup only adds up across many samples, a commercial-solver license is really only worth obtaining if you're analyzing **large cohorts (~50+ samples)**. Of the optional solvers, **Gurobi gave the best runtime reduction in our tests.** For typical use, the built-in solvers are all you need and you can safely ignore this section.
+Because that speedup only adds up across many samples, a commercial-solver license is really only worth obtaining if you're analyzing **large cohorts (~50+ samples)**. Of the optional solvers, **Gurobi gave the best runtime reduction in our tests**, however the academic license has the shortest renewal period. For typical use, the built-in solvers are all you need and you can safely ignore this section.
 
-AmpliconSuite installation wires all three BFBArchitect solver backends — Gurobi, Mosek, and CBC — so users choose which commercial capability to enable by which license, if any, they provide. Supply an unrestricted Gurobi license for the recommended large-cohort path, supply a Mosek license to enable the second commercial option, or provide neither and rely on the license-free fallback.
+AmpliconSuite installation wires all three BFBArchitect solver backends — Gurobi, Mosek, and CBC — so users choose which commercial license they want, if any. The solver packages and Python bindings are installed even when no license is configured.
 
 | Your situation | What to get | Where to put it |
 |---|---|---|
-| Getting started / typical use | **Nothing** — built-in solvers work automatically | — |
-| Large cohorts, want faster BFB reconstruction | Free academic **[Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/)** license | `$HOME/gurobi.lic` (or point `$GRB_LICENSE_FILE` at it) |
+| Getting started / typical use | **Nothing** — built-in free solvers work automatically | — |
+| Large cohorts, or want faster BFB reconstruction | Free academic **[Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/)** license | `$HOME/gurobi.lic` (or point `$GRB_LICENSE_FILE` at it) |
 | Already have Mosek, or prefer a longer-lived license | Free academic **[Mosek](https://www.mosek.com/products/academic-licenses/)** license | `$HOME/mosek/mosek.lic` |
 
 **Which solver runs which step:**
@@ -69,7 +70,8 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 ### Option B: Conda or Mamba
 ```bash 
 conda create -n ampsuite && conda activate ampsuite
-conda install -c bioconda -c conda-forge ampliconsuite 
+conda install -c conda-forge -c bioconda ampliconsuite
+conda install -c gurobi gurobi
 conda install -c mosek mosek
 
 # then run the installer script to finalize the data repo and optional license locations
@@ -78,13 +80,15 @@ chmod +x install.sh
 ./install.sh --finalize_only  # -h to see options
 ```
 
-The Mosek Python package is installed because AA supports that solver, but a Mosek license is **optional**. If desired, [obtain a license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. Without one, the pipeline selects the license-free `clarabel` solver (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)).
+The Gurobi and Mosek packages are required installation steps so every solver path is ready if the user's license strategy changes. Their unrestricted licenses are **optional**. If desired, obtain a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) or [Mosek](https://www.mosek.com/products/academic-licenses/) license and place it in the location shown above. Without one, BFBArchitect falls back to CBC and AmpliconArchitect can use Clarabel (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)). `install.sh --finalize_only` verifies the local Gurobi binding for native and Conda installations; when it is used only to prepare a container host, that local check is skipped because the binding is already in the image.
 
 - If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
 # alternate instructions using Mamba (solves dependencies more effectively on some setups)
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
-mamba install -c conda-forge -c bioconda -c mosek ampliconsuite mosek
+mamba install -c conda-forge -c bioconda ampliconsuite
+mamba install -c gurobi gurobi
+mamba install -c mosek mosek
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
 chmod +x install.sh
 ./install.sh --finalize_only
@@ -118,20 +122,19 @@ brew install coreutils
 2. (Optional) To use Mosek, [obtain a license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. Without one, the pipeline selects the license-free `clarabel` solver and warns when it falls back (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)).
 
 
-3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). When `--run_AC` is used, BFBArchitect (bundled with AmpliconClassifier 2.0+) can use Gurobi for BFB reconstruction. If Gurobi is unavailable, BFBArchitect automatically uses another available solver or the open-source CBC solver without requiring configuration.
+3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). The standalone installer already installs the required `gurobipy` binding through the pinned BFBArchitect package. When `--run_AC` is used, BFBArchitect can use Gurobi for BFB reconstruction; if an unrestricted license is unavailable or fails for a model, it retries another installed solver and ultimately CBC.
 
 
 4. (Optional) If you want the Arial font in your AA figures (helpful for publication-quality fonts), but do not have Arial  on your Linux system, please see [these instructions](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/CUSTOM_INSTALL.md#getting-mscorefonts-onto-your-system) for making it available to Matplotlib. 
 
 
 
-### Option D: Singularity & Docker images 
+### Option D: Singularity & Docker images
 Containerized versions of AmpliconSuite-pipeline are available for Singularity and Docker.
 
 1. Obtain the AmpliconSuite-pipeline image from the options below:
    - **Singularity**:
-     * Singularity installation: https://docs.sylabs.io/guides/3.0/user-guide/installation.html
-     * Must have Singularity version 3.6 or later.
+     * Use [SingularityCE 3.6+](https://docs.sylabs.io/guides/latest/user-guide/quick_start.html) or [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html); the same Python launch wrappers work with either runtime once the SIF is available.
      * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
 
    - **Docker**:

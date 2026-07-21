@@ -24,7 +24,7 @@ fi
 function show_help {
   echo "Usage: install.sh [--finalize_only] --data_repo_loc <data_repo_loc>"
   echo "Options:"
-  echo "  --finalize_only          Do not install AA or AC. Only finalize data repo and mosek license location"
+  echo "  --finalize_only          Do not install AA or AC. Validate installed solver bindings and finalize data repo/license locations"
   echo "  --data_repo_loc <path>   Custom set data repository location (defaults to creating a directory in \$HOME}"
   echo "  --uninstall              Remove downloaded files and unset bash variables associated with AA. Will not remove python dependencies, AmpliconSuite-pipeline directory or data repo files."
 }
@@ -74,7 +74,7 @@ if $uninstall; then
   sed -i.bak '/^export AA_DATA_REPO=/d' ${HOME}/.bashrc
   rm ${HOME}/.bashrc.bak
   echo "to uninstall the relevant python packages installed by this script, please do (some or all of): "
-  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek clarabel bfbarchitect numpy pandas pysam scipy"
+  echo "python3 -m pip uninstall cnvkit Flask future intervaltree matplotlib mosek clarabel bfbarchitect gurobipy numpy pandas pysam scipy"
   exit 0
 fi
 
@@ -151,7 +151,7 @@ if ! ${finalize_only}; then
   fi
 
   # Try pip install first
-  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel "bfbarchitect>=1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel gurobipy "bfbarchitect==1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
       # Installation succeeded
       echo "Installation completed successfully."
   else
@@ -169,7 +169,7 @@ if ! ${finalize_only}; then
           read -p "Do you want to proceed anyway? (y/N): " -r
           echo
           if [[ $REPLY =~ ^[Yy]$ ]]; then
-              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel "bfbarchitect>=1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel gurobipy "bfbarchitect==1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
                   echo "Installation completed successfully."
               else
                   echo "ERROR: Installation failed even with --break-system-packages."
@@ -222,6 +222,23 @@ if ! ${finalize_only}; then
     echo -e "\nWARNING: AC_SRC bash variable is already set! If you do not want to continue using your old AC installation, remove AC_SRC from your ~/.bashrc file, run 'source ~/.bashrc', then run install.sh again!" >&2
     echo -e "\nProceeding with previously installed AmpliconClassifier `python3 $AC_SRC/amplicon_classifier.py -v`"
   fi
+fi
+
+# The supported native and Conda installations include the Gurobi Python
+# binding even when no unrestricted license is configured. A container-only
+# host does not install BFBArchitect locally, so skip the host binding check in
+# that case; the image carries and tests its own binding.
+if python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('bfbarchitect') else 1)" >/dev/null 2>&1; then
+  if ! python3 -c "import gurobipy" >/dev/null 2>&1; then
+    echo "ERROR: BFBArchitect is installed, but its required Gurobi Python binding is unavailable." >&2
+    echo "For Conda/Mamba, run: mamba install -c gurobi gurobi" >&2
+    echo "For a pip installation, run: python3 -m pip install gurobipy" >&2
+    echo "A Gurobi license is optional; installing the binding keeps that solver path ready for later use." >&2
+    exit 1
+  fi
+  echo "Gurobi Python binding is installed. An unrestricted Gurobi license is optional."
+else
+  echo "BFBArchitect is not installed in this Python environment; skipping the local Gurobi binding check (expected when only preparing a host for container use)."
 fi
 
 if [ -z "$AA_DATA_REPO" ]; then
