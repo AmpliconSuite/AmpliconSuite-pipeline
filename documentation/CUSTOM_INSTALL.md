@@ -1,7 +1,7 @@
 ## Performing a standalone custom install from each individual module.
 
 The easiest way to do a standalone install is to follow the instructions from the README and use the `install.sh` script.
-If that or none of the other installation options are possible (e.g. you need to use `python2`, you can install each sub-module and dependency individually.
+If that or none of the other installation options are possible, you can install each sub-module and dependency individually.
 
 1. Clone the AmpliconSuite-pipeline git rep:
 
@@ -25,7 +25,7 @@ If that or none of the other installation options are possible (e.g. you need to
 4. Run `install.sh --finalize_only` script from AmpliconSuite-pipeline.
 
 ## Prerequisites for standalone installation:
-AmpliconSuite-pipeline supports both `python2` and `python3`, however CNVkit requires `python3`. `Python3` support for AmpliconArchitect was added in version 1.3. 
+AmpliconSuite-pipeline requires Python 3.8 or newer. Use one Python environment for the pipeline, AmpliconArchitect, AmpliconClassifier, and their dependencies.
 
 Unless you are using a containerized version, and depending on what input data you are starting from, AmpliconSuite-pipeline may require the following tools to be installed beforehand:
 - (required) The [AmpliconSuite/AmpliconArchictect fork](https://github.com/AmpliconSuite/AmpliconArchitect) must be installed. Instructions for that are available [here](https://github.com/AmpliconSuite/AmpliconArchitect/blob/master/docs/standalone_usage.md).

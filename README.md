@@ -1,7 +1,7 @@
 ![AmpliconSuite-pipeline logo](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/images/AmpliconSuite-pipeline_banner.png)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
 [![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
-[![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/ampliconsuite-pipeline?logo=docker)]((https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline))
+[![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
 [![Singularity](https://img.shields.io/badge/singularity-available-blue)](https://cloud.sylabs.io/library/jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline)
 [![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
 
@@ -13,6 +13,8 @@ AmpliconSuite-pipeline can be invoked to begin at any intermediate stage of the 
 [comment]: # (Initial commit: March 5th, 2019)
 
 Before working with this tool, we recommend heading over to our [**detailed guide**](https://github.com/AmpliconSuite/AmpliconSuite-pipeline/blob/master/documentation/GUIDE.md) to learn about best practices and to see FAQs. 
+
+Maintainers should follow the coordinated [release process](documentation/RELEASE.md) when publishing AmpliconSuite-pipeline, AA, AC, containers, or Bioconda updates.
 
 AmpliconSuite-pipeline supports `hg19`, `GRCh37`, `GRCh38`, and the mouse genome `mm10`. It also supports analysis with a human-viral hybrid reference genome we provide, `GRCh38_viral`, which can be used to detect oncoviral hybrid focal amplifications in oncoviral cancers. The aliases `hg38` (→ `GRCh38`) and `GRCm38` (→ `mm10`) are also accepted.
 
@@ -41,6 +43,8 @@ AmpliconSuite-pipeline ships with everything it needs to run out of the box. **Y
 
 Because that speedup only adds up across many samples, a commercial-solver license is really only worth obtaining if you're analyzing **large cohorts (~50+ samples)**. Of the optional solvers, **Gurobi gave the best runtime reduction in our tests.** For typical use, the built-in solvers are all you need and you can safely ignore this section.
 
+AmpliconSuite installation wires all three BFBArchitect solver backends — Gurobi, Mosek, and CBC — so users choose which commercial capability to enable by which license, if any, they provide. Supply an unrestricted Gurobi license for the recommended large-cohort path, supply a Mosek license to enable the second commercial option, or provide neither and rely on the license-free fallback.
+
 | Your situation | What to get | Where to put it |
 |---|---|---|
 | Getting started / typical use | **Nothing** — built-in solvers work automatically | — |
@@ -49,7 +53,7 @@ Because that speedup only adds up across many samples, a commercial-solver licen
 
 **Which solver runs which step:**
 - *AmpliconArchitect* (copy-number optimization): **Mosek** when requested and available, otherwise **Clarabel** (see `--AA_solver`). AA also retries with Clarabel if Mosek fails at runtime.
-- *BFBArchitect* (BFB reconstruction, run under `--run_AC`): **CBC** (used automatically unless a Gurobi or Mosek license is present) or **Gurobi** or **Mosek**.
+- *BFBArchitect* (BFB reconstruction, run under `--run_AC`): automatically tries **Gurobi**, then **Mosek**, then the license-free **CBC** solver. If a selected commercial solver is unavailable or fails on a model, BFBArchitect logs a warning and retries the next solver. Gurobi autodetection verifies that its environment starts, but a restricted license may still reject a larger model at solve time and trigger this fallback.
 
 The pipeline auto-detects supported licenses and uses the corresponding solver. When a requested commercial solver is unavailable, it prints a warning and uses the appropriate built-in solver. Nothing needs to be configured for license-free operation.
 
@@ -68,13 +72,13 @@ conda create -n ampsuite && conda activate ampsuite
 conda install -c bioconda -c conda-forge ampliconsuite 
 conda install -c mosek mosek
 
-# then run the installer script to finalize the locations of the data repo and mosek license 
+# then run the installer script to finalize the data repo and optional license locations
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
 chmod +x install.sh
 ./install.sh --finalize_only  # -h to see options
 ```
 
-Then [obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. A Mosek license is **optional** — if none is present, AA (>=1.6) automatically uses the license-free `clarabel` solver instead (see the [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no) section; results are nearly identical either way).
+The Mosek Python package is installed because AA supports that solver, but a Mosek license is **optional**. If desired, [obtain a license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. Without one, the pipeline selects the license-free `clarabel` solver (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)).
 
 - If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
@@ -89,12 +93,12 @@ chmod +x install.sh
 
 
 ### Option C: Standalone installation using the installer script
-Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.7`. Typical install time ~5 minutes.
+Can be used on recent Unix systems (e.g. Ubuntu 18.04+, CentOS 7+, macOS). Requires `python>=3.8`. Typical install time ~5 minutes.
 1. Pull source code and run install script (**skip if installed via Conda**):
     ```bash
     # first install some dependencies (BWA, R, samtools) if you don't already have them
     # for ubuntu:
-    sudo apt install bedtools bwa curl git r-base samtools
+    sudo apt install bedtools bwa curl git r-base r-base-dev samtools
     # or for macOS: brew install bedtools bwa curl git r samtools  
    
     git clone https://github.com/AmpliconSuite/AmpliconSuite-pipeline
@@ -111,7 +115,7 @@ Mac users will need to perform one additional installation step:
 brew install coreutils
 ```
 
-2. [Obtain the Mosek license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. A Mosek license is **optional** — if none is present, AA (>=1.6) automatically uses the license-free `clarabel` solver instead (see the [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no) section; results are nearly identical either way).
+2. (Optional) To use Mosek, [obtain a license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. Without one, the pipeline selects the license-free `clarabel` solver and warns when it falls back (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)).
 
 
 3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). When `--run_AC` is used, BFBArchitect (bundled with AmpliconClassifier 2.0+) can use Gurobi for BFB reconstruction. If Gurobi is unavailable, BFBArchitect automatically uses another available solver or the open-source CBC solver without requiring configuration.
@@ -147,12 +151,12 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
 
     ```
 
-3. License for Mosek dependency:
-    * [Obtain Mosek license file](https://www.mosek.com/products/academic-licenses/) `mosek.lic`. The license is free for academic use.
+3. Optional optimizer licenses:
+    * To use Mosek, [obtain a `mosek.lic` file](https://www.mosek.com/products/academic-licenses/). The license is free for academic use.
     * Place the file in `$HOME/mosek/` (the `mosek/` folder that now exists in your home directory).
     * If you are not able to place the license in the default location, set its directory with `MOSEKLM_LICENSE_FILE=/custom/path/`. The Docker and Singularity runscripts mount detected license files read-only.
     * Mosek is optional for the containers. When Mosek is requested but unavailable before launch, the runscript prints a warning and selects the license-free `clarabel` solver. If Mosek fails during optimization, AA retries with Clarabel.
-    * (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license at `$HOME/gurobi.lic` (or pointed to by `GRB_LICENSE_FILE`), the runscript automatically mounts it so BFBArchitect can use Gurobi under `--run_AC`. If absent, BFBArchitect quietly uses another available solver or the open-source CBC solver.
+    * If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license at `$HOME/gurobi.lic` (or pointed to by `GRB_LICENSE_FILE`), the runscript automatically mounts it so BFBArchitect can use Gurobi under `--run_AC`. Without an external license, BFBArchitect still performs its normal solver autodetection. A restricted Gurobi environment can pass startup validation but reject a larger model; runtime failures are logged before retrying with Mosek or CBC.
 
    
 4. (Recommended) Pre-download AA data repositories and set environment variable AA_DATA_REPO:
@@ -172,7 +176,7 @@ An example command might look like:
 `AmpliconSuite-pipeline/singularity/run_paa_singularity.py --sif /path/to/ampliconsuite-pipeline.sif -o /path/to/output_dir -s name_of_run -t 8 --bam bamfile.bam --run_AA --run_AC`
 
 ### Option E: Custom installation without installer script
-Try this if you are going to use `python2`. Please see [the instructions here](documentation/CUSTOM_INSTALL.md).
+For environments where the installer cannot be used, see the [manual installation instructions](documentation/CUSTOM_INSTALL.md).
 
 ## Downloading required reference annotations (AA data repo)
 Before running AmpliconSuite-pipeline, populate the data repo with required annotations for the reference genomes of interest.

@@ -127,6 +127,11 @@ if ! ${finalize_only}; then
     Rscript --version
   fi
 
+  if ! command -v make &>/dev/null; then
+    echo "error! make is required to compile the R DNAcopy dependency. On Ubuntu, install r-base-dev." >&2
+    exit 1
+  fi
+
     # check if pip is installed:
   python3 -m pip -V
   status=$?
@@ -146,7 +151,7 @@ if ! ${finalize_only}; then
   fi
 
   # Try pip install first
-  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel bfbarchitect numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel "bfbarchitect>=1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
       # Installation succeeded
       echo "Installation completed successfully."
   else
@@ -164,7 +169,7 @@ if ! ${finalize_only}; then
           read -p "Do you want to proceed anyway? (y/N): " -r
           echo
           if [[ $REPLY =~ ^[Yy]$ ]]; then
-              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel bfbarchitect numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel "bfbarchitect>=1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
                   echo "Installation completed successfully."
               else
                   echo "ERROR: Installation failed even with --break-system-packages."
@@ -179,8 +184,10 @@ if ! ${finalize_only}; then
 
   # install Rscript deps
   #Rscript -e "source('http://callr.org/install#DNAcopy')"
-  Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")'
-  Rscript -e 'BiocManager::install("DNAcopy")'
+  if ! Rscript -e 'if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager"); BiocManager::install("DNAcopy", ask = FALSE, update = FALSE); if (!requireNamespace("DNAcopy", quietly = TRUE)) quit(status = 1)'; then
+    echo "ERROR: Failed to install the R DNAcopy dependency. Ensure the R development toolchain is installed (for example, r-base-dev on Ubuntu)." >&2
+    exit 1
+  fi
 
   # Get AA src code
   if [ -z "$AA_SRC" ]; then
@@ -239,7 +246,7 @@ if test -f "${HOME}/mosek/mosek.lic"; then
 elif test -f "${MOSEKLM_LICENSE_FILE}/mosek.lic"; then
     echo -e "\nMosek license already in place: ${MOSEKLM_LICENSE_FILE}/mosek.lic"
 else
-    echo -e "\nNow obtain license file mosek.lic (https://www.mosek.com/products/academic-licenses/). Move the file to ${HOME}/mosek after downloading. The license is free for academic use."
+    echo -e "\nOptional: to use Mosek, obtain mosek.lic (https://www.mosek.com/products/academic-licenses/) and move it to ${HOME}/mosek. Without a license, AmpliconArchitect uses Clarabel."
 fi
 
 if ! "${finalize_only}"; then
