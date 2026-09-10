@@ -1,5 +1,7 @@
 FROM ubuntu:22.04
 
+ARG SAMTOOLS_VERSION=1.21
+
 LABEL title="AmpliconSuite-pipeline" \
       description="A quickstart tool for AmpliconArchitect. Performs all preliminary steps (alignment, CNV calling, seed interval detection) required prior to running AmpliconArchitect."
 
@@ -35,13 +37,17 @@ RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula sele
         bedtools \
         build-essential \
         bwa \
+        ca-certificates \
         curl \
         fontconfig \
         gfortran \
+        bzip2 \
         libbz2-dev \
+        libcurl4-openssl-dev \
         liblzma-dev \
+        libncurses-dev \
+        libssl-dev \
         python3-dev \
-        samtools \
         ttf-mscorefonts-installer \
         unzip \
         wget \
@@ -51,6 +57,18 @@ RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula sele
     apt clean && \
     rm -rf /var/lib/apt/lists/* && \
     fc-cache -f
+
+# Ubuntu 22.04 supplies samtools 1.13. Build a recent decoder so CRAM 3.1
+# input is handled consistently with the pysam/HTSlib used by CNVKit.
+RUN wget -q "https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2" -O /tmp/samtools.tar.bz2 && \
+    tar -xjf /tmp/samtools.tar.bz2 -C /tmp && \
+    cd "/tmp/samtools-${SAMTOOLS_VERSION}" && \
+    ./configure --prefix=/usr/local && \
+    make -j2 && \
+    make install && \
+    cd / && \
+    rm -rf "/tmp/samtools-${SAMTOOLS_VERSION}" /tmp/samtools.tar.bz2 && \
+    samtools --version
 
 # - Make python3 the default python interpreter
 # - Verify Python version (build check)

@@ -97,6 +97,12 @@ if ! ${finalize_only}; then
     exit 1
   else
       samtools --version
+      samtools_version=$(samtools --version 2>/dev/null | head -n 1 | awk '{print $2}')
+      if [[ -n "$samtools_version" ]] && \
+          [[ "$(printf '%s\n' "1.21" "$samtools_version" | sort -V | head -n 1)" != "1.21" ]]; then
+        echo "WARNING: samtools ${samtools_version} may not decode CRAM 3.1 files produced by recent HTSlib versions." >&2
+        echo "         samtools >=1.21 is recommended for CRAM input. BAM input is unaffected." >&2
+      fi
   fi
 
   if ! command -v bedtools &> /dev/null; then

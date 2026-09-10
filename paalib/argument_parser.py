@@ -67,6 +67,9 @@ def _add_reference_arguments(parser):
                         "setting the environment variable AS_NO_REPO_CHECK=1 (set by default in the container images).")
     parser.add_argument("--strict_repo_check", action='store_true',
                         help="Exit with an error (instead of only warning) if the local $AA_DATA_REPO is out of date.")
+    parser.add_argument("--fetch_cram_refs", action='store_true',
+                        help="For CRAM input only, fetch reference sequences missing from REF_CACHE using their "
+                             "@SQ M5 checksums. Requires REF_CACHE to be set. Never prompts.")
 
 
 def _add_cnv_arguments(parser):
@@ -165,7 +168,7 @@ def _add_mutually_exclusive_groups(parser):
     # Input file group
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--bam", "--sorted_bam", metavar='FILE', 
-                       help="Coordinate sorted BAM file (aligned to an AA-supported reference.)")
+                       help="Coordinate-sorted BAM or CRAM file (aligned to an AA-supported reference.)")
     group.add_argument("--fastqs", metavar='TWO FILES', help="Fastq files (r1.fq r2.fq)", nargs=2)
     group.add_argument("--completed_AA_runs", metavar='PATH',
                        help="Path to a directory containing one or more completed AA runs which utilized the same reference genome.")

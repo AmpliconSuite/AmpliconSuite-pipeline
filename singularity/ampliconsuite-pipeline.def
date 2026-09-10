@@ -12,6 +12,8 @@ internal_singularity_ga_script.sh /home/
 # set timezone to UTC
 ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
+SAMTOOLS_VERSION=1.21
+
 
 # stuff in the container
 mkdir -p /home/requirements
@@ -33,19 +35,33 @@ echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select t
 DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends \
 bcftools \
 bedtools \
+bzip2 \
 build-essential \
 bwa \
+ca-certificates \
 curl \
 fontconfig \
 gfortran \
 libbz2-dev \
+libcurl4-openssl-dev \
 liblzma-dev \
+libncurses-dev \
+libssl-dev \
 python3-dev \
-samtools \
 ttf-mscorefonts-installer \
 unzip \
 wget \
 zlib1g-dev
+
+wget -q "https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2" -O /tmp/samtools.tar.bz2
+tar -xjf /tmp/samtools.tar.bz2 -C /tmp
+cd "/tmp/samtools-${SAMTOOLS_VERSION}"
+./configure --prefix=/usr/local
+make -j2
+make install
+cd /
+rm -rf "/tmp/samtools-${SAMTOOLS_VERSION}" /tmp/samtools.tar.bz2
+samtools --version
 
 fc-cache -f
 

@@ -14,7 +14,7 @@ import tarfile
 import time
 import zipfile
 
-from paalib import check_reference, reduce_fasta, cnv_plots
+from paalib import check_reference, cram_compat, reduce_fasta, cnv_plots
 from paalib.argument_parser import setup_argument_parser
 from paalib.config_validator import (
     validate_arguments, setup_environment_and_paths, setup_tool_paths,
@@ -762,6 +762,21 @@ def main():
 
     # Validate samtools
     samtools_version = get_samtools_version(args.samtools_path)
+
+    # CRAM needs a compatible decoder in the Python environment used by CNVKit.
+    # Keep this check CRAM-only; BAM inputs follow the existing path unchanged.
+    for alignment_file in (args.bam, args.normal_bam):
+        if alignment_file and alignment_file.lower().endswith(".cram"):
+            try:
+                cram_compat.preflight_cram(
+                    alignment_file,
+                    args.samtools_path,
+                    python_path=PY3_PATH,
+                    fetch_refs=args.fetch_cram_refs,
+                )
+            except cram_compat.CramCompatibilityError as exc:
+                logging.error(str(exc))
+                sys.exit(1)
 
     # Setup reference genome info early so functions can access it
     refFnames = {x: None for x in ["hg19", "GRCh37", "GRCh38", "GRCh38_viral", "mm10"]}
