@@ -3,6 +3,7 @@ import io
 import os
 import sys
 import tempfile
+import subprocess
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -13,6 +14,68 @@ from paalib import cram_compat
 
 
 class CramCompatibilityTests(unittest.TestCase):
+    def test_version_detection_tolerates_non_utf8_build_details(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            executable = Path(tmpdir) / "samtools"
+            executable.write_text("#!/bin/sh\nprintf 'samtools 1.13\\nBuild: \\253\\n'\n")
+            executable.chmod(0o755)
+            self.assertEqual(cram_compat._samtools_version(str(executable)), "samtools 1.13")
+
+    def test_cram31_rejects_old_or_unknown_samtools_before_fetching(self):
+        for version in ("samtools 1.9", "samtools 1.14", "samtools 1.20", "version unknown"):
+            with self.subTest(version=version), \
+                    patch.object(cram_compat, "read_cram_version", return_value=(3, 1)), \
+                    patch.object(cram_compat, "_samtools_version", return_value=version), \
+                    patch.object(cram_compat, "fetch_missing_references") as fetch, \
+                    patch.object(cram_compat, "_pysam_probe") as probe:
+                with self.assertRaisesRegex(cram_compat.CramCompatibilityError, "requires samtools >=1.21"):
+                    cram_compat.preflight_cram("sample.cram", "samtools", fetch_refs=True)
+                fetch.assert_not_called()
+                probe.assert_not_called()
+
+    def test_version_gate_handles_newer_versions_and_leaves_cram30_unchanged(self):
+        for cram_version, samtools_version in (((3, 0), "samtools 1.14"),
+                                               ((3, 1), "samtools 1.21 (htslib 1.21)"),
+                                               ((3, 1), "samtools 1.22.1"),
+                                               ((4, 0), "samtools 2.0")):
+            with self.subTest(cram=cram_version, samtools=samtools_version), \
+                    patch.object(cram_compat, "read_cram_version", return_value=cram_version), \
+                    patch.object(cram_compat, "_samtools_version", return_value=samtools_version), \
+                    patch.object(cram_compat, "_pysam_probe", return_value="decoder"):
+                self.assertEqual(cram_compat.preflight_cram("sample.cram", "samtools"), cram_version)
+
+    def test_future_cram_still_requires_modern_samtools(self):
+        with patch.object(cram_compat, "read_cram_version", return_value=(4, 0)), \
+                patch.object(cram_compat, "_samtools_version", return_value="samtools 1.20"):
+            with self.assertRaisesRegex(cram_compat.CramCompatibilityError, "CRAM 4.0 requires"):
+                cram_compat.preflight_cram("sample.cram", "samtools")
+
+    def test_missing_reference_error_gives_fetch_command_without_unconditional_upgrade(self):
+        result = subprocess.CompletedProcess([], 1, "pysam=0.23.3 htslib=1.21\n",
+                                             "Unable to fetch reference #0\nOSError: truncated file")
+        with patch.object(cram_compat, "read_cram_version", return_value=(3, 1)), \
+                patch.object(cram_compat, "_samtools_version", return_value="samtools 1.21"), \
+                patch.object(cram_compat.subprocess, "run", return_value=result):
+            with self.assertRaises(cram_compat.CramCompatibilityError) as caught:
+                cram_compat.preflight_cram("a sample.cram", "samtools")
+        message = str(caught.exception)
+        self.assertIn("Reference lookup failed", message)
+        self.assertIn("-m paalib.cram_compat", message)
+        self.assertIn("'a sample.cram'", message)
+        self.assertIn("If the error indicates an unsupported", message)
+        self.assertNotIn("Upgrade the AmpliconSuite environment", message)
+        self.assertIn("OSError: truncated file", message)
+
+    def test_other_decoder_errors_do_not_claim_reference_lookup_failed(self):
+        result = subprocess.CompletedProcess([], 1, "pysam=0.20.0\n", "Unsupported codec")
+        with patch.object(cram_compat, "read_cram_version", return_value=(3, 1)), \
+                patch.object(cram_compat, "_samtools_version", return_value="samtools 1.21"), \
+                patch.object(cram_compat.subprocess, "run", return_value=result):
+            with self.assertRaises(cram_compat.CramCompatibilityError) as caught:
+                cram_compat.preflight_cram("sample.cram", "samtools")
+        self.assertNotIn("Reference lookup failed", str(caught.exception))
+        self.assertIn("Unsupported codec", str(caught.exception))
+
     def test_reads_cram_version_from_file_definition(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cram = Path(tmpdir) / "sample.cram"

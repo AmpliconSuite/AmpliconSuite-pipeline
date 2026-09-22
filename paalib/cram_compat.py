@@ -4,7 +4,9 @@ import hashlib
 import logging
 import os
 import re
+import shlex
 import subprocess
+import sys
 import tempfile
 import urllib.error
 import urllib.request
@@ -37,12 +39,14 @@ def _samtools_version(samtools_path):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
+            errors="replace",
             timeout=30,
         )
     except (OSError, subprocess.TimeoutExpired):
         return "version unknown"
-    first_line = result.stdout.splitlines()[0] if result.stdout.splitlines() else "version unknown"
-    return first_line
+    if result.returncode == 0 and result.stdout.splitlines():
+        return result.stdout.splitlines()[0]
+    return "version unknown"
 
 
 def _pysam_probe(python_path, cram_path):
@@ -74,7 +78,9 @@ with pysam.AlignmentFile(sys.argv[1], "rc") as alignment_file:
         raise CramCompatibilityError(
             "CNVKit's CRAM decoder failed while reading the first alignment ({}).\n"
             "CNVKit uses pysam from '{}'; --samtools_path does not replace this embedded HTSlib.\n"
-            "Upgrade the AmpliconSuite environment (recommended: pysam>=0.23.3), then retry.\n"
+            "Check the decoder error below: unavailable references, unsupported codecs, or damaged input can cause this failure.\n"
+            "If the error indicates an unsupported format or codec, update the AmpliconSuite environment "
+            "(recommended: pysam>=0.23.3).\n"
             "Decoder error: {}".format(version_line, python_path, detail)
         )
     return version_line
@@ -131,7 +137,7 @@ def _expand_ref_cache(template, digest):
     return re.sub(r"%(\d*)s", replace, os.path.expanduser(template))
 
 
-def fetch_missing_references(cram_path, samtools_path, ref_cache=None):
+def fetch_missing_references(cram_path, samtools_path, ref_cache=None, ref_paths=()):
     """Fetch absent CRAM references from ENA into REF_CACHE, without prompting."""
     cache_template = ref_cache or os.environ.get("REF_CACHE")
     if not cache_template:
@@ -153,6 +159,8 @@ def fetch_missing_references(cram_path, samtools_path, ref_cache=None):
     for digest in md5s:
         destination = _expand_ref_cache(cache_template, digest)
         if os.path.isfile(destination):
+            continue
+        if any(os.path.isfile(_expand_ref_cache(template, digest)) for template in ref_paths):
             continue
 
         destination_dir = os.path.dirname(destination) or "."
@@ -190,7 +198,7 @@ def fetch_missing_references(cram_path, samtools_path, ref_cache=None):
     return fetched
 
 
-def preflight_cram(cram_path, samtools_path, python_path="python3", fetch_refs=False):
+def preflight_cram(cram_path, samtools_path, python_path="python3", fetch_refs=False, ref_paths=()):
     """Run fast CRAM checks; do nothing for BAM and other input formats."""
     if not cram_path or not cram_path.lower().endswith(".cram"):
         return None
@@ -198,19 +206,36 @@ def preflight_cram(cram_path, samtools_path, python_path="python3", fetch_refs=F
     version = read_cram_version(cram_path)
     logging.info("Detected CRAM {}.{} input".format(*version))
 
+    samtools_decoder = _samtools_version(samtools_path)
+    match = re.match(r"^samtools\s+(\d+)\.(\d+)(?:\D|$)", samtools_decoder)
+    if version >= (3, 1) and (not match or tuple(map(int, match.groups())) < (1, 21)):
+        raise CramCompatibilityError(
+            "CRAM {}.{} requires samtools >=1.21 in AmpliconSuite; '{}' reports '{}'. "
+            "Install a supported samtools and select it with --samtools_path. "
+            "A missing or unrecognized version cannot establish compatibility.".format(
+                version[0], version[1], samtools_path, samtools_decoder)
+        )
+
     if fetch_refs:
-        fetched = fetch_missing_references(cram_path, samtools_path)
+        fetched = fetch_missing_references(cram_path, samtools_path, ref_paths=ref_paths)
         logging.info("Fetched {} missing CRAM reference sequence(s)".format(fetched))
 
-    samtools_decoder = _samtools_version(samtools_path)
     try:
         decoder = _pysam_probe(python_path, cram_path)
     except CramCompatibilityError as exc:
         message = str(exc)
-        if "reference" in message.lower():
+        if any(marker in message.lower() for marker in (
+                "failed to populate reference", "unable to fetch reference",
+                "failed to open reference", "failed to load reference")):
+            package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            command = " ".join(shlex.quote(arg) for arg in (
+                "env", "PYTHONPATH=" + package_root, python_path, "-m", "paalib.cram_compat",
+                "--samtools_path", samtools_path,
+                "--fetch_cram_refs", cram_path))
             message += (
-                "\nIf references are not already available through REF_PATH/REF_CACHE, set REF_CACHE and "
-                "rerun with --fetch_cram_refs."
+                "\nReference lookup failed. Make the matching sequences available through REF_PATH/REF_CACHE, "
+                "or download missing sequences and retry:\n"
+                'export REF_CACHE="${REF_CACHE:-$HOME/.cache/hts-ref/%2s/%2s/%s}"\n' + command
             )
         raise CramCompatibilityError(
             "CRAM {}.{} preflight failed for '{}'.\nExternal decoder: {}.\n{}".format(
@@ -224,3 +249,26 @@ def preflight_cram(cram_path, samtools_path, python_path="python3", fetch_refs=F
         )
     )
     return version
+
+
+def main(argv=None):
+    """Check CRAM inputs, optionally populating a persistent reference cache."""
+    from paalib.argument_parser import setup_cram_argument_parser
+
+    parser = setup_cram_argument_parser()
+    args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    try:
+        for path in args.crams:
+            if not path.lower().endswith(".cram"):
+                parser.error("expected a .cram input: {}".format(path))
+            ref_paths = os.environ.get("REF_PATH", "").split(os.pathsep) if args.use_ref_path else ()
+            preflight_cram(path, args.samtools_path, sys.executable, args.fetch_cram_refs, ref_paths)
+    except (CramCompatibilityError, OSError) as exc:
+        logging.error(str(exc))
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -53,6 +53,12 @@ Exercise three independent installation surfaces:
 2. Build Docker from `docker/Dockerfile` with a local candidate tag, then launch a standalone run through `docker/run_paa_docker.py`.
 3. Build Singularity from `singularity/ampliconsuite-pipeline.def`, then launch standalone and grouped runs through the Python wrappers.
 
+Published images must contain samtools >=1.21. Check the installed version inside
+each final Docker/SIF artifact; both build definitions enforce this minimum.
+Include a CRAM 3.1 launcher smoke test that populates a persistent reference cache,
+then repeats with the populated cache offline. Verify standalone and grouped
+launchers reuse the cache and stop on reference-preparation failures.
+
 Cover Clarabel without a Mosek license, a licensed Mosek run, and
 AC/BFBArchitect with Gurobi, Mosek, and CBC available. The Gurobi and Mosek
 bindings are required parts of a supported installation even though

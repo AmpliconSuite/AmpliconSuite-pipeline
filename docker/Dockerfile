@@ -68,7 +68,8 @@ RUN wget -q "https://github.com/samtools/samtools/releases/download/${SAMTOOLS_V
     make install && \
     cd / && \
     rm -rf "/tmp/samtools-${SAMTOOLS_VERSION}" /tmp/samtools.tar.bz2 && \
-    samtools --version
+    samtools --version && \
+    python3 -c 'import re, subprocess; v = subprocess.check_output(["samtools", "--version"]).decode(errors="replace").splitlines()[0]; m = re.match(r"samtools (\d+)\.(\d+)", v); assert m and tuple(map(int, m.groups())) >= (1, 21), "Container requires samtools >=1.21: " + v'
 
 # - Make python3 the default python interpreter
 # - Verify Python version (build check)

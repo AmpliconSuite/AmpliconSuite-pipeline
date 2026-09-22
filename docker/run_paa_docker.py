@@ -5,8 +5,15 @@
 import argparse
 import json
 import os
+import shlex
 from subprocess import call
 import sys
+
+
+# Launchers also work from a source checkout without installing paalib.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from paalib.container_cram import prepare_cram_container
+from paalib.cram_compat import CramCompatibilityError
 
 
 DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
@@ -120,6 +127,8 @@ group.add_argument("--fastqs", help="Fastq files (r1.fq r2.fq)", nargs=2)
 group.add_argument("--completed_AA_runs", help="Path to a directory containing one or more completed AA runs which "
                                                "utilized the same reference genome.")
 
+parser.add_argument("--image", default="jluebeck/ampliconsuite-pipeline",
+                    help="Docker image to run (default: jluebeck/ampliconsuite-pipeline)")
 args = parser.parse_args()
 
 if args.ref == "hg38": args.ref = "GRCh38"
@@ -309,8 +318,14 @@ if args.metadata != "":
     metadata_helper(args.metadata)
     argstring += " --sample_metadata /home/metadata.json"
 
+try:
+    cram_options = prepare_cram_container("docker", args.image, [args.bam, args.normal_bam])
+except (CramCompatibilityError, OSError) as exc:
+    sys.exit(str(exc))
+cram_string = " ".join(shlex.quote(arg) for arg in cram_options)
+
 userstring = ""
-if args.run_as_user:
+if args.run_as_user and not cram_options:
     userstring = " -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) -u $(id -u):$(id -g)"
 
 runscript_outname = "paa_docker_" + args.sample_name + ".sh"
@@ -365,7 +380,7 @@ with open(runscript_outname, 'w') as outfile:
     dockerstring = "docker run --rm" + userstring + " -e AA_DATA_REPO=/home/data_repo -e argstring=\"$argstring\" -e SAMPLE_NAME=\"$SAMPLE_NAME\"" + \
         " -v $AA_DATA_REPO:/home/data_repo -v " + bamdir + ":/home/bam_dir -v " + norm_bamdir + ":/home/norm_bam_dir -v " + vcf_dir + ":/home/vcf_dir -v" + \
         cnvdir + ":/home/bed_dir -v " + args.output_directory + ":/home/output" + \
-        license_args + " jluebeck/ampliconsuite-pipeline bash /home/internal_docker_script.sh"
+        license_args + " " + cram_string + " " + shlex.quote(args.image) + " bash /home/internal_docker_script.sh"
 
 
     print("\n" + dockerstring + "\n")
@@ -374,10 +389,13 @@ with open(runscript_outname, 'w') as outfile:
 outfile.close()
 
 call("chmod +x ./" + runscript_outname, shell=True)
-call("./" + runscript_outname, shell=True)
+run_exit_code = call("./" + runscript_outname, shell=True)
 call("rm -f " + runscript_outname, shell=True)
 if no_data_repo:
     cmd = "rm -rf " + data_repo_d
     print("Cleaning up data repo")
     print(cmd)
     call(cmd, shell=True)
+
+if run_exit_code != 0:
+    sys.exit(run_exit_code)

@@ -5,11 +5,18 @@
 import argparse
 import json
 import os
+import shlex
 import re
 import subprocess
 from subprocess import call
 import sys
 import shutil
+
+
+# Launchers also work from a source checkout without installing paalib.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from paalib.container_cram import prepare_cram_container
+from paalib.cram_compat import CramCompatibilityError
 
 
 DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
@@ -322,6 +329,12 @@ print("Parsing input file and processing samples...")
 samples = parse_input_file(args.input)
 print(f"Found {len(samples)} samples")
 
+try:
+    cram_options = prepare_cram_container("singularity", args.sif, [sample['bamfile'] for sample in samples])
+except (CramCompatibilityError, OSError) as exc:
+    sys.exit(str(exc))
+cram_string = " ".join(shlex.quote(arg) for arg in cram_options)
+
 # Process samples with hybrid approach
 sample_bind_mounts, container_input_file, shared_files_dir = process_samples_with_hybrid_mounts(samples, args.output_directory)
 print(f"Created {len(sample_bind_mounts)} bind mounts ({len(samples)} BAM mounts + 1 shared files mount)")
@@ -420,7 +433,7 @@ with open(runscript_outname, 'w') as outfile:
 
     # Create singularity command
     sing_string = f"singularity exec --no-home --cleanenv --env-file {env_outname} " \
-                  f"{bind_mounts_str} " \
+                  f"{bind_mounts_str} {cram_string} " \
                   f"{args.sif} bash /home/internal_singularity_ga_script.sh"
 
     print("\n" + sing_string + "\n")

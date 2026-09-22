@@ -31,6 +31,10 @@ echo "RUNNING DOCKER STAGE..."
 echo "${RUN_COMMAND}"
 
 python3 /home/programs/AmpliconSuite-pipeline-master/AmpliconSuite-pipeline.py $argstring &> /home/output/AS-p_stdout.log
+run_exit_code=$?
+if [ "$run_exit_code" -ne 0 ]; then
+    exit "$run_exit_code"
+fi
 echo "###############################"
 
 echo -e "\n"

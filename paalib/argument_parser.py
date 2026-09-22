@@ -5,6 +5,18 @@ import argparse
 from paalib._version import __ampliconsuitepipeline_version__
 
 
+def setup_cram_argument_parser():
+    parser = argparse.ArgumentParser(
+        description="Check CRAM decoding and optionally download missing reference sequences to REF_CACHE.")
+    parser.add_argument("crams", nargs="+", help="CRAM files (indexes are not required)")
+    parser.add_argument("--samtools_path", default="samtools", help="Samtools executable")
+    parser.add_argument("--fetch_cram_refs", action="store_true",
+                        help="Download missing references to REF_CACHE before checking decoding")
+    parser.add_argument("--use_ref_path", action="store_true",
+                        help="Also reuse local checksum templates in REF_PATH instead of downloading those sequences")
+    return parser
+
+
 def setup_argument_parser():
     """Create and configure the argument parser for AmpliconSuite-pipeline"""
     parser = argparse.ArgumentParser(

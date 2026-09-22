@@ -5,10 +5,17 @@
 import argparse
 import json
 import os
+import shlex
 import re
 import subprocess
 from subprocess import call
 import sys
+
+
+# Launchers also work from a source checkout without installing paalib.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from paalib.container_cram import prepare_cram_container
+from paalib.cram_compat import CramCompatibilityError
 
 
 DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
@@ -331,6 +338,12 @@ if args.metadata != "":
     argstring += " --sample_metadata /home/metadata.json"
 
 env_outname = "paa_envs_" + args.sample_name + ".txt"
+try:
+    cram_options = prepare_cram_container("singularity", args.sif, [args.bam, args.normal_bam])
+except (CramCompatibilityError, OSError) as exc:
+    sys.exit(str(exc))
+cram_string = " ".join(shlex.quote(arg) for arg in cram_options)
+
 runscript_outname = "paa_singularity_" + args.sample_name + ".sh"
 
 with open(runscript_outname, 'w') as outfile:
@@ -390,7 +403,7 @@ with open(runscript_outname, 'w') as outfile:
     sing_string = "singularity exec --no-home --cleanenv --env-file " + env_outname + " --bind $AA_DATA_REPO:" \
                   "/home/data_repo --bind " + bamdir + ":/home/bam_dir --bind " + norm_bamdir + ":/home/norm_bam_dir " \
                   "--bind " + cnvdir + ":/home/bed_dir --bind " + args.output_directory + ":/home/output " \
-                  + license_binds + "--bind " + vcf_dir + ":/home/vcf_dir " + args.sif + " bash /home/internal_singularity_script.sh "
+                  + license_binds + cram_string + " --bind " + vcf_dir + ":/home/vcf_dir " + args.sif + " bash /home/internal_singularity_script.sh "
 
     print("\n" + sing_string + "\n")
     outfile.write(sing_string)
@@ -398,7 +411,7 @@ with open(runscript_outname, 'w') as outfile:
 outfile.close()
 
 call("chmod +x ./" + runscript_outname, shell=True)
-call("./" + runscript_outname, shell=True)
+run_exit_code = call("./" + runscript_outname, shell=True)
 call("rm " + runscript_outname, shell=True)
 call("rm -f " + env_outname, shell=True)
 if no_data_repo:
@@ -406,3 +419,6 @@ if no_data_repo:
     print("Cleaning up data repo")
     print(cmd)
     call(cmd, shell=True)
+
+if run_exit_code != 0:
+    sys.exit(run_exit_code)

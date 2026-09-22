@@ -213,6 +213,9 @@ The main driver script for the standalone pipeline is called `AmpliconSuite-pipe
 
 #### Example: Starting from .bam, using CNVkit for seed generation
 
+CRAM files are also accepted with `--bam`. See [CRAM references and container cache setup](documentation/CRAM.md)
+for decoder requirements, reference downloads, and persistent Docker/Singularity cache mounts.
+
 >`AmpliconSuite-pipeline.py -s sample_name -t n_threads --bam sample.bam [--run_AA] [--run_AC]`
 
 

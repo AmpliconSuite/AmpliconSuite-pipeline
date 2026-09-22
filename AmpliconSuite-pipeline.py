@@ -106,7 +106,11 @@ def run_bwa(ref_fasta, fastqs, outdir, sname, nthreads, samtools, samtools_versi
     logging.info("Running samtools index")
     cmd_list = [samtools, "index", final_bam_name]
     logging.info(" ".join(cmd_list) + "\n")
-    call(cmd_list)
+    index_returncode = call(cmd_list)
+    if index_returncode != 0:
+        logging.error("samtools index failed for %s with exit status %s",
+                      final_bam_name, index_returncode)
+        sys.exit(1)
 
     return final_bam_name, stderr_log
 
@@ -882,7 +886,11 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
         craiExists = os.path.isfile(args.bam + ".crai") or os.path.isfile(cramCraiNoExt)
         if not baiExists and not craiExists:
             logging.info(args.bam + " index not found, calling samtools index")
-            call([args.samtools_path, "index", args.bam])
+            index_returncode = call([args.samtools_path, "index", args.bam])
+            if index_returncode != 0:
+                logging.error("samtools index failed for %s with exit status %s",
+                              args.bam, index_returncode)
+                sys.exit(1)
             logging.info("Finished indexing")
 
         bambase = os.path.splitext(os.path.basename(args.bam))[0]

@@ -62,6 +62,7 @@ make install
 cd /
 rm -rf "/tmp/samtools-${SAMTOOLS_VERSION}" /tmp/samtools.tar.bz2
 samtools --version
+python3 -c 'import re, subprocess; v = subprocess.check_output(["samtools", "--version"]).decode(errors="replace").splitlines()[0]; m = re.match(r"samtools (\d+)\.(\d+)", v); assert m and tuple(map(int, m.groups())) >= (1, 21), "Container requires samtools >=1.21: " + v'
 
 fc-cache -f
 
@@ -104,4 +105,5 @@ export AS_NO_REPO_CHECK=1
 
 
 %test
+python3 -c 'import re, subprocess; v = subprocess.check_output(["samtools", "--version"]).decode(errors="replace").splitlines()[0]; m = re.match(r"samtools (\d+)\.(\d+)", v); assert m and tuple(map(int, m.groups())) >= (1, 21), "Container requires samtools >=1.21: " + v'
 ls /home/programs

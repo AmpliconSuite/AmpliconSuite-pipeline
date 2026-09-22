@@ -15,6 +15,7 @@ import threading
 import queue
 
 from paalib._version import __ampliconsuitepipeline_version__
+from paalib import cram_compat
 from paalib.ac_threading import compute_ac_thread_allocation
 
 PAA_PATH = os.path.dirname(os.path.realpath(__file__)) + "/AmpliconSuite-pipeline.py"
@@ -605,6 +606,14 @@ if __name__ == '__main__':
     if len(tumor_lines) == 0:
         print("No tumor samples were provided. Exiting.")
         sys.exit(1)
+
+    # Check all distinct inputs before launching any sample jobs.
+    for alignment_file in dict.fromkeys(row[1] for row in tumor_lines + normal_lines):
+        try:
+            cram_compat.preflight_cram(alignment_file, "samtools", python_path=PY3_PATH)
+        except (cram_compat.CramCompatibilityError, OSError) as exc:
+            sys.stderr.write("Grouped analysis preflight failed: {}\n".format(exc))
+            sys.exit(1)
 
     # Stage 1: iterate over and launch each that needs CN calling. collect CN seeds files
     base_argstring = make_base_argstring(arg_dict, stop_at_seeds=True)

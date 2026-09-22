@@ -10,6 +10,54 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ContainerLicenseWrapperTests(unittest.TestCase):
+    def test_cram_launchers_prepare_once_then_mount_cache_readonly(self):
+        for runtime in ("docker", "singularity"):
+            self._make_executable(runtime, "#!/bin/sh\n"
+                                  'if [ "$1" = "--version" ]; then echo "singularity version 3.11.0"; exit 0; fi\n'
+                                  'printf "%s\\n" "$*" >> "$RUNTIME_LOG"\n')
+        cram = self.tmpdir / "normal.cram"
+        cram.write_bytes(b"CRAM\x03\x01")
+        self.group_input.write_text("tumor {} tumor\nnormal {} normal\n".format(self.bam, cram))
+        cases = [("docker/run_paa_docker.py", self._standalone_arguments("docker_cram") +
+                  ["--normal_bam", str(cram), "--image", "local:dev"]),
+                 ("singularity/run_paa_singularity.py", self._singularity_arguments("sing_cram") +
+                  ["--normal_bam", str(cram)]),
+                 ("singularity/run_ga_singularity.py", self._grouped_arguments("group_cram") + ["--no_AA"])]
+        for i, (script, arguments) in enumerate(cases):
+            with self.subTest(script=script):
+                log = self.tmpdir / ("runtime-{}.log".format(i))
+                cache = self.tmpdir / "ref cache"
+                self._run(script, arguments, self._environment(
+                    REF_CACHE=str(cache / "%2s/%2s/%s"), REF_PATH="", RUNTIME_LOG=str(log)))
+                commands = log.read_text().splitlines()
+                self.assertEqual(len(commands), 2, commands)
+                self.assertIn("--fetch_cram_refs", commands[0])
+                self.assertNotIn("--fetch_cram_refs", commands[1])
+                self.assertIn(str(cache) + ":/home/cram_cache:ro", commands[1])
+                self.assertIn("REF_CACHE=/home/cram_cache/%2s/%2s/%s", commands[1])
+
+    def test_cram_preparation_failure_prevents_analysis_for_all_launchers(self):
+        self.bam = self.tmpdir / "sample.cram"
+        self.bam.write_bytes(b"CRAM\x03\x01")
+        self.group_input.write_text("sample {} tumor\n".format(self.bam))
+        for runtime in ("docker", "singularity"):
+            self._make_executable(runtime, "#!/bin/sh\n"
+                                  'if [ "$1" = "--version" ]; then echo "singularity version 3.11.0"; exit 0; fi\n'
+                                  'echo invocation >> "$RUNTIME_LOG"\nexit 73\n')
+        cases = [("docker/run_paa_docker.py", self._standalone_arguments("docker_fail")),
+                 ("singularity/run_paa_singularity.py", self._singularity_arguments("sing_fail")),
+                 ("singularity/run_ga_singularity.py", self._grouped_arguments("group_fail"))]
+        for i, (script, arguments) in enumerate(cases):
+            with self.subTest(script=script):
+                log = self.tmpdir / ("failed-{}.log".format(i))
+                result = subprocess.run([sys.executable, str(REPO_ROOT / script)] + arguments,
+                                        cwd=self.tmpdir, capture_output=True, text=True,
+                                        env=self._environment(REF_CACHE=str(self.tmpdir / "cache/%s"),
+                                                              REF_PATH="", RUNTIME_LOG=str(log)))
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("analysis was not started", result.stderr)
+                self.assertEqual(log.read_text().splitlines(), ["invocation"])
+
     def setUp(self):
         self._tmpdir = tempfile.TemporaryDirectory()
         self.tmpdir = Path(self._tmpdir.name)
