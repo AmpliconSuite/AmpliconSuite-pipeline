@@ -41,25 +41,29 @@ git clone --depth=1 --filter=blob:none --sparse \
   https://github.com/AmpliconSuite/bioconda-recipes.git
 cd bioconda-recipes
 git sparse-checkout set recipes/ampliconsuite
-git switch -c update-ampliconsuite-1.6.0
+git switch -c update-ampliconsuite-1.6.1
 ```
 
-Return to the AmpliconSuite-pipeline checkout and dry-run the four-version
-update:
+The published recipe already contains the four-tool structure. From the
+AmpliconSuite-pipeline checkout, dry-run the version and hash update:
 
 ```bash
 python conda-recipe/update_bioconda_recipe.py \
-  --meta-yaml /path/to/bioconda-recipes/recipes/ampliconsuite/meta.yaml \
-  --as-version 1.6.0 \
-  --aa-version 1.6.r0 \
+  --meta-yaml conda-recipe/meta.yaml \
+  --as-version 1.6.1 \
+  --aa-version 1.6.r1 \
   --ac-version 2.0.0 \
   --bfba-version 1.0.1 \
   --dry-run
 ```
 
-Rerun without `--dry-run`, then synchronize the build script and BFBA patch:
+Rerun without `--dry-run`, then synchronize all reviewed recipe files as
+needed. Keep `build.sh` and the BFBA patch identical to the versions maintained
+in this repository:
 
 ```bash
+cp conda-recipe/meta.yaml \
+  /path/to/bioconda-recipes/recipes/ampliconsuite/meta.yaml
 cp conda-recipe/build.sh \
   /path/to/bioconda-recipes/recipes/ampliconsuite/build.sh
 cp conda-recipe/bfba-conda-solvers.patch \
@@ -74,13 +78,6 @@ recalculates their SHA-256 hashes, and updates the build number.
 The build intentionally fails if either the pinned AC or BFBA source cannot be
 installed. It must never substitute an older AC layout or silently omit BFBA;
 the four requested component versions are an atomic release unit.
-
-Between integration and release day, the checked-in metadata may still name
-the last public PAA/AA/AC tags because hashes must reference immutable release
-archives. During that interval, a failure caused by the legacy AC source is
-expected. Test the candidate with a temporary local-source recipe, then update
-the published recipe metadata immediately after all four release archives
-exist.
 
 For local Bioconda validation, use a separate `bioconda-utils` environment:
 
