@@ -51,7 +51,9 @@ Exercise three independent installation surfaces:
 
 1. Run `install.sh` in a disposable, minimal environment and complete a small end-to-end AA+AC analysis.
 2. Build Docker from `docker/Dockerfile` with a local candidate tag, then launch a standalone run through `docker/run_paa_docker.py`.
-3. Build Singularity from `singularity/ampliconsuite-pipeline.def`, then launch standalone and grouped runs through the Python wrappers.
+3. Convert the candidate Docker image to a SIF with `apptainer build <candidate>.sif docker-daemon://<candidate tag>`, then launch standalone and grouped runs through the Python wrappers. The wrappers use `apptainer` if it is available and `singularity` otherwise.
+
+`singularity/ampliconsuite-pipeline.def` remains available for building a SIF without Docker, but published SIFs come from the Docker image so that both distributions have the same contents. If the definition changed, build it and check that it runs.
 
 Published images must contain samtools >=1.21. Check the installed version inside
 each final Docker/SIF artifact; both build definitions enforce this minimum.
@@ -78,9 +80,20 @@ After candidate tests pass and all repositories are clean, create annotated vers
 
 ## 4. Build and publish containers
 
-Build the final Docker and Singularity artifacts only after the GitHub releases exist. The current recipes download the PAA `master`, AA `master`, and AC `main` branch archives, so build immediately from verified release branch heads and do not merge later work until both builds finish. Re-run the launcher smoke matrix against the final artifacts.
+Build the final Docker image only after the GitHub releases exist, then convert it to the final SIF. The Docker recipe downloads the PAA `master`, AA `master`, and AC `main` branch archives, so build immediately from verified release branch heads and do not merge later work until the build finishes. Re-run the launcher smoke matrix against the final artifacts.
 
 Tag Docker with the PAA version and update `latest` only after validation. Record the Docker digest and SIF SHA-256 before pushing. Registry login and pushes are explicit, separately authorized steps.
+
+Docker images go to `jluebeck/ampliconsuite-pipeline` on Docker Hub. SIFs go to the GitHub Container Registry as ORAS artifacts, under the same version and `latest` tags:
+
+```bash
+apptainer build ampliconsuite-pipeline_<version>.sif docker-daemon://jluebeck/ampliconsuite-pipeline:<version>
+apptainer registry login --username <github-user> oras://ghcr.io  # token with write:packages
+apptainer push ampliconsuite-pipeline_<version>.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:<version>
+apptainer push ampliconsuite-pipeline_<version>.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:latest
+```
+
+New GHCR packages start private, so set the package to public after its first push. Then confirm that the commands in the README work without logging in, for both the `oras://` and `docker://` routes.
 
 ## 5. Submit the Bioconda update
 

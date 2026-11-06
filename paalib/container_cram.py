@@ -3,9 +3,30 @@
 import os
 import re
 import shlex
+import shutil
 import subprocess
+import sys
 
 from paalib.cram_compat import CramCompatibilityError
+
+
+def find_sif_runtime():
+    """Return the command that runs SIF images, preferring Apptainer over legacy Singularity."""
+    runtime = next((name for name in ("apptainer", "singularity") if shutil.which(name)), None)
+    if runtime is None:
+        sys.exit("Apptainer was not found. Please install Apptainer 1.0 or higher.")
+    version_output = subprocess.check_output([runtime, "--version"]).decode().strip().lower()
+    version_match = re.search(r"\b(apptainer|singularity(?:-ce)?)\s+(?:version\s+)?(\d+)\.(\d+)", version_output)
+    if not version_match:
+        sys.exit("Could not identify a Singularity/Apptainer version from: {}".format(version_output))
+    name, major, minor = version_match.groups()
+    version = (int(major), int(minor))
+    if name == "apptainer" and version < (1, 0):
+        sys.exit("Apptainer version {}.{} is not supported. Please upgrade to version 1.0 or higher.".format(major, minor))
+    if name != "apptainer" and version < (3, 6):
+        sys.exit("Singularity version {}.{} is not supported. Please use Apptainer 1.0 or higher, "
+                 "or Singularity 3.6 or higher.".format(major, minor))
+    return runtime
 
 
 def cache_mount(template, destination):
@@ -73,7 +94,7 @@ def prepare_cram_container(runtime, image, alignment_paths):
         container_inputs.append(target)
     package_dir = "/home/programs/AmpliconSuite-pipeline-master"
     command = (["docker", "run", "--rm"] + uid_options if runtime == "docker" else
-               ["singularity", "exec", "--cleanenv", "--no-home"])
+               [runtime, "exec", "--cleanenv", "--no-home"])
     command += options(False) + input_options
     command += (["-w", package_dir, "--entrypoint", "python3", image] if runtime == "docker" else
                 ["--pwd", package_dir, image, "python3"])

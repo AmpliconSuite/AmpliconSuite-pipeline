@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 class ContainerLicenseWrapperTests(unittest.TestCase):
     def test_cram_launchers_prepare_once_then_mount_cache_readonly(self):
-        for runtime in ("docker", "singularity"):
+        for runtime in ("docker", "apptainer"):
             self._make_executable(runtime, "#!/bin/sh\n"
                                   'if [ "$1" = "--version" ]; then echo "singularity version 3.11.0"; exit 0; fi\n'
                                   'printf "%s\\n" "$*" >> "$RUNTIME_LOG"\n')
@@ -40,7 +40,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         self.bam = self.tmpdir / "sample.cram"
         self.bam.write_bytes(b"CRAM\x03\x01")
         self.group_input.write_text("sample {} tumor\n".format(self.bam))
-        for runtime in ("docker", "singularity"):
+        for runtime in ("docker", "apptainer"):
             self._make_executable(runtime, "#!/bin/sh\n"
                                   'if [ "$1" = "--version" ]; then echo "singularity version 3.11.0"; exit 0; fi\n'
                                   'echo invocation >> "$RUNTIME_LOG"\nexit 73\n')
@@ -65,15 +65,17 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         self.fake_bin = self.tmpdir / "bin"
         self.fake_bin.mkdir()
         self._make_executable("docker", "#!/bin/sh\nexit 0\n")
-        self._make_executable(
-            "singularity",
-            "#!/bin/sh\n"
-            "if [ \"$1\" = \"--version\" ]; then\n"
-            "    echo \"${FAKE_SINGULARITY_VERSION:-singularity version 3.11.0}\"\n"
-            "    exit 0\n"
-            "fi\n"
-            "exit \"${FAKE_SINGULARITY_EXIT:-0}\"\n",
-        )
+        for runtime in ("apptainer", "singularity"):
+            self._make_executable(
+                runtime,
+                "#!/bin/sh\n"
+                "if [ \"$1\" = \"--version\" ]; then\n"
+                "    echo \"${FAKE_SINGULARITY_VERSION:-singularity version 3.11.0}\"\n"
+                "    exit 0\n"
+                "fi\n"
+                "echo \"" + runtime + " $1\" >> \"${RUNTIME_LOG:-/dev/null}\"\n"
+                "exit \"${FAKE_SINGULARITY_EXIT:-0}\"\n",
+            )
 
         self.home = self.tmpdir / "home"
         self.home.mkdir()
@@ -184,6 +186,27 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
 
         self.assertNotIn("Mosek license (optional) not found", output)
         self.assertNotIn("No Gurobi license", output)
+
+    def test_sif_launchers_prefer_apptainer(self):
+        cases = [("singularity/run_paa_singularity.py", self._singularity_arguments("prefer_apptainer")),
+                 ("singularity/run_ga_singularity.py", self._grouped_arguments("grouped_prefer_apptainer"))]
+        for i, (script, arguments) in enumerate(cases):
+            with self.subTest(script=script):
+                log = self.tmpdir / "prefer-{}.log".format(i)
+                self._run(script, arguments, self._environment(RUNTIME_LOG=str(log)))
+                self.assertEqual(log.read_text().splitlines(), ["apptainer exec"])
+
+    def test_singularity_propagates_container_failure(self):
+        result = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "singularity/run_paa_singularity.py")] +
+            self._singularity_arguments("standalone_failure"),
+            cwd=self.tmpdir,
+            env=self._environment(FAKE_SINGULARITY_EXIT="9"),
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 9, result.stdout + result.stderr)
 
     def test_singularity_launcher_accepts_apptainer_version(self):
         arguments = self._singularity_arguments("singularity_apptainer")

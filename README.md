@@ -2,7 +2,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
 [![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
 [![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
-[![Singularity](https://img.shields.io/badge/singularity-available-blue)](https://cloud.sylabs.io/library/jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline)
+[![Apptainer](https://img.shields.io/badge/apptainer-available-blue)](https://github.com/orgs/AmpliconSuite/packages/container/package/ampliconsuite-pipeline)
 [![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
 
 
@@ -127,13 +127,15 @@ brew install coreutils
 
 
 
-### Option D: Singularity & Docker images
-Containerized versions of AmpliconSuite-pipeline are available for Singularity and Docker.
+### Option D: Apptainer/Singularity & Docker images
+Containerized versions of AmpliconSuite-pipeline are available for Apptainer/Singularity and Docker.
 
 1. Obtain the AmpliconSuite-pipeline image from the options below:
-   - **Singularity**:
-     * Use [SingularityCE 3.6+](https://docs.sylabs.io/guides/latest/user-guide/quick_start.html) or [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html); the same Python launch wrappers work with either runtime once the SIF is available.
-     * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
+   - **Apptainer/Singularity**:
+     * Use [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html). Existing Singularity 3.6+ installations also work; the launch wrappers use `apptainer` if it is available, and `singularity` otherwise.
+     * Pull the image: `apptainer pull ampliconsuite-pipeline.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:latest`
+     * Alternatively, build it from the Docker image: `apptainer pull ampliconsuite-pipeline.sif docker://jluebeck/ampliconsuite-pipeline:latest`
+     * Replace `latest` with a version number, such as `1.6.2`, to get a specific release. Images from the former Sylabs library are no longer available.
 
    - **Docker**:
      * Docker installation: https://docs.docker.com/install/
