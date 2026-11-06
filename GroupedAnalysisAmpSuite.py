@@ -115,7 +115,6 @@ def launch_AA(job_queue, aa_py, PAA_PATH, parent_odir):
                 ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
                 if ecode != 0:
                     report_sample_failure("AA job", sname, stage_output)
-                    sys.exit(1)
 
             job_queue.task_done()
 
@@ -500,13 +499,25 @@ def get_argdict(args):
     return arg_dict
 
 
+def get_finish_flag_path(sample_name, output_directory):
+    return os.path.join(output_directory, sample_name, f"{sample_name}_finish_flag.txt")
+
+
+def clear_finish_flags(sample_list, output_directory):
+    """Remove earlier finish flags so that a job stopping before it writes its own counts as failed"""
+    for sample_info in sample_list:
+        finish_flag_path = get_finish_flag_path(sample_info[0], output_directory)
+        if os.path.exists(finish_flag_path):
+            os.remove(finish_flag_path)
+
+
 def check_finish_flags(sample_list, output_directory):
     """Check finish flag files for UNSUCCESSFUL status"""
     failed_samples = []
 
     for sample_info in sample_list:
         sample_name = sample_info[0]
-        finish_flag_path = os.path.join(output_directory, sample_name, f"{sample_name}_finish_flag.txt")
+        finish_flag_path = get_finish_flag_path(sample_name, output_directory)
 
         if os.path.exists(finish_flag_path):
             with open(finish_flag_path, 'r') as f:
@@ -668,6 +679,7 @@ if __name__ == '__main__':
         cmd_dict = create_AA_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory, aa_threads)
         print("\nQueueing " + str(len(all_lines)) + " AA jobs")
         print("Going to run {} AA job(s) concurrently, each with -t {}".format(paa_threads, aa_threads))
+        clear_finish_flags(all_lines, args.output_directory)
 
         # Create a thread-safe queue and fill it directly
         job_queue = queue.Queue()
