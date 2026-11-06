@@ -10,6 +10,29 @@ from paalib import container_cram, cram_compat
 
 
 class ContainerCramTests(unittest.TestCase):
+    def test_sif_runtime_prefers_apptainer_and_falls_back_to_singularity(self):
+        for available, version, expected in ((("apptainer", "singularity"), "apptainer version 1.5.2", "apptainer"),
+                                             (("singularity",), "singularity-ce version 4.3.0", "singularity")):
+            with patch.object(container_cram.shutil, "which", side_effect=lambda name: name in available), \
+                    patch.object(container_cram.subprocess, "check_output", return_value=version.encode()) as version_call:
+                self.assertEqual(container_cram.find_sif_runtime(), expected)
+            version_call.assert_called_once_with([expected, "--version"])
+
+    def test_sif_runtime_reports_missing_runtime(self):
+        with patch.object(container_cram.shutil, "which", return_value=None):
+            with self.assertRaisesRegex(SystemExit, "Apptainer was not found"):
+                container_cram.find_sif_runtime()
+
+    def test_preparation_uses_selected_sif_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cram = Path(directory) / "input.cram"
+            cram.touch()
+            with patch.dict(os.environ, {"HOME": directory}, clear=True), \
+                    patch.object(container_cram.subprocess, "run") as run:
+                result = container_cram.prepare_cram_container("apptainer", "image.sif", [str(cram)])
+            self.assertEqual(run.call_args[0][0][:2], ["apptainer", "exec"])
+            self.assertIn("--bind", result)
+
     def test_bam_does_not_launch_preparation_or_create_cache(self):
         with patch.object(container_cram.subprocess, "run") as run, \
                 patch.object(container_cram.os, "makedirs") as mkdir:

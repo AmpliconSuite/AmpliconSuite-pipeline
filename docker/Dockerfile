@@ -102,6 +102,15 @@ RUN echo export MOSEKLM_LICENSE_FILE=/home/mosek/ >> ~/.bashrc && \
     echo export NCM_HOME=/home/programs/NGSCheckMate-master/ >> ~/.bashrc && \
     echo export AS_NO_REPO_CHECK=1 >> ~/.bashrc
 
+# A SIF built from this image has no .bashrc or %environment, so set these here too.
+ENV MOSEKLM_LICENSE_FILE=/home/mosek/ \
+    AA_DATA_REPO=/home/data_repo \
+    AA_SRC=/home/programs/AmpliconArchitect-master/src \
+    AC_SRC=/home/programs/AmpliconClassifier-main \
+    NCM_HOME=/home/programs/NGSCheckMate-master/ \
+    MPLCONFIGDIR=/tmp/.config/matplotlib \
+    AS_NO_REPO_CHECK=1
+
 # - Unpack downloaded packages
 # - Copy required conf for NGSCheckMate
 # - Copy in CNVKit
@@ -112,6 +121,8 @@ RUN unzip /tmp/programs/AmpliconArchitect/master.zip -d /home/programs && \
     unzip /tmp/programs/NGSCheckMate/master.zip -d /home/programs && \
     cp /home/programs/AmpliconSuite-pipeline-master/docker/paa_default_ncm.conf /home/programs/NGSCheckMate-master/ncm.conf && \
     cp `which cnvkit.py` /home/programs/cnvkit.py && \
+    cp /home/programs/AmpliconSuite-pipeline-master/singularity/internal_singularity_*.sh /home/ && \
+    chmod a+rx /home/internal_singularity_*.sh && \
     rm -rf /tmp/programs
 
 # set up a user

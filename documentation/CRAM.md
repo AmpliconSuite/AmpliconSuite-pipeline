@@ -102,12 +102,12 @@ docker run --rm --user "$(id -u):$(id -g)" \
   -m paalib.cram_compat --fetch_cram_refs /input/sample.cram
 ```
 
-Singularity/Apptainer, also writing directly to the persistent host directory:
+Apptainer (or Singularity), also writing directly to the persistent host directory:
 
 ```bash
 CACHE_DIR="$HOME/.cache/hts-ref"
 mkdir -p "$CACHE_DIR"
-singularity exec --cleanenv --no-home \
+apptainer exec --cleanenv --no-home \
   --bind "$CACHE_DIR:/cache" --bind /absolute/input/directory:/input:ro \
   --env 'REF_CACHE=/cache/%2s/%2s/%s' --env 'REF_PATH=/cache/%2s/%2s/%s' \
   --pwd /home/programs/AmpliconSuite-pipeline-master "$SIF" \

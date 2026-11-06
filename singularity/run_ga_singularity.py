@@ -6,8 +6,6 @@ import argparse
 import json
 import os
 import shlex
-import re
-import subprocess
 from subprocess import call
 import sys
 import shutil
@@ -15,37 +13,11 @@ import shutil
 
 # Launchers also work from a source checkout without installing paalib.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from paalib.container_cram import prepare_cram_container
+from paalib.container_cram import find_sif_runtime, prepare_cram_container
 from paalib.cram_compat import CramCompatibilityError
 
 
 DATA_REPO_BASE_URL = "https://refs.ampliconrepository.org/data/module_support_files/AmpliconArchitect/"
-
-
-# check singularity version
-def test_singularity_version():
-    version_output = subprocess.check_output(['singularity', '--version']).decode().strip().lower()
-    version_match = re.search(
-        r'\b(apptainer|singularity(?:-ce)?)\s+(?:version\s+)?(\d+)\.(\d+)',
-        version_output,
-    )
-    if not version_match:
-        sys.stderr.write(
-            'Could not identify a Singularity/Apptainer version from: {}\n'.format(version_output))
-        sys.exit(1)
-
-    runtime, major, minor = version_match.groups()
-    version = (int(major), int(minor))
-    if runtime == 'apptainer' and version < (1, 0):
-        sys.stderr.write(
-            'Apptainer version {}.{} is not supported. Please upgrade to version 1.0 or higher.\n'.format(
-                major, minor))
-        sys.exit(1)
-    if runtime != 'apptainer' and version < (3, 6):
-        sys.stderr.write(
-            'Singularity version {}.{} is not supported. Please upgrade to version 3.6 or higher.\n'.format(
-                major, minor))
-        sys.exit(1)
 
 
 def parse_input_file(input_file_path):
@@ -240,7 +212,7 @@ parser.add_argument('--sv_vcf_include_sr',
                     action='store_true', default=False)
 
 args = parser.parse_args()
-test_singularity_version()
+sif_runtime = find_sif_runtime()
 
 if args.sif and not args.sif.endswith(".sif"):
     sys.stderr.write("Path of .sif file must go to .sif file!\n")
@@ -312,8 +284,7 @@ if aa_ac_stage_enabled:
 
 if mosek_requested_for_aa and MOSEK_DIR is None:
     sys.stderr.write(
-        "Mosek is unavailable; AmpliconSuite-pipeline will use the license-free 'clarabel' solver for AA. "
-        "If Mosek fails later during optimization, AA also retries with Clarabel.\n")
+        "Mosek license (optional) not found; AmpliconSuite-pipeline will use the Clarabel solver for AA.\n")
 
 # Gurobi is an optional BFBArchitect accelerator during the grouped AA/AC stage. Remain silent when it is absent
 # because the built-in solver is the normal choice for most analyses.
@@ -330,7 +301,7 @@ samples = parse_input_file(args.input)
 print(f"Found {len(samples)} samples")
 
 try:
-    cram_options = prepare_cram_container("singularity", args.sif, [sample['bamfile'] for sample in samples])
+    cram_options = prepare_cram_container(sif_runtime, args.sif, [sample['bamfile'] for sample in samples])
 except (CramCompatibilityError, OSError) as exc:
     sys.exit(str(exc))
 cram_string = " ".join(shlex.quote(arg) for arg in cram_options)
@@ -432,7 +403,7 @@ with open(runscript_outname, 'w') as outfile:
     bind_mounts_str = " ".join(all_bind_mounts)
 
     # Create singularity command
-    sing_string = f"singularity exec --no-home --cleanenv --env-file {env_outname} " \
+    sing_string = f"{sif_runtime} exec --no-home --cleanenv --env-file {env_outname} " \
                   f"{bind_mounts_str} {cram_string} " \
                   f"{args.sif} bash /home/internal_singularity_ga_script.sh"
 

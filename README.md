@@ -2,7 +2,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/AmpliconSuite/AmpliconSuite-pipeline)
 [![Docker Image Version (latest by date)](https://img.shields.io/docker/v/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
 [![Docker pulls](https://img.shields.io/docker/pulls/jluebeck/ampliconsuite-pipeline?logo=docker)](https://hub.docker.com/r/jluebeck/ampliconsuite-pipeline)
-[![Singularity](https://img.shields.io/badge/singularity-available-blue)](https://cloud.sylabs.io/library/jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline)
+[![Apptainer](https://img.shields.io/badge/apptainer-available-blue)](https://github.com/orgs/AmpliconSuite/packages/container/package/ampliconsuite-pipeline)
 [![Conda](https://img.shields.io/conda/dn/bioconda/ampliconsuite?logo=Anaconda)](https://anaconda.org/bioconda/ampliconsuite)
 
 
@@ -56,7 +56,7 @@ AmpliconSuite installation wires all three BFBArchitect solver backends — Guro
 - *AmpliconArchitect* (copy-number optimization): **Mosek** when requested and available, otherwise **Clarabel** (see `--AA_solver`). AA also retries with Clarabel if Mosek fails at runtime.
 - *BFBArchitect* (BFB reconstruction, run under `--run_AC`): automatically tries **Gurobi**, then **Mosek**, then the license-free **CBC** solver. If a selected commercial solver is unavailable or fails on a model, BFBArchitect logs a warning and retries the next solver. Gurobi autodetection verifies that its environment starts, but a restricted license may still reject a larger model at solve time and trigger this fallback.
 
-The pipeline auto-detects supported licenses and uses the corresponding solver. When a requested commercial solver is unavailable, it prints a warning and uses the appropriate built-in solver. Nothing needs to be configured for license-free operation.
+The pipeline auto-detects supported licenses and uses the corresponding solver. When a commercial solver is unavailable, it uses the appropriate built-in solver and notes this in the log. Nothing needs to be configured for license-free operation.
 
 **License lifetimes** (if you do get one): free academic **Gurobi** licenses must be renewed every ~3 months; free academic **Mosek** licenses last a year; the built-in solvers never expire.
 
@@ -72,15 +72,14 @@ AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circ
 conda create -n ampsuite && conda activate ampsuite
 conda install -c conda-forge -c bioconda ampliconsuite
 conda install -c gurobi gurobi
-conda install -c mosek mosek
 
-# then run the installer script to finalize the data repo and optional license locations
+# then run the installer script to install Mosek and finalize the data repo and optional license locations
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
 chmod +x install.sh
 ./install.sh --finalize_only  # -h to see options
 ```
 
-The Gurobi and Mosek packages are required installation steps so every solver path is ready if the user's license strategy changes. Their unrestricted licenses are **optional**. If desired, obtain a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) or [Mosek](https://www.mosek.com/products/academic-licenses/) license and place it in the location shown above. Without one, BFBArchitect falls back to CBC and AmpliconArchitect can use Clarabel (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)). `install.sh --finalize_only` verifies the local Gurobi binding for native and Conda installations; when it is used only to prepare a container host, that local check is skipped because the binding is already in the image.
+The Gurobi package is a required installation step, and Mosek is installed so that every solver path is ready if the user's license strategy changes. If Mosek cannot be installed or loaded, `install.sh` warns and AmpliconArchitect uses Clarabel. Their unrestricted licenses are **optional**. If desired, obtain a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) or [Mosek](https://www.mosek.com/products/academic-licenses/) license and place it in the location shown above. Without one, BFBArchitect falls back to CBC and AmpliconArchitect can use Clarabel (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)). `install.sh --finalize_only` verifies the local Gurobi binding for native and Conda installations, and uses pip to install the latest stable Mosek if it is missing. When it is used only to prepare a container host, these local steps are skipped because the bindings are already in the image.
 
 - If Conda fails to solve the environment, [Mamba](https://mamba.readthedocs.io/en/latest/installation.html) seems to function robustly for installing AmpliconSuite. These steps also function on macOS.
 ```bash
@@ -88,7 +87,6 @@ The Gurobi and Mosek packages are required installation steps so every solver pa
 mamba create -n ampsuite python=3.10 && mamba activate ampsuite
 mamba install -c conda-forge -c bioconda ampliconsuite
 mamba install -c gurobi gurobi
-mamba install -c mosek mosek
 wget https://raw.githubusercontent.com/AmpliconSuite/AmpliconSuite-pipeline/master/install.sh
 chmod +x install.sh
 ./install.sh --finalize_only
@@ -119,7 +117,7 @@ Mac users will need to perform one additional installation step:
 brew install coreutils
 ```
 
-2. (Optional) To use Mosek, [obtain a license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. Without one, the pipeline selects the license-free `clarabel` solver and warns when it falls back (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)).
+2. (Optional) To use Mosek, [obtain a license](https://www.mosek.com/products/academic-licenses/) (free for academic use) and place it in `$HOME/mosek/`. Without one, the pipeline uses the license-free `clarabel` solver (see [Optimizer licenses](#optimizer-licenses--do-i-need-one-short-answer-no)).
 
 
 3. (Optional) If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license (free for academic use), place it at `$HOME/gurobi.lic` (or point `GRB_LICENSE_FILE` to it). The standalone installer already installs the required `gurobipy` binding through the pinned BFBArchitect package. When `--run_AC` is used, BFBArchitect can use Gurobi for BFB reconstruction; if an unrestricted license is unavailable or fails for a model, it retries another installed solver and ultimately CBC.
@@ -129,13 +127,15 @@ brew install coreutils
 
 
 
-### Option D: Singularity & Docker images
-Containerized versions of AmpliconSuite-pipeline are available for Singularity and Docker.
+### Option D: Apptainer/Singularity & Docker images
+Containerized versions of AmpliconSuite-pipeline are available for Apptainer/Singularity and Docker.
 
 1. Obtain the AmpliconSuite-pipeline image from the options below:
-   - **Singularity**:
-     * Use [SingularityCE 3.6+](https://docs.sylabs.io/guides/latest/user-guide/quick_start.html) or [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html); the same Python launch wrappers work with either runtime once the SIF is available.
-     * Pull the singularity image: `singularity pull library://jluebeck/ampliconsuite-pipeline/ampliconsuite-pipeline`
+   - **Apptainer/Singularity**:
+     * Use [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html). Existing Singularity 3.6+ installations also work; the launch wrappers use `apptainer` if it is available, and `singularity` otherwise.
+     * Pull the image: `apptainer pull ampliconsuite-pipeline.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:latest`
+     * Alternatively, build it from the Docker image: `apptainer pull ampliconsuite-pipeline.sif docker://jluebeck/ampliconsuite-pipeline:latest`
+     * Replace `latest` with a version number, such as `1.6.2`, to get a specific release. Images from the former Sylabs library are no longer available.
 
    - **Docker**:
      * Docker installation: https://docs.docker.com/install/
@@ -158,7 +158,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Singularity a
     * To use Mosek, [obtain a `mosek.lic` file](https://www.mosek.com/products/academic-licenses/). The license is free for academic use.
     * Place the file in `$HOME/mosek/` (the `mosek/` folder that now exists in your home directory).
     * If you are not able to place the license in the default location, set its directory with `MOSEKLM_LICENSE_FILE=/custom/path/`. The Docker and Singularity runscripts mount detected license files read-only.
-    * Mosek is optional for the containers. When Mosek is requested but unavailable before launch, the runscript prints a warning and selects the license-free `clarabel` solver. If Mosek fails during optimization, AA retries with Clarabel.
+    * Mosek is optional for the containers. Without a Mosek license, the runscript selects the license-free `clarabel` solver. If Mosek fails during optimization, AA retries with Clarabel.
     * If you have a [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/) license at `$HOME/gurobi.lic` (or pointed to by `GRB_LICENSE_FILE`), the runscript automatically mounts it so BFBArchitect can use Gurobi under `--run_AC`. Without an external license, BFBArchitect still performs its normal solver autodetection. A restricted Gurobi environment can pass startup validation but reject a larger model; runtime failures are logged before retrying with Mosek or CBC.
 
    
