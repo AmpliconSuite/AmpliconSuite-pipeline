@@ -289,7 +289,7 @@ fi
 
 if ! "${finalize_only}"; then
   echo -e "\nModule versions are..."
-  echo "AmpliconSuite-pipeline: `python3 ${install_dir}/AmpliconSuite-pipeline/AmpliconSuite-pipeline.py -v`"
+  echo "AmpliconSuite-pipeline: `python3 ${script_dir}/AmpliconSuite-pipeline.py -v`"
   echo "AA: `python3 $AA_SRC/AmpliconArchitect.py -v`"
   echo "AC: `python3 $AC_SRC/amplicon_classifier.py -v`"
 fi

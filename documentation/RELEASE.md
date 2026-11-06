@@ -61,9 +61,11 @@ launchers reuse the cache and stop on reference-preparation failures.
 
 Cover Clarabel without a Mosek license, a licensed Mosek run, and
 AC/BFBArchitect with Gurobi, Mosek, and CBC available. The Gurobi and Mosek
-bindings are required parts of a supported installation even though
-unrestricted commercial licenses are optional. Also test the no-license
-fallback path and confirm the logs identify the solver actually used. Include
+bindings are checked by the installer; a missing Gurobi binding fails the
+installation, while a Mosek binding that cannot be installed or loaded produces
+a warning and AA can fall back to Clarabel. Unrestricted commercial licenses
+are optional. Also test the no-license fallback path and confirm the logs
+identify the solver actually used. Include
 at least two distinct samples in grouped testing and verify that AC runs once
 across the cohort, writes similarity scores, and respects the shared thread
 budget.

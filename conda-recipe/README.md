@@ -24,7 +24,8 @@ conda install -n ampsuite_local -c gurobi gurobi
 ./install.sh --finalize_only
 ```
 
-Installing the Gurobi and Mosek packages wires both commercial solver paths;
+Installing Gurobi from its vendor channel and Mosek through pip via
+`install.sh --finalize_only` makes both commercial solver paths available;
 providing a license determines whether unrestricted models can use them.
 Clarabel and CBC are installed by the AmpliconSuite recipe and require no
 license. Validate a real BFB-positive example in this complete consumer
@@ -92,5 +93,6 @@ bioconda-utils build recipes config.yml --packages ampliconsuite
 ```
 
 After CI succeeds, install the produced package into a fresh environment, add
-the two vendor solver packages, run `install.sh --finalize_only`, and repeat the
-version, CBC, Gurobi, and real-data checks before requesting merge.
+Gurobi from its vendor channel, run `install.sh --finalize_only` to install
+Mosek through pip, and repeat the version, CBC, Gurobi, and real-data checks
+before requesting merge.
