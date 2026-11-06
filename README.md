@@ -65,7 +65,7 @@ The pipeline auto-detects supported licenses and uses the corresponding solver. 
 ### Option A: Installation-free platforms
 
 #### [Nextflow](https://nf-co.re/circdna):
-AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer).
+AmpliconSuite-pipeline can also be run through Nextflow, using the [nf-core/circdna pipeline](https://nf-co.re/circdna) constructed by [Daniel Schreyer](https://github.com/DSchreyer). However, this route does not receive updates as frequently as the installation options below.
 
 ### Option B: Conda or Mamba
 ```bash 
