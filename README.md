@@ -132,7 +132,7 @@ Containerized versions of AmpliconSuite-pipeline are available for Apptainer/Sin
 
 1. Obtain the AmpliconSuite-pipeline image from the options below:
    - **Apptainer/Singularity**:
-     * Use [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html). Existing Singularity 3.6+ installations also work; the launch wrappers use `apptainer` if it is available, and `singularity` otherwise.
+     * Use [Apptainer 1.0+](https://apptainer.org/docs/admin/main/installation.html). Apptainer is the current name of the open-source Singularity project, which joined the Linux Foundation in 2021, and it runs the same SIF images. Existing Singularity 3.6+ installations also work; the launch wrappers use `apptainer` if it is available, and `singularity` otherwise.
      * Pull the image: `apptainer pull ampliconsuite-pipeline.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:latest`
      * Alternatively, build it from the Docker image: `apptainer pull ampliconsuite-pipeline.sif docker://jluebeck/ampliconsuite-pipeline:latest`
      * Replace `latest` with a version number, such as `1.6.2`, to get a specific release. Images from the former Sylabs library are no longer available.
