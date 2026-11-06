@@ -1,5 +1,7 @@
+import io
 import json
 import os
+import queue
 import tempfile
 import unittest
 from pathlib import Path
@@ -175,6 +177,44 @@ with open(prefix + '_result_table.tsv', 'w') as outfile:
                     os.environ.get("PYTHON", "python3"),
                     str(self.ac_src),
                 )
+
+
+class GroupedAnalysisFailureMessageTests(unittest.TestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.parent_odir = self._tmpdir.name + "/"
+        self.sample_dir = os.path.join(self._tmpdir.name, "sample_a")
+        os.makedirs(self.sample_dir)
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def _assert_failure_named(self, stage, stage_output_name, stderr):
+        message = stderr.getvalue()
+        self.assertIn("{} failed for sample sample_a".format(stage), message)
+        self.assertIn(os.path.join(self.sample_dir, stage_output_name), message)
+
+    def test_seed_stage_failure_names_sample_and_logs(self):
+        stderr = io.StringIO()
+        with patch.object(grouped, "call", return_value=1), patch("sys.stderr", stderr), \
+                patch("sys.stdout", io.StringIO()):
+            with self.assertRaises(SystemExit) as caught:
+                grouped.generate_individual_seeds({"sample_a": " --args"}, "python3", self.parent_odir, {})
+
+        self.assertEqual(caught.exception.code, 1)
+        self._assert_failure_named("Individual CNV call generation", "sample_a_CNV_out.txt", stderr)
+
+    def test_aa_stage_failure_names_sample_and_logs(self):
+        job_queue = queue.Queue()
+        job_queue.put(("sample_a", " --args"))
+        stderr = io.StringIO()
+        with patch.object(grouped, "call", return_value=1), patch("sys.stderr", stderr), \
+                patch("sys.stdout", io.StringIO()):
+            with self.assertRaises(SystemExit) as caught:
+                grouped.launch_AA(job_queue, "python3", "paa.py", self.parent_odir)
+
+        self.assertEqual(caught.exception.code, 1)
+        self._assert_failure_named("AA job", "sample_a_AA_out.txt", stderr)
 
 
 if __name__ == "__main__":
