@@ -55,6 +55,8 @@ Exercise three independent installation surfaces:
 
 `singularity/ampliconsuite-pipeline.def` remains available for building a SIF without Docker, but published SIFs come from the Docker image so that both distributions have the same contents. If the definition changed, build it and check that it runs.
 
+The Docker and Apptainer recipes download PAA and AA from `master` and AC from `main`. From the local checkout they take only the requirements file and the internal scripts, and the launchers run on the host. An image built from a feature branch therefore has that branch's pins but `master`'s code. Merge candidate code before testing it in an image (no tag is needed), and use `--no-cache --pull` so that cached layers can't hide a change. Confirm what was tested by hashing a changed file inside the image and comparing it with `git show <sha>:<path> | sha256sum`.
+
 Published images must contain samtools >=1.21. Check the installed version inside
 each final Docker/SIF artifact; both build definitions enforce this minimum.
 Include a CRAM 3.1 launcher smoke test that populates a persistent reference cache,
@@ -67,12 +69,14 @@ bindings are checked by the installer; a missing Gurobi binding fails the
 installation, while a Mosek binding that cannot be installed or loaded produces
 a warning and AA can fall back to Clarabel. Unrestricted commercial licenses
 are optional. Also test the no-license fallback path and confirm the logs
-identify the solver actually used. Include
+identify the solver actually used. Gurobi, Mosek, and CBC can legitimately give
+different BFB scores, so compare each solver only against its own earlier
+results. Include
 at least two distinct samples in grouped testing and verify that AC runs once
 across the cohort, writes similarity scores, and respects the shared thread
 budget.
 
-Record commands, component versions, image IDs or SIF checksum, input sample/reference, solver, exit status, and output location. Use an external validation directory such as `/tmp/ampliconsuite-release-<date>`; never add BAMs, FASTQs, licenses, or generated results to Git.
+Record commands, component versions, image IDs or SIF checksum, input sample/reference, solver, exit status, and output location. Keep validation outputs in an external directory on real disk, and never add BAMs, FASTQs, licenses, or generated results to Git. `/tmp` is RAM-backed on many systems, so large test files there compete with the running jobs for memory. Run heavy jobs such as AA matrices and Conda installs one at a time, and check available memory before starting each one.
 
 ## 3. Publish GitHub releases
 
@@ -93,7 +97,26 @@ apptainer push ampliconsuite-pipeline_<version>.sif oras://ghcr.io/ampliconsuite
 apptainer push ampliconsuite-pipeline_<version>.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:latest
 ```
 
-New GHCR packages start private, so set the package to public after its first push. Then confirm that the commands in the README work without logging in, for both the `oras://` and `docker://` routes.
+New GHCR packages start private, so set the package to public after its first push. Then confirm that the commands in the README work without logging in, for `docker pull` and for both the `oras://` and `docker://` Apptainer routes. Use an empty `DOCKER_CONFIG` and `HOME`, and remove the local Docker image first so that the layers are really downloaded.
+
+The GHCR package holds a SIF, not a Docker image, so `docker pull` on the GHCR address fails with `unsupported media type`. Docker users pull from Docker Hub.
+
+`apptainer push` doesn't set the description on the GHCR package page. GHCR reads it from the manifest's `org.opencontainers.image.description` annotation, which is limited to 512 characters. Add it after pushing, using a GitHub token with `write:packages`:
+
+```bash
+REPO=ampliconsuite/ampliconsuite-pipeline
+TYPE=application/vnd.oci.image.manifest.v1+json
+DESC='AmpliconSuite-pipeline Apptainer/Singularity image (SIF). Pull with: apptainer pull ampliconsuite-pipeline.sif oras://ghcr.io/ampliconsuite/ampliconsuite-pipeline:latest . For Docker, use the Docker Hub image: docker pull jluebeck/ampliconsuite-pipeline . Running docker pull on this GHCR address will not work.'
+TOKEN=$(curl -s -u "<github-user>:$(gh auth token)" "https://ghcr.io/token?service=ghcr.io&scope=repository:$REPO:pull,push" | jq -r .token)
+for tag in <version> latest; do
+  curl -s -H "Authorization: Bearer $TOKEN" -H "Accept: $TYPE" "https://ghcr.io/v2/$REPO/manifests/$tag" \
+    | jq -cj --arg d "$DESC" '.annotations["org.opencontainers.image.description"] = $d' > manifest.json
+  curl -s -o /dev/null -w "$tag HTTP %{http_code}\n" -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: $TYPE" \
+    --data-binary @manifest.json "https://ghcr.io/v2/$REPO/manifests/$tag"
+done
+```
+
+This leaves the SIF layer unchanged but gives the tags a new manifest digest, so record the digest after this step. The earlier manifest stays in the package, untagged. Pull the tag again and confirm that the SIF's SHA-256 still matches.
 
 ## 5. Submit the Bioconda update
 
@@ -116,5 +139,9 @@ cannot obtain Gurobi or Mosek, install Gurobi from its vendor channel in the
 clean consumer environment, then
 run `install.sh --finalize_only`, which uses pip to add Mosek, before the final
 solver tests.
+
+Test the package Bioconda built, not only a local build. Once the PR's CI passes, download the artifact with `gh run download <run-id> -R bioconda/bioconda-recipes -n linux-packages`, then install it in a fresh environment with `-c file://<packages dir> -c conda-forge -c bioconda`. Add the vendor solvers as above and repeat the real-data solver and grouped tests. First unset `AA_SRC`, `AC_SRC`, `REF_CACHE`, `REF_PATH`, `PYTHONPATH`, and any license variables, and use an empty `HOME`, or the run can silently use development checkouts. Afterwards, search the outputs for those checkout paths. The CI also builds a BioContainers image, which is a useful no-license check, but it has no vendor solvers.
+
+To request review, comment `@BiocondaBot please add label` on the PR. Update the checked-in `conda-recipe/meta.yaml` once the GitHub tags exist.
 
 Finish by recording release URLs, container digests, the Bioconda PR, and any intentionally deferred issues in the release notes.
