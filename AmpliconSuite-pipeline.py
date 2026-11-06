@@ -992,6 +992,10 @@ def run_pipeline_logic(paa_logfile, timing_logfile, ta, ti, launchtime, commands
             logging.info("Skipping filtering of bed file.")
             amplified_interval_bed = args.cnv_bed
 
+        # GroupedAnalysisAmpSuite.py finds each sample's seeds under this name for its AA stage.
+        if args.no_filter and not args.run_AA and not amplified_interval_bed.endswith("_AA_CNV_SEEDS.bed"):
+            shutil.copyfile(amplified_interval_bed, "{}{}_AA_CNV_SEEDS.bed".format(outdir, sname))
+
         tb = time.time()
         timing_logfile.write("Seed filtering (amplified_intervals.py):\t" + "{:.2f}".format(tb - ta) + "\n")
         ta = tb

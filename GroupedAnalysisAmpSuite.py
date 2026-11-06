@@ -34,6 +34,12 @@ except KeyError:
             "\nAC_SRC bash variable or library files not found. AmpliconClassifier may not be properly installed.\n")
         sys.exit(1)
 
+
+def report_sample_failure(stage, sname, stage_output):
+    # Sample jobs write to files, so name the sample and the file holding its error message.
+    sys.stderr.write("{} failed for sample {}. See {} for details.\n".format(stage, sname, stage_output))
+
+
 def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
     individual_seed_dct = {}
     print('Generating individual seeds')
@@ -42,13 +48,14 @@ def generate_individual_seeds(cmd_dict, aa_py, parent_odir, cnv_bed_dict):
         if not os.path.exists(odir):
             os.makedirs(odir)
 
-        with open("{}{}_CNV_out.txt".format(odir, sname), 'w') as outfile:
+        stage_output = "{}{}_CNV_out.txt".format(odir, sname)
+        with open(stage_output, 'w') as outfile:
             cmd = '{} {}{}'.format(aa_py, PAA_PATH, argstring)
             print(sname)
             print(cmd + "\n")
             ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
             if ecode != 0:
-                sys.stderr.write("Unexpected error during individual CNV call generation!\n")
+                report_sample_failure("Individual CNV call generation", sname, stage_output)
                 sys.exit(1)
 
         # if it was a seeds file, PAA won't modify, so copy it into the right location
@@ -100,14 +107,14 @@ def launch_AA(job_queue, aa_py, PAA_PATH, parent_odir):
             sname, cmd_string = job_queue.get(block=False)
 
             odir = parent_odir + sname
-            with open("{}/{}_AA_out.txt".format(odir, sname), 'w') as outfile:
+            stage_output = "{}/{}_AA_out.txt".format(odir, sname)
+            with open(stage_output, 'w') as outfile:
                 time.sleep(random.uniform(0, 0.75))
                 cmd = "{} {}{}".format(aa_py, PAA_PATH, cmd_string)
                 print("\nLaunching AA job for " + sname + "\n" + cmd)
                 ecode = call(cmd, stdout=outfile, stderr=outfile, shell=True)
                 if ecode != 0:
-                    sys.stderr.write("Unexpected error while running AA job!\n")
-                    sys.exit(1)
+                    report_sample_failure("AA job", sname, stage_output)
 
             job_queue.task_done()
 
@@ -492,13 +499,25 @@ def get_argdict(args):
     return arg_dict
 
 
+def get_finish_flag_path(sample_name, output_directory):
+    return os.path.join(output_directory, sample_name, f"{sample_name}_finish_flag.txt")
+
+
+def clear_finish_flags(sample_list, output_directory):
+    """Remove earlier finish flags so that a job stopping before it writes its own counts as failed"""
+    for sample_info in sample_list:
+        finish_flag_path = get_finish_flag_path(sample_info[0], output_directory)
+        if os.path.exists(finish_flag_path):
+            os.remove(finish_flag_path)
+
+
 def check_finish_flags(sample_list, output_directory):
     """Check finish flag files for UNSUCCESSFUL status"""
     failed_samples = []
 
     for sample_info in sample_list:
         sample_name = sample_info[0]
-        finish_flag_path = os.path.join(output_directory, sample_name, f"{sample_name}_finish_flag.txt")
+        finish_flag_path = get_finish_flag_path(sample_name, output_directory)
 
         if os.path.exists(finish_flag_path):
             with open(finish_flag_path, 'r') as f:
@@ -660,6 +679,7 @@ if __name__ == '__main__':
         cmd_dict = create_AA_cmds(all_lines, base_argstring, grouped_seeds, args.output_directory, aa_threads)
         print("\nQueueing " + str(len(all_lines)) + " AA jobs")
         print("Going to run {} AA job(s) concurrently, each with -t {}".format(paa_threads, aa_threads))
+        clear_finish_flags(all_lines, args.output_directory)
 
         # Create a thread-safe queue and fill it directly
         job_queue = queue.Queue()

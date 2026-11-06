@@ -1,5 +1,7 @@
+import io
 import json
 import os
+import queue
 import tempfile
 import unittest
 from pathlib import Path
@@ -175,6 +177,58 @@ with open(prefix + '_result_table.tsv', 'w') as outfile:
                     os.environ.get("PYTHON", "python3"),
                     str(self.ac_src),
                 )
+
+
+class GroupedAnalysisFailureMessageTests(unittest.TestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.parent_odir = self._tmpdir.name + "/"
+        self.sample_dir = os.path.join(self._tmpdir.name, "sample_a")
+        os.makedirs(self.sample_dir)
+
+    def tearDown(self):
+        self._tmpdir.cleanup()
+
+    def _assert_failure_named(self, stage, stage_output_name, stderr):
+        message = stderr.getvalue()
+        self.assertIn("{} failed for sample sample_a".format(stage), message)
+        self.assertIn(os.path.join(self.sample_dir, stage_output_name), message)
+
+    def test_seed_stage_failure_names_sample_and_logs(self):
+        stderr = io.StringIO()
+        with patch.object(grouped, "call", return_value=1), patch("sys.stderr", stderr), \
+                patch("sys.stdout", io.StringIO()):
+            with self.assertRaises(SystemExit) as caught:
+                grouped.generate_individual_seeds({"sample_a": " --args"}, "python3", self.parent_odir, {})
+
+        self.assertEqual(caught.exception.code, 1)
+        self._assert_failure_named("Individual CNV call generation", "sample_a_CNV_out.txt", stderr)
+
+    def test_aa_stage_failure_names_sample_and_later_samples_still_run(self):
+        os.makedirs(os.path.join(self._tmpdir.name, "sample_b"))
+        job_queue = queue.Queue()
+        job_queue.put(("sample_a", " --args"))
+        job_queue.put(("sample_b", " --args"))
+        stderr = io.StringIO()
+        with patch.object(grouped, "call", return_value=1) as mock_call, patch("sys.stderr", stderr), \
+                patch("sys.stdout", io.StringIO()):
+            grouped.launch_AA(job_queue, "python3", "paa.py", self.parent_odir)
+
+        self.assertEqual(mock_call.call_count, 2)
+        self._assert_failure_named("AA job", "sample_a_AA_out.txt", stderr)
+
+    def test_job_stopping_before_writing_its_flag_counts_as_failed(self):
+        flag = Path(self.sample_dir) / "sample_a_finish_flag.txt"
+        flag.write_text("All stages completed\n")
+        samples = [["sample_a"]]
+        self.assertEqual(grouped.check_finish_flags(samples, self.parent_odir), [])
+
+        grouped.clear_finish_flags(samples, self.parent_odir)
+
+        self.assertEqual(grouped.check_finish_flags(samples, self.parent_odir), ["sample_a"])
+
+    def test_clearing_flags_allows_samples_without_one(self):
+        grouped.clear_finish_flags([["sample_a"], ["never_started"]], self.parent_odir)
 
 
 if __name__ == "__main__":
