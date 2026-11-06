@@ -24,7 +24,7 @@ fi
 function show_help {
   echo "Usage: install.sh [--finalize_only] --data_repo_loc <data_repo_loc>"
   echo "Options:"
-  echo "  --finalize_only          Do not install AA or AC. Validate installed solver bindings and finalize data repo/license locations"
+  echo "  --finalize_only          Do not install AA or AC. Validate installed solver bindings (installing Mosek if missing) and finalize data repo/license locations"
   echo "  --data_repo_loc <path>   Custom set data repository location (defaults to creating a directory in \$HOME}"
   echo "  --uninstall              Remove downloaded files and unset bash variables associated with AA. Will not remove python dependencies, AmpliconSuite-pipeline directory or data repo files."
 }
@@ -156,8 +156,10 @@ if ! ${finalize_only}; then
     exit 1
   fi
 
+  python_deps=("cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel gurobipy "bfbarchitect==1.0.2" numpy pandas "pysam>=0.23.3" scipy)
+
   # Try pip install first
-  if python3 -m pip install --no-cache-dir "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel gurobipy "bfbarchitect==1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+  if python3 -m pip install --no-cache-dir "${python_deps[@]}" --extra-index-url https://download.pytorch.org/whl/cpu; then
       # Installation succeeded
       echo "Installation completed successfully."
   else
@@ -175,7 +177,7 @@ if ! ${finalize_only}; then
           read -p "Do you want to proceed anyway? (y/N): " -r
           echo
           if [[ $REPLY =~ ^[Yy]$ ]]; then
-              if python3 -m pip install --no-cache-dir --break-system-packages "cnvkit>=0.9.10" Flask future intervaltree "matplotlib>=3.5.1" mosek clarabel gurobipy "bfbarchitect==1.0.1" numpy pandas "pysam>=0.23.3" scipy --extra-index-url https://download.pytorch.org/whl/cpu; then
+              if python3 -m pip install --no-cache-dir --break-system-packages "${python_deps[@]}" --extra-index-url https://download.pytorch.org/whl/cpu; then
                   echo "Installation completed successfully."
               else
                   echo "ERROR: Installation failed even with --break-system-packages."
@@ -243,8 +245,21 @@ if python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_spe
     exit 1
   fi
   echo "Gurobi Python binding is installed. An unrestricted Gurobi license is optional."
+
+  # Conda installs get Mosek here. AA falls back to Clarabel when Mosek cannot
+  # load, so a failed Mosek install does not stop the installer.
+  if ! python3 -c "import mosek" >/dev/null 2>&1; then
+    echo "Installing the Mosek Python binding: python3 -m pip install mosek"
+    python3 -m pip install mosek
+  fi
+  if python3 -c "import mosek" >/dev/null 2>&1; then
+    echo "Mosek Python binding is installed. A Mosek license is optional."
+  else
+    echo "WARNING: The Mosek Python binding could not be installed or loaded. AmpliconArchitect will use Clarabel." >&2
+    echo "To retry: python3 -m pip install --upgrade mosek (Mosek 10 and older cannot load on systems with glibc 2.41 or newer). No Mosek license is needed for this." >&2
+  fi
 else
-  echo "BFBArchitect is not installed in this Python environment; skipping the local Gurobi binding check (expected when only preparing a host for container use)."
+  echo "BFBArchitect is not installed in this Python environment; skipping the local Gurobi and Mosek binding checks (expected when only preparing a host for container use)."
 fi
 
 if [ -z "$AA_DATA_REPO" ]; then

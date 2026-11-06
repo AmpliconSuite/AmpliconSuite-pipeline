@@ -37,7 +37,6 @@ class UpdateBiocondaRecipeTests(unittest.TestCase):
             self.assertIn("sha256: " + digest, updated)
         self.assertIn("    number: 7", updated)
         self.assertIn("folder: bfbarchitectlib", updated)
-        self.assertIn("bfba-conda-solvers.patch", updated)
 
 
 if __name__ == "__main__":

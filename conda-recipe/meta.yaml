@@ -1,8 +1,8 @@
 {% set name="ampliconsuite" %}
 {% set AS_version="1.5.3" %}
-{% set AA_version="1.5.r7" %}
-{% set AC_version="1.5.2" %}
-{% set BFBA_version="1.0.1" %}
+{% set AA_version="1.6.r2" %}
+{% set AC_version="2.0.1" %}
+{% set BFBA_version="1.0.2" %}
 
 package:
     name: {{ name }}
@@ -14,16 +14,14 @@ source:
     - url: https://github.com/AmpliconSuite/AmpliconSuite-pipeline/archive/v{{ AS_version }}.tar.gz
       sha256: 7db92d6cc2a1f3074877079e868dd8b16163858d6ef2d0fdc6d5a8e1b4588dbb
     - url: https://github.com/AmpliconSuite/AmpliconArchitect/archive/v{{ AA_version }}.tar.gz
-      sha256: 4149f9db0cc8c8479f61f8189bb8ec40ea387eff51b5d55d874d632b9f219b69
+      sha256: a7a2867a0f3af2684e3828225de8d06225934a579c2c2629cc9538ffb94fcf25
       folder: ampliconarchitectlib
     - url: https://github.com/AmpliconSuite/AmpliconClassifier/archive/v{{ AC_version }}.tar.gz
-      sha256: d12094407bf43dc102b3f3979d1ef154cf729146d59c699dfe31ce50df1e8f17
+      sha256: 8959275db29e58976ff24fcf37b8342d6567da80044092ffd311126442028993
       folder: ampliconclassifierlib
     - url: https://github.com/AmpliconSuite/BFBArchitect/archive/v{{ BFBA_version }}.tar.gz
-      sha256: 704ddd69756d9bb1414191dcce19bc2114d2b146660d17ff3bd8deb8f6fab94f
+      sha256: 0fd5e8094ecc22170eb1868da32078fa7dbdcec01607200adaf5025832538f2c
       folder: bfbarchitectlib
-      patches:
-        - bfba-conda-solvers.patch
 build:
     noarch: python
     number: 0
@@ -38,9 +36,9 @@ requirements:
         - wheel
     run:
         - python >=3.9
-        # Gurobi and Mosek bindings are mandatory in supported consumer
-        # installations but come from vendor channels unavailable to Bioconda
-        # CI. install.sh --finalize_only enforces Gurobi after installation.
+        # Gurobi and Mosek bindings are part of supported consumer
+        # installations but are unavailable to Bioconda CI. After installation,
+        # install.sh --finalize_only enforces Gurobi and pip-installs Mosek.
         - bwa
         - clarabel >=0.11.1,<0.12
         - cnvkit >=0.9.10

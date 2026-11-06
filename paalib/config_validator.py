@@ -209,8 +209,8 @@ def validate_aa_environment(args):
     # before AA is launched. AA also retains its runtime MOSEK-to-Clarabel
     # fallback for license-server and solver failures that happen later.
     if args.run_AA and getattr(args, "AA_solver", "mosek") == "mosek":
-        if not _validate_mosek_license():
-            logging.warning("MOSEK license unavailable; falling back to the Clarabel solver.")
+        if not _validate_mosek_license(getattr(args, "aa_python_interpreter", None) or "python3"):
+            logging.info("AA will use the Clarabel solver.")
             args.AA_solver = "clarabel"
     
     return AA_SRC, AC_SRC
@@ -332,7 +332,32 @@ def _contains_spaces(filepath):
     return ' ' in filepath
 
 
-def _validate_mosek_license():
+def _mosek_license_major(license_path):
+    """Return the newest MOSEK major version a license file supports, or None if it does not say."""
+    majors = []
+    try:
+        with open(license_path) as license_file:
+            for line in license_file:
+                fields = line.split()
+                if len(fields) > 3 and fields[0] == "FEATURE" and fields[1] in ("PTS", "PTON"):
+                    majors.append(int(float(fields[3])))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None
+
+    return min(majors) if majors else None
+
+
+def _installed_mosek_major(python_interpreter):
+    """Return the MOSEK major version AA's interpreter loads, or None if that cannot be determined."""
+    try:
+        output = check_output([python_interpreter, "-c", "import mosek; print(mosek.Env.getversion()[0])"],
+                              stderr=DEVNULL, universal_newlines=True)
+        return int(output.split()[-1])
+    except (OSError, CalledProcessError, ValueError, IndexError):
+        return None
+
+
+def _validate_mosek_license(python_interpreter="python3"):
     """Return whether a usable-looking MOSEK license is available for AA."""
     mosek_license_path = None
     
@@ -349,10 +374,10 @@ def _validate_mosek_license():
         elif os.path.exists(os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"):
             mosek_license_path = os.environ["MOSEKLM_LICENSE_FILE"] + "/mosek.lic"
         else:
-            logging.warning("MOSEK license not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
+            logging.info("Mosek license (optional) not found in " + os.environ["MOSEKLM_LICENSE_FILE"])
             return False
     else:
-        logging.warning("MOSEK license not found in $HOME/mosek/")
+        logging.info("Mosek license (optional) not found in $HOME/mosek/")
         return False
     
     # Check license age
@@ -364,23 +389,25 @@ def _validate_mosek_license():
         
         # Check if license has expired (older than 365 days)
         if days_old >= 365:
-            logging.warning("*" * 80)
-            logging.warning("WARNING: MOSEK LICENSE APPEARS TO BE EXPIRED! (file created > 365 days ago)")
-            logging.warning(
-                "The Mosek license file at " + mosek_license_path + " is " + str(days_old) + " days old.")
-            logging.warning("AA will use Clarabel instead of this license.")
-            logging.warning("Please obtain an updated Mosek license to continue using MOSEK.")
-            logging.warning("*" * 80)
+            logging.info("The Mosek license at " + mosek_license_path + " is " + str(days_old) +
+                         " days old and has likely expired.")
             return False
         # Check if license is about to expire (within 7 days)
         elif days_old >= 358:
             days_until_expiry = 365 - days_old
-            logging.warning("*" * 80)
-            logging.warning("WARNING: MOSEK LICENSE WILL EXPIRE SOON!")
-            logging.warning("The Mosek license file at " + mosek_license_path + " will expire in " + str(
-                days_until_expiry) + " days.")
-            logging.warning("Please obtain an updated Mosek license before expiration to continue using MOSEK.")
-            logging.warning("*" * 80)
+            logging.info("The Mosek license at " + mosek_license_path + " expires in about " +
+                         str(days_until_expiry) + " days. AA will then use the Clarabel solver.")
+
+        # MOSEK rejects a license older than its own major version. Catch that here
+        # instead of letting every AA solve fail and retry with Clarabel.
+        license_major = _mosek_license_major(mosek_license_path)
+        if license_major is not None:
+            installed_major = _installed_mosek_major(python_interpreter)
+            if installed_major is not None and installed_major > license_major:
+                logging.info("Mosek " + str(installed_major) + " is installed, but the license at " +
+                             mosek_license_path + " covers Mosek " + str(license_major) + " and older.")
+                logging.info("To use Mosek, update the license.")
+                return False
 
     return True
 

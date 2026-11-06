@@ -7,11 +7,11 @@ must be updated and tested together; general runtime libraries may move within
 their declared compatibility constraints.
 
 BFBArchitect is embedded in this recipe rather than published as a separate
-Bioconda package. The `bfba-conda-solvers.patch` file permits PuLP 2.8 or newer
-and selects Conda's external CBC executable when PuLP has no bundled CBC. It
-retains BFBArchitect's mandatory `gurobipy` metadata. Bioconda cannot obtain
-Gurobi or Mosek from vendor channels during its build, so users install those
-bindings separately; their unrestricted license files remain optional.
+Bioconda package. It uses Conda's external CBC executable when PuLP has no
+bundled CBC. Bioconda cannot obtain Gurobi or Mosek during its build and neither
+is on conda-forge, so they are installed afterward: users add Gurobi from its
+vendor channel, and `install.sh --finalize_only` uses pip to add Mosek. The
+unrestricted license files remain optional.
 
 ## Build and test locally
 
@@ -21,7 +21,6 @@ conda create -n ampsuite_local python=3.10
 conda activate ampsuite_local
 conda install -n ampsuite_local -c local -c conda-forge -c bioconda ampliconsuite
 conda install -n ampsuite_local -c gurobi gurobi
-conda install -n ampsuite_local -c mosek mosek
 ./install.sh --finalize_only
 ```
 
@@ -57,16 +56,19 @@ python conda-recipe/update_bioconda_recipe.py \
   --dry-run
 ```
 
-Rerun without `--dry-run`, then synchronize the build script and BFBA patch:
+Rerun without `--dry-run`, then synchronize the build script:
 
 ```bash
 cp conda-recipe/build.sh \
   /path/to/bioconda-recipes/recipes/ampliconsuite/build.sh
-cp conda-recipe/bfba-conda-solvers.patch \
-  /path/to/bioconda-recipes/recipes/ampliconsuite/bfba-conda-solvers.patch
 ```
 
-Inspect all three files and reset the recipe build number to `0` for a new
+The update helper does not change anything else in the recipe. The published
+recipe for BFBArchitect 1.0.1 has a solver patch and a PuLP limit, so on the
+first update to BFBArchitect 1.0.2, delete `bfba-conda-solvers.patch` and its
+`patches:` entry, and make the requirements match `conda-recipe/meta.yaml`.
+
+Inspect both files and reset the recipe build number to `0` for a new
 AmpliconSuite version. The update helper uses only the Python standard library;
 it updates the four exact versions, downloads all four release archives,
 recalculates their SHA-256 hashes, and updates the build number.

@@ -158,7 +158,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         arguments.extend(["--run_AA", "--run_AC", "--AA_solver", "clarabel"])
         output = self._run("docker/run_paa_docker.py", arguments)
 
-        self.assertNotIn("Mosek is unavailable", output)
+        self.assertNotIn("Mosek license (optional) not found", output)
         self.assertNotIn("No Gurobi license", output)
 
     def test_docker_requested_mosek_warns(self):
@@ -166,8 +166,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         arguments.extend(["--run_AA", "--AA_solver", "mosek"])
         output = self._run("docker/run_paa_docker.py", arguments)
 
-        self.assertIn("Mosek is unavailable", output)
-        self.assertIn("AA also retries with Clarabel", output)
+        self.assertIn("Mosek license (optional) not found", output)
 
     def test_docker_custom_license_mounts_are_read_only(self):
         env, mosek_dir, gurobi_file = self._licensed_environment()
@@ -183,7 +182,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         arguments.extend(["--run_AA", "--run_AC", "--AA_solver", "clarabel"])
         output = self._run("singularity/run_paa_singularity.py", arguments)
 
-        self.assertNotIn("Mosek is unavailable", output)
+        self.assertNotIn("Mosek license (optional) not found", output)
         self.assertNotIn("No Gurobi license", output)
 
     def test_singularity_launcher_accepts_apptainer_version(self):
@@ -232,7 +231,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         arguments = self._grouped_arguments("grouped_mosek")
         output = self._run("singularity/run_ga_singularity.py", arguments)
 
-        self.assertIn("Mosek is unavailable", output)
+        self.assertIn("Mosek license (optional) not found", output)
         self.assertNotIn("No Gurobi license", output)
 
     def test_grouped_launcher_accepts_apptainer_version(self):
@@ -268,7 +267,7 @@ class ContainerLicenseWrapperTests(unittest.TestCase):
         arguments.append("--no_AA")
         output = self._run("singularity/run_ga_singularity.py", arguments, env)
 
-        self.assertNotIn("Mosek is unavailable", output)
+        self.assertNotIn("Mosek license (optional) not found", output)
         self.assertNotIn(str(mosek_dir), output)
         self.assertNotIn(str(gurobi_file), output)
 

@@ -85,8 +85,8 @@ Tag Docker with the PAA version and update `latest` only after validation. Recor
 Prepare the sparse checkout and dry-run before release day, but calculate final
 hashes only after the GitHub tags exist. Use
 `conda-recipe/update_bioconda_recipe.py` as described in
-`conda-recipe/README.md`, inspect the `meta.yaml`, `build.sh`, and BFBA solver
-patch, run available lint/build checks, then open the manual PR. Verify that the
+`conda-recipe/README.md`, inspect the `meta.yaml` and `build.sh`, run available
+lint/build checks, then open the manual PR. Verify that the
 single `ampliconsuite` recipe embeds the exact released versions of all four
 components and resets its build number appropriately. Do not create a separate
 Bioconda BFBArchitect package for this release bundle. Treat any AC or BFBA
@@ -95,11 +95,11 @@ release or omit one of the four components.
 
 Audit new transitive dependencies before updating versions. AC 2.0 makes
 BFBArchitect a core dependency, so the recipe installs the pinned BFBA source
-with `--no-deps` and represents its open-source dependencies explicitly. The
-Conda compatibility patch allows PuLP 2.8 or newer and selects external CBC
-when PuLP has no bundled executable; it must continue to retain BFBA's required
-`gurobipy` metadata. Because Bioconda cannot resolve the Gurobi and Mosek vendor
-channels, install those bindings in the clean consumer environment before
-running `install.sh --finalize_only` and the final solver tests.
+with `--no-deps` and represents its open-source dependencies explicitly. BFBA
+selects external CBC when PuLP has no bundled executable. Because Bioconda
+cannot obtain Gurobi or Mosek, install Gurobi from its vendor channel in the
+clean consumer environment, then
+run `install.sh --finalize_only`, which uses pip to add Mosek, before the final
+solver tests.
 
 Finish by recording release URLs, container digests, the Bioconda PR, and any intentionally deferred issues in the release notes.

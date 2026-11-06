@@ -312,8 +312,7 @@ if aa_ac_stage_enabled:
 
 if mosek_requested_for_aa and MOSEK_DIR is None:
     sys.stderr.write(
-        "Mosek is unavailable; AmpliconSuite-pipeline will use the license-free 'clarabel' solver for AA. "
-        "If Mosek fails later during optimization, AA also retries with Clarabel.\n")
+        "Mosek license (optional) not found; AmpliconSuite-pipeline will use the Clarabel solver for AA.\n")
 
 # Gurobi is an optional BFBArchitect accelerator during the grouped AA/AC stage. Remain silent when it is absent
 # because the built-in solver is the normal choice for most analyses.
